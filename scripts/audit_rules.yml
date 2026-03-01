@@ -1,0 +1,41 @@
+{
+  "required_paths": [
+    "docs/ARCHITECTURE_RULES.md",
+    "scripts/audit_architecture.py",
+    "scripts/audit_rules.yml",
+    "player-web/src/app/.gitkeep",
+    "player-web/src/widgets/.gitkeep",
+    "player-web/src/features/.gitkeep",
+    "player-web/src/entities/.gitkeep",
+    "player-web/src/shared/.gitkeep",
+    "player-web/src/pages/home/HomePage.jsx",
+    "player-web/src/pages/about/AboutPage.jsx",
+    "player-web/src/pages/player-data/PlayerDataPage.jsx",
+    "player-web/server/server_core/services/ranking_service.py",
+    ".github/workflows/architecture-audit.yml"
+  ],
+  "max_lines": {
+    "player-web/src/App.jsx": 2000,
+    "player-web/server/app.py": 700,
+    "player-web/src/styles.css": 700
+  },
+  "forbidden_patterns": [
+    {
+      "glob": "player-web/src/pages/**/*.jsx",
+      "pattern": "fetch\\(",
+      "message": "pages 层禁止直接调用 fetch，请走 shared/api"
+    },
+    {
+      "glob": "player-web/src/pages/**/*.jsx",
+      "pattern": "localStorage\\.",
+      "message": "pages 层禁止直接读写 localStorage，请走 shared/lib"
+    }
+  ],
+  "required_substrings": [
+    {
+      "path": "player-web/server/app.py",
+      "substring": "from server_core.services.ranking_service import",
+      "message": "后端入口必须依赖 service 层，避免业务逻辑全部堆在 app.py"
+    }
+  ]
+}

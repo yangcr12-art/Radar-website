@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.mplconfig/
+.venv/
+
+# Node
+node_modules/
+player-web/node_modules/
+
+# Build outputs
+out/
+player-web/dist/
+
+# Local runtime data
+player-web/server/data/
+
+# Logs
+*.log

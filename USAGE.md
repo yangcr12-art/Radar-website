@@ -1,0 +1,128 @@
+# USAGE
+
+`player` 项目的核心命令是通过 CSV 模板自动生成球员雷达/径向图。
+
+## 1. 单图生成
+
+```bash
+python3 scripts/generate_player_radar.py \
+  --input <input_csv> \
+  --output <output_png> \
+  --title "<主标题>" \
+  --subtitle "<副标题>" \
+  --dpi 220
+```
+
+示例：
+
+```bash
+python3 scripts/generate_player_radar.py \
+  --input templates/player_chart_template.csv \
+  --output out/player_charts/alberto_quiles.png \
+  --title "Alberto Quiles Piosa (30, CF, 2901 mins.), Tianjin Tigers" \
+  --subtitle "2025 Chinese Super League Percentile Rankings & Per 90 Values"
+```
+
+## 2. 参数说明
+
+- `--input`：输入 CSV 路径（必填）
+- `--output`：输出 PNG 路径（必填）
+- `--title`：主标题（必填）
+- `--subtitle`：副标题（可选）
+- `--dpi`：图片清晰度，默认 `220`
+
+## 3. CSV 字段（模板）
+
+必填字段：
+- `metric`：指标名称
+- `value`：百分位值（0-100）
+- `group`：指标分组
+- `order`：分组顺序（整数）
+
+可选字段：
+- `per90`：显示在小标签里的每90数值
+- `tier`：`elite/above_avg/avg/bottom`
+- `color`：覆盖默认颜色（hex）
+
+## 4. 常见问题
+
+1. `Missing dependency`：
+```bash
+pip install matplotlib numpy
+```
+
+2. `Missing required columns`：
+- 检查 CSV 是否包含 `metric/value/group/order`
+
+3. `value must be 0..100`：
+- 百分位必须在 0 到 100 之间
+
+## 5. 网页版（可交互输入并导图）
+
+```bash
+# 1) 启动存储后端（统一保存草稿与版本）
+cd player-web/server
+python3 -m pip install -r requirements.txt
+python3 app.py
+
+# 2) 启动前端
+cd player-web
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+网页支持：
+- 顶部导航四页面：主页 / 雷达图生成器 / 球员数据 / About（默认进入雷达图生成器）
+- 「球员数据」为独立页面，支持导入 Excel（`.xlsx`）到本地后端
+- 导入后的 Excel 数据集可在下拉菜单中切换
+- 支持删除当前选中的导入数据集
+- 导入后可在下拉菜单切换球员
+- 支持按球员名关键字搜索后再从下拉菜单选择
+- 搜索关键字与“选择球员”会按数据集分别缓存，切换回来可自动恢复
+- 每列展示：列标题、该球员列值、全体球员排名、百分比
+- 搜索输入后，“选择球员”会自动定位为当前筛选结果的第一项，并联动刷新下方数据
+- 球员数据表格默认不显示 `player` 行，列标题按“中文（English）”展示
+- 支持按数据集勾选指标列，一键导入到“雷达图生成器”并自动跳转
+- 一键导入口径：`value=百分比`、`per90=该球员原始列值`
+- 一键导入时 `metric` 优先使用列标题中文名（无中文映射则保留英文）
+- 一键导入分组按“科尔多瓦最终版”口径：`传球(order=1)`、`对抗(order=2)`、`防守(order=3)`，其余列归 `其他(order=4)`
+- 指标勾选结果按数据集分别记忆，切换数据集会自动恢复对应勾选
+- Excel 约束：必须包含 `player` 列；按“宽表（一行一个球员）”读取；除 `player` 外的数值列自动参与排名
+- 直接编辑标准字段：`metric,value,group,order,per90,tier,color`
+- `tier` 按 `value` 自动联动（不可手动编辑）：
+- `value >= 90` => `elite`
+- `65 <= value < 90` => `above_avg`
+- `34 <= value < 65` => `avg`
+- `value < 34` => `bottom`
+- 标题模板一键生成（姓名/年龄/位置/分钟/球队/联赛/赛季）
+- 图表字体与分组字号调整（主/副标题、指标、分组、per90、刻度、图例）
+- 实时自动保存当前草稿（后端优先 + 本地兜底）
+- 同一后端地址下，跨 `127.0.0.1/localhost/不同前端端口` 读取同一份已保存数据
+- 首次接入后端会自动迁移一次浏览器本地草稿/版本
+- 保存命名版本并通过下拉切换
+- 版本保存范围：`title/subtitle/rows/meta/textStyle/chartStyle/centerImage/cornerImage`
+- 版本不保存：面板折叠状态、粘贴框临时文本
+- 选中版本后，编辑会实时回写该版本，下拉可见更新时间
+- 支持中心图片上传/替换/清除与大小调节（仅显示在中心圆内）
+- 支持左上角图片上传/替换/清除，并可调大小与 X/Y 位置
+- 中心图片与左上角图片都会随草稿与版本一起保存/恢复
+- 标题模板/字体样式面板可折叠
+- 上传 CSV 导入球员数据
+- 粘贴 CSV 文本导入
+- 下载当前 CSV（用于复现）
+- 导出 SVG / PNG 图片
+
+可选环境变量（前端）：
+
+- `VITE_STORAGE_API_BASE`：后端地址，默认 `http://127.0.0.1:8787`
+
+## 6. 架构审核（自动化阻断）
+
+```bash
+python3 scripts/audit_architecture.py
+```
+
+说明：
+- 规则文件：`scripts/audit_rules.yml`
+- 报告输出：`out/architecture_audit_report.json` 与 `out/architecture_audit_report.md`
+- 任意违规会返回非零退出码（阻断）
