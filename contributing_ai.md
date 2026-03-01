@@ -84,4 +84,11 @@ pip install matplotlib numpy
 
 ---
 
+## 5) GitHub 与 Tag
+
+- 项目 GitHub 更新流程与 Tag 规则统一遵循：`docs/GITHUB_WORKFLOW_AND_TAGS.md`
+- 涉及发布版本时，必须使用 `vMAJOR.MINOR.PATCH` 语义化 Tag。
+
+---
+
 _最后更新：2026-03-01_

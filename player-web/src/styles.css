@@ -156,6 +156,55 @@ body {
   color: #5f554a;
 }
 
+.mapping-card {
+  width: min(1100px, 100%);
+}
+
+.mapping-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.mapping-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.mapping-table th,
+.mapping-table td {
+  border-bottom: 1px solid #ece5db;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.mapping-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8f3ea;
+}
+
+.mapping-table th:first-child,
+.mapping-table td:first-child {
+  width: 64px;
+}
+
+.mapping-table td input {
+  width: 100%;
+  min-width: 140px;
+}
+
 .page {
   display: grid;
   grid-template-columns: 46% 54%;
@@ -237,7 +286,7 @@ h1 {
 
 .style-grid {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 110px 1fr 110px 1fr;
   gap: 8px;
   align-items: center;
 }
@@ -348,8 +397,22 @@ button:disabled {
 
 .table-tools {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   margin: 0 0 8px;
+}
+
+.row-reorder-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-reorder-control label {
+  font-size: 12px;
+  color: #5f554a;
 }
 
 .table-wrap {
@@ -363,7 +426,8 @@ button:disabled {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 960px;
+  min-width: 0;
+  table-layout: fixed;
 }
 
 th,
@@ -384,6 +448,46 @@ th {
 td input,
 td select {
   width: 100%;
+  box-sizing: border-box;
+}
+
+.move-btn {
+  background: #f5efe6;
+}
+
+.radar-data-table .col-metric {
+  width: 13%;
+}
+
+.radar-data-table .col-group {
+  width: 13%;
+}
+
+.radar-data-table .col-value {
+  width: 13%;
+}
+
+.radar-data-table .col-per90 {
+  width: 13%;
+}
+
+.radar-data-table .col-tier {
+  width: 13%;
+}
+
+.radar-data-table .col-order,
+.radar-data-table .col-suborder,
+.radar-data-table .col-up,
+.radar-data-table .col-down,
+.radar-data-table .col-delete {
+  width: 7%;
+}
+
+.radar-data-table td button {
+  width: 100%;
+  padding: 6px 4px;
+  font-size: 12px;
+  box-sizing: border-box;
 }
 
 .right-panel {
@@ -479,7 +583,7 @@ svg {
   }
 
   .style-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 120px 1fr;
   }
 
   .save-grid {

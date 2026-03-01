@@ -17,6 +17,8 @@
 文档扩展：
 - `docs/PLAYER_CHART_TEMPLATE.md`：模板字段与出图细节
 - `docs/ROADMAP.md`：版本计划与优先级
+- `docs/ARCHITECTURE_RULES.md`：架构约束与自动化审核规则
+- `docs/GITHUB_WORKFLOW_AND_TAGS.md`：GitHub 更新流程与 Tag 标记规范
 
 ---
 

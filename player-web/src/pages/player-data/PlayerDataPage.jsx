@@ -1,4 +1,5 @@
 import React from "react";
+import { getProjectGroupByColumn } from "../../utils/projectMappingStore";
 
 function PlayerDataPage(props) {
   const {
@@ -116,6 +117,7 @@ function PlayerDataPage(props) {
                 <tr>
                   <th>勾选</th>
                   <th>列标题</th>
+                  <th>group</th>
                   <th>数值</th>
                   <th>排名</th>
                   <th>百分比 (%)</th>
@@ -124,7 +126,7 @@ function PlayerDataPage(props) {
               <tbody>
                 {playerDataLoading ? (
                   <tr>
-                    <td colSpan="5">加载中...</td>
+                    <td colSpan="6">加载中...</td>
                   </tr>
                 ) : null}
                 {!playerDataLoading && selectedPlayerDetail?.columns?.length
@@ -141,6 +143,7 @@ function PlayerDataPage(props) {
                             />
                           </td>
                           <td>{formatPlayerDataColumnLabel(row.column)}</td>
+                          <td>{getProjectGroupByColumn(row.column) || "-"}</td>
                           <td>{String(row.value ?? "")}</td>
                           <td>{row.rank ?? "-"}</td>
                           <td>{row.percentile === null || row.percentile === undefined ? "-" : Number(row.percentile).toFixed(2)}</td>
@@ -149,7 +152,7 @@ function PlayerDataPage(props) {
                   : null}
                 {!playerDataLoading && (!selectedPlayerDetail || !selectedPlayerDetail.columns || selectedPlayerDetail.columns.length === 0) ? (
                   <tr>
-                    <td colSpan="5">暂无球员数据，请先导入 Excel。</td>
+                    <td colSpan="6">暂无球员数据，请先导入 Excel。</td>
                   </tr>
                 ) : null}
               </tbody>

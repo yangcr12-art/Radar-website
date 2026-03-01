@@ -40,6 +40,7 @@ python3 scripts/generate_player_radar.py \
 - `order`：分组顺序（整数）
 
 可选字段：
+- `subOrder`：组内顺序（整数，决定同组指标先后）
 - `per90`：显示在小标签里的每90数值
 - `tier`：`elite/above_avg/avg/bottom`
 - `color`：覆盖默认颜色（hex）
@@ -72,7 +73,8 @@ npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
 网页支持：
-- 顶部导航四页面：主页 / 雷达图生成器 / 球员数据 / About（默认进入雷达图生成器）
+- 顶部导航五页面：主页 / 雷达图生成器 / 球员数据 / 项目对应表 / About（默认进入雷达图生成器）
+- 「项目对应表」页面内置 Excel 首行字段的中英对照表，支持手动填写 `group` 并下载对应表 CSV
 - 「球员数据」为独立页面，支持导入 Excel（`.xlsx`）到本地后端
 - 导入后的 Excel 数据集可在下拉菜单中切换
 - 支持删除当前选中的导入数据集
@@ -81,14 +83,21 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 搜索关键字与“选择球员”会按数据集分别缓存，切换回来可自动恢复
 - 每列展示：列标题、该球员列值、全体球员排名、百分比
 - 搜索输入后，“选择球员”会自动定位为当前筛选结果的第一项，并联动刷新下方数据
-- 球员数据表格默认不显示 `player` 行，列标题按“中文（English）”展示
+- 球员数据表格默认不显示 `player` 行，列标题按“中文（English）”展示（英文列名会从“项目对应表”映射）
+- 球员数据表格会展示项目对应表里维护的 `group` 列
 - 支持按数据集勾选指标列，一键导入到“雷达图生成器”并自动跳转
 - 一键导入口径：`value=百分比`、`per90=该球员原始列值`
-- 一键导入时 `metric` 优先使用列标题中文名（无中文映射则保留英文）
+- 一键导入时 `metric` 优先使用项目对应表里的中文名（无中文映射则保留英文）
+- 一键导入时若项目对应表里为该英文列配置了 `group`，则优先使用该 `group`（支持 `传球/对抗/防守/其他` 与 `passing/duel/defending`）
 - 一键导入分组按“科尔多瓦最终版”口径：`传球(order=1)`、`对抗(order=2)`、`防守(order=3)`，其余列归 `其他(order=4)`
 - 指标勾选结果按数据集分别记忆，切换数据集会自动恢复对应勾选
 - Excel 约束：必须包含 `player` 列；按“宽表（一行一个球员）”读取；除 `player` 外的数值列自动参与排名
-- 直接编辑标准字段：`metric,value,group,order,per90,tier,color`
+- 直接编辑标准字段：`metric,value,group,order,subOrder,per90,tier,color`
+- 雷达图排序规则：`order -> group -> subOrder`（同组同序号再按 `metric` 兜底）
+- 雷达图生成器数据表支持“上移/下移”逐行重排
+- 重排模式支持两种：
+- `同步 order（图表跟随）`：移动行时会同步交换 `order`，右侧图表顺序立即变化
+- `仅表格顺序`：只调整编辑表格行序，不改 `order`，图表仍按 `order/group/metric` 渲染
 - `tier` 按 `value` 自动联动（不可手动编辑）：
 - `value >= 90` => `elite`
 - `65 <= value < 90` => `above_avg`
@@ -126,3 +135,27 @@ python3 scripts/audit_architecture.py
 - 规则文件：`scripts/audit_rules.yml`
 - 报告输出：`out/architecture_audit_report.json` 与 `out/architecture_audit_report.md`
 - 任意违规会返回非零退出码（阻断）
+
+## 7. GitHub 更新与 Tag 规范
+
+详见：`docs/GITHUB_WORKFLOW_AND_TAGS.md`
+
+常用命令：
+
+```bash
+# 日常分支开发
+git checkout main
+git pull origin main
+git checkout -b feature/<topic>
+
+# 提交并推送
+git add .
+git commit -m "feat: <message>"
+git push -u origin feature/<topic>
+
+# 发布 Tag（示例）
+git checkout main
+git pull origin main
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```

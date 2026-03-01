@@ -12,7 +12,8 @@ import {
 import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
-
+import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
+import { getProjectGroupByColumn, getProjectGroupOrder, getProjectZhByColumn } from "./utils/projectMappingStore";
 const DEFAULT_TIER_COLORS = {
   elite: "#0099FF",
   above_avg: "#16a34a",
@@ -26,7 +27,6 @@ const TIER_LABELS = {
   avg: "中等",
   bottom: "较弱"
 };
-
 const TIER_ALIASES = {
   elite: "elite",
   顶级: "elite",
@@ -37,7 +37,6 @@ const TIER_ALIASES = {
   bottom: "bottom",
   较弱: "bottom"
 };
-
 const HEADER_ALIASES = {
   metric: "metric",
   指标: "metric",
@@ -48,6 +47,11 @@ const HEADER_ALIASES = {
   分组: "group",
   order: "order",
   顺序: "order",
+  subOrder: "subOrder",
+  groupOrder: "subOrder",
+  intraOrder: "subOrder",
+  组内顺序: "subOrder",
+  组内排序: "subOrder",
   per90: "per90",
   每90: "per90",
   tier: "tier",
@@ -79,7 +83,7 @@ const INITIAL_ROWS = [
 ];
 
 const REQUIRED_COLUMNS = ["metric", "value", "group", "order"];
-const OPTIONAL_COLUMNS = ["per90", "tier", "color"];
+const OPTIONAL_COLUMNS = ["subOrder", "per90", "tier", "color"];
 const ALL_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
 const FONT_OPTIONS = [
   { label: "苹方 / PingFang", value: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif' },
@@ -97,28 +101,15 @@ const STORAGE_KEYS = {
   playerSearchByDataset: "player_web_player_search_by_dataset_v1",
   selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1"
 };
+const REORDER_MODE_VIEW = "view";
+const REORDER_MODE_ORDER = "order";
 const NAV_ITEMS = [
   { key: "home", label: "主页" },
   { key: "radar", label: "雷达图生成器" },
   { key: "player_data", label: "球员数据" },
+  { key: "project_mapping", label: "项目对应表" },
   { key: "about", label: "About" }
 ];
-const PLAYER_DATA_COLUMN_ZH = {
-  Player: "球员",
-  "Minutes played": "出场分钟",
-  "Duels per 90": "每90分钟对抗",
-  "Duels won, %": "对抗成功率",
-  "Successful defensive actions per 90": "每90分钟成功防守动作",
-  "Aerial duels per 90": "每90分钟空中对抗",
-  "Aerial duels won, %": "空中对抗成功率",
-  "PAdj Sliding tackles": "PAdj 滑铲",
-  "PAdj Interceptions": "PAdj 拦截",
-  "Fouls per 90": "每90分钟犯规",
-  "Accurate forward passes, %": "向前传球成功率",
-  "Long passes per 90": "每90分钟长传",
-  "Accurate long passes, %": "长传成功率",
-  "Progressive passes per 90": "每90分钟推进传球"
-};
 const METRIC_GROUP_RULES = [
   { group: "对抗", order: 2, keywords: ["duel", "aerial", "对抗", "空中对抗"] },
   { group: "防守", order: 3, keywords: ["def", "tackle", "interception", "foul", "防守", "抢断", "拦截", "犯规", "padj"] },
@@ -290,12 +281,16 @@ function parseCsv(text) {
 
     const tierRaw = (cells[idx.tier] || "avg").trim();
     const tier = TIER_ALIASES[tierRaw.toLowerCase()] || TIER_ALIASES[tierRaw] || "avg";
+    const subOrderRaw = idx.subOrder === undefined ? "" : (cells[idx.subOrder] || "").trim();
+    const parsedSubOrder = Number(subOrderRaw);
+    const subOrder = Number.isInteger(parsedSubOrder) && parsedSubOrder > 0 ? parsedSubOrder : null;
 
     rows.push({
       metric,
       group,
       value,
       order,
+      subOrder,
       per90: (cells[idx.per90] || "").trim(),
       tier,
       color: (cells[idx.color] || "").trim()
@@ -322,6 +317,7 @@ function toCsv(rows) {
         row.value,
         row.group,
         row.order,
+        row.subOrder,
         row.per90,
         row.tier,
         row.color
@@ -343,10 +339,22 @@ function computeTierFromValue(value) {
 }
 
 function recomputeRowsTier(rows) {
-  return rows.map((row) => ({
-    ...row,
-    tier: computeTierFromValue(row.value)
-  }));
+  const groupCounter = new Map();
+  return rows.map((row) => {
+    const groupKey = String(row.group || "");
+    const subOrderNum = Number(row.subOrder);
+    let subOrder = Number.isInteger(subOrderNum) && subOrderNum > 0 ? subOrderNum : null;
+    if (subOrder == null) {
+      const next = Number(groupCounter.get(groupKey) || 0) + 1;
+      subOrder = next;
+    }
+    groupCounter.set(groupKey, Number(subOrder));
+    return {
+      ...row,
+      subOrder: Number(subOrder),
+      tier: computeTierFromValue(row.value)
+    };
+  });
 }
 
 function readStorage(key, fallbackValue) {
@@ -393,6 +401,7 @@ function normalizeSnapshot(snapshot) {
       title: "Player Radar (Template Mode)",
       subtitle: "Input metric CSV and export image",
       rows: INITIAL_ROWS,
+      rowReorderMode: REORDER_MODE_ORDER,
       meta: DEFAULT_META,
       textStyle: DEFAULT_TEXT_STYLE,
       chartStyle: DEFAULT_CHART_STYLE,
@@ -420,6 +429,7 @@ function normalizeSnapshot(snapshot) {
     title: snapshot.title ?? "Player Radar (Template Mode)",
     subtitle: snapshot.subtitle ?? "Input metric CSV and export image",
     rows: normalizedRows,
+    rowReorderMode: snapshot.rowReorderMode === REORDER_MODE_VIEW ? REORDER_MODE_VIEW : REORDER_MODE_ORDER,
     meta: { ...DEFAULT_META, ...(snapshot.meta || {}) },
     textStyle: { ...DEFAULT_TEXT_STYLE, ...(snapshot.textStyle || {}) },
     chartStyle: { ...DEFAULT_CHART_STYLE, ...(snapshot.chartStyle || {}) },
@@ -468,11 +478,14 @@ function formatDateTime(isoText) {
 }
 
 function formatPlayerDataColumnLabel(column) {
-  const zhRaw = PLAYER_DATA_COLUMN_ZH[column] || column;
-  const zh = stripPer90Text(zhRaw);
-  const en = stripPer90Text(column);
+  const en = String(column || "").trim();
+  const zh = getProjectZhByColumn(en);
   if (zh && en && zh !== en) return `${zh} (${en})`;
-  return zh || en || column;
+  return en || column;
+}
+
+function getColumnZhFromProjectMapping(column) {
+  return getProjectZhByColumn(column);
 }
 
 function stripPer90Text(text) {
@@ -484,7 +497,7 @@ function stripPer90Text(text) {
 }
 
 function getMetricDisplayNameFromColumn(column) {
-  const mapped = PLAYER_DATA_COLUMN_ZH[column];
+  const mapped = getColumnZhFromProjectMapping(column);
   if (mapped) {
     return stripPer90Text(mapped);
   }
@@ -505,7 +518,8 @@ function App() {
   const [activePage, setActivePage] = useState("radar");
   const [title, setTitle] = useState("Player Radar (Template Mode)");
   const [subtitle, setSubtitle] = useState("Input metric CSV and export image");
-  const [rows, setRows] = useState(INITIAL_ROWS);
+  const [rows, setRows] = useState(() => recomputeRowsTier(INITIAL_ROWS));
+  const [rowReorderMode, setRowReorderMode] = useState(REORDER_MODE_ORDER);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [csvText, setCsvText] = useState("");
@@ -558,6 +572,7 @@ function App() {
     return [...rows].sort((a, b) => {
       if (Number(a.order) !== Number(b.order)) return Number(a.order) - Number(b.order);
       if (a.group !== b.group) return a.group.localeCompare(b.group, "en-US");
+      if (Number(a.subOrder) !== Number(b.subOrder)) return Number(a.subOrder) - Number(b.subOrder);
       return a.metric.localeCompare(b.metric, "en-US");
     });
   }, [rows]);
@@ -610,6 +625,9 @@ function App() {
       } else if (field === "order") {
         const num = Number(value);
         cloned[field] = Number.isNaN(num) ? 1 : Math.floor(num);
+      } else if (field === "subOrder") {
+        const num = Number(value);
+        cloned[field] = Number.isNaN(num) ? 1 : Math.max(1, Math.floor(num));
       } else {
         cloned[field] = value;
       }
@@ -629,6 +647,7 @@ function App() {
         per90: "",
         tier: computeTierFromValue(50),
         order: 1,
+        subOrder: 1,
         color: ""
       }
     ]);
@@ -636,6 +655,42 @@ function App() {
 
   const removeRow = (index) => {
     setRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const moveRow = (index, direction) => {
+    setRows((prev) => {
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+
+      let next =
+        rowReorderMode === REORDER_MODE_ORDER
+          ? prev.map((row) => ({ ...row }))
+          : [...prev];
+
+      const sourceSubOrder = Number(next[index].subOrder);
+      const normalizedSubOrder = Number.isFinite(sourceSubOrder) ? Math.max(1, Math.floor(sourceSubOrder)) : 1;
+      next[index] = {
+        ...next[index],
+        subOrder: Math.max(1, normalizedSubOrder + direction)
+      };
+
+      if (rowReorderMode === REORDER_MODE_ORDER) {
+        const sourceOrder = Number(next[index].order);
+        const targetOrder = Number(next[target].order);
+        const hasInvalidOrder = !Number.isFinite(sourceOrder) || !Number.isFinite(targetOrder);
+        if (hasInvalidOrder) {
+          next = next.map((row, i) => ({ ...row, order: i + 1 }));
+        }
+        const normalizedSourceOrder = Math.floor(Number(next[index].order));
+        const normalizedTargetOrder = Math.floor(Number(next[target].order));
+        next[index].order = normalizedTargetOrder;
+        next[target].order = normalizedSourceOrder;
+      }
+
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+    setError("");
   };
 
   const downloadFile = (filename, content, type) => {
@@ -830,12 +885,16 @@ function App() {
         if (!Number.isFinite(percentile)) return null;
         const value = Math.max(0, Math.min(100, Number(percentile.toFixed(2))));
         const metric = getMetricDisplayNameFromColumn(column);
-        const { group, order } = inferMetricGroupAndOrder(column, metric);
+        const mappedGroup = getProjectGroupByColumn(column);
+        const fallback = inferMetricGroupAndOrder(column, metric);
+        const group = mappedGroup || fallback.group;
+        const order = mappedGroup ? getProjectGroupOrder(mappedGroup) : fallback.order;
         return {
           metric,
           value,
           group,
           order,
+          subOrder: index + 1,
           per90: String(detail.value ?? ""),
           tier: computeTierFromValue(value),
           color: "",
@@ -853,7 +912,13 @@ function App() {
       if (a.order !== b.order) return a.order - b.order;
       return a._index - b._index;
     });
-    const finalRows = nextRows.map(({ _index, ...item }) => item);
+    const groupCounter = new Map();
+    const finalRows = nextRows.map(({ _index, ...item }) => {
+      const groupKey = String(item.group || "");
+      const nextSubOrder = Number(groupCounter.get(groupKey) || 0) + 1;
+      groupCounter.set(groupKey, nextSubOrder);
+      return { ...item, subOrder: nextSubOrder };
+    });
 
     setRows(finalRows);
     setMeta((prev) => ({
@@ -900,6 +965,7 @@ function App() {
     title,
     subtitle,
     rows,
+    rowReorderMode,
     meta,
     textStyle,
     chartStyle,
@@ -912,6 +978,7 @@ function App() {
     setTitle(normalized.title);
     setSubtitle(normalized.subtitle);
     setRows(normalized.rows);
+    setRowReorderMode(normalized.rowReorderMode);
     setMeta(normalized.meta);
     setTextStyle(normalized.textStyle);
     setChartStyle(normalized.chartStyle);
@@ -1006,7 +1073,7 @@ function App() {
     if (!okDraft || !okSelected || !okPresets) {
       setError("本地缓存写入失败。");
     }
-  }, [title, subtitle, rows, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, presets, isHydrated]);
+  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, presets, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1033,7 +1100,7 @@ function App() {
           : item
       )
     );
-  }, [title, subtitle, rows, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, isHydrated]);
+  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1062,7 +1129,7 @@ function App() {
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [title, subtitle, rows, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, isHydrated]);
+  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, isHydrated]);
 
   useEffect(() => {
     const hydratePlayerDataPage = async () => {
@@ -1119,19 +1186,6 @@ function App() {
       return { ...prev, [selectedDatasetId]: next };
     });
   }, [selectedDatasetId, playerDataMeta.numericColumns]);
-
-  useEffect(() => {
-    if (activePage !== "player_data") return;
-    if (filteredPlayerOptions.length === 0) {
-      setSelectedPlayerId("");
-      setSelectedPlayerDetail(null);
-      return;
-    }
-    const firstId = filteredPlayerOptions[0].id;
-    if (selectedPlayerId !== firstId) {
-      setSelectedPlayerId(firstId);
-    }
-  }, [activePage, filteredPlayerOptions, selectedPlayerId]);
 
   useEffect(() => {
     const loadPlayerDetail = async () => {
@@ -1584,7 +1638,7 @@ function App() {
           <label>粘贴 CSV 文本后导入（可选）</label>
           <textarea
             className="csv-input"
-            placeholder={"支持表头: metric,value,group,order 或 指标,百分比,分组,顺序"}
+            placeholder={"支持表头: metric,value,group,order,subOrder 或 指标,百分比,分组,顺序,组内顺序"}
             value={csvText}
             onChange={(e) => setCsvText(e.target.value)}
           />
@@ -1593,10 +1647,29 @@ function App() {
 
         <div className="table-tools">
           <button onClick={addRow}>在表格中添加一行</button>
+          <div className="row-reorder-control">
+            <label>重排模式</label>
+            <select value={rowReorderMode} onChange={(e) => setRowReorderMode(e.target.value)}>
+              <option value={REORDER_MODE_ORDER}>同步 order（图表跟随）</option>
+              <option value={REORDER_MODE_VIEW}>仅表格顺序</option>
+            </select>
+          </div>
         </div>
 
         <div className="table-wrap">
-          <table>
+          <table className="radar-data-table">
+            <colgroup>
+              <col className="col-metric" />
+              <col className="col-group" />
+              <col className="col-value" />
+              <col className="col-per90" />
+              <col className="col-tier" />
+              <col className="col-order" />
+              <col className="col-suborder" />
+              <col className="col-up" />
+              <col className="col-down" />
+              <col className="col-delete" />
+            </colgroup>
             <thead>
               <tr>
                 <th>metric*</th>
@@ -1605,8 +1678,10 @@ function App() {
                 <th>per90</th>
                 <th>tier(自动)</th>
                 <th>order*</th>
-                <th>color</th>
-                <th>操作</th>
+                <th>组内顺序</th>
+                <th>上移</th>
+                <th>下移</th>
+                <th>删除</th>
               </tr>
             </thead>
             <tbody>
@@ -1643,10 +1718,31 @@ function App() {
                   </td>
                   <td>
                     <input
-                      placeholder="#0f9d58"
-                      value={row.color}
-                      onChange={(e) => updateCell(index, "color", e.target.value)}
+                      type="number"
+                      step="1"
+                      value={row.subOrder}
+                      onChange={(e) => updateCell(index, "subOrder", e.target.value)}
                     />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="move-btn"
+                      onClick={() => moveRow(index, -1)}
+                      disabled={index === 0}
+                    >
+                      上移
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="move-btn"
+                      onClick={() => moveRow(index, 1)}
+                      disabled={index === rows.length - 1}
+                    >
+                      下移
+                    </button>
                   </td>
                   <td>
                     <button className="danger" onClick={() => removeRow(index)}>
@@ -1710,7 +1806,7 @@ function App() {
               y={CENTER_Y - (INNER_RING * 2 * centerImage.scale) / 2}
               width={INNER_RING * 2 * centerImage.scale}
               height={INNER_RING * 2 * centerImage.scale}
-              preserveAspectRatio="xMidYMid slice"
+              preserveAspectRatio="xMidYMid meet"
               clipPath="url(#center-image-clip)"
             />
           ) : null}
@@ -1822,7 +1918,7 @@ function App() {
   return (
     <div className="app-shell">
       <header className="top-nav">
-        <div className="brand">player</div>
+        <div className="brand">雷达图生成器V3.1</div>
         <nav className="nav-list" aria-label="Primary Navigation">
           {NAV_ITEMS.map((item) => (
             <button
@@ -1838,11 +1934,9 @@ function App() {
 
       <main className="content-shell">
         {activePage === "home" ? <HomePage onEnterRadar={() => setActivePage("radar")} /> : null}
-
         {activePage === "radar" ? radarPage : null}
-
         {activePage === "about" ? <AboutPage /> : null}
-
+        {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
         {activePage === "player_data" ? (
           <PlayerDataPage
             playerDataMeta={playerDataMeta}
