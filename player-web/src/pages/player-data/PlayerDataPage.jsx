@@ -82,7 +82,7 @@ function PlayerDataPage(props) {
               {playerOptions.length === 0 ? <option value="">暂无球员数据</option> : null}
               {playerOptions.length > 0 && filteredPlayerOptions.length === 0 ? <option value="">无匹配球员</option> : null}
               {filteredPlayerOptions.map((item) => (
-                <option key={item.id} value={item.id}>
+                <option key={item.id} value={String(item.id)}>
                   {item.player}
                 </option>
               ))}

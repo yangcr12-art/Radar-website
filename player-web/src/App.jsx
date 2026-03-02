@@ -13,14 +13,15 @@ import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
 import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
-import { getProjectGroupByColumn, getProjectGroupOrder, getProjectZhByColumn } from "./utils/projectMappingStore";
+import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
+import { getProjectGroupByColumn, getProjectZhByColumn } from "./utils/projectMappingStore";
+import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 const DEFAULT_TIER_COLORS = {
   elite: "#0099FF",
   above_avg: "#16a34a",
   avg: "#f2b700",
   bottom: "#d32f2f"
 };
-
 const TIER_LABELS = {
   elite: "顶级",
   above_avg: "良好",
@@ -139,6 +140,9 @@ const DEFAULT_CHART_STYLE = {
   innerRingStrokeWidth: 2,
   ringLineStyle: "dashed",
   ringDasharray: "4 8",
+  groupSeparatorWidth: 1.2,
+  groupSeparatorLength: 0,
+  groupSeparatorOffset: 0,
   groupLabelRadius: 540,
   groupLabelOffsetX: 0,
   groupLabelOffsetY: 0
@@ -168,14 +172,6 @@ function polarPoint(radius, angle) {
     x: CENTER_X + radius * Math.cos(angle),
     y: CENTER_Y + radius * Math.sin(angle)
   };
-}
-
-function sectorPolygon(a0, a1, r0, r1) {
-  const p1 = polarPoint(r0, a0);
-  const p2 = polarPoint(r1, a0);
-  const p3 = polarPoint(r1, a1);
-  const p4 = polarPoint(r0, a1);
-  return `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y} ${p4.x},${p4.y}`;
 }
 
 function annularSectorPath(a0, a1, rInner, rOuter) {
@@ -357,6 +353,16 @@ function recomputeRowsTier(rows) {
   });
 }
 
+function resequenceSubOrder(rows) {
+  const counter = new Map();
+  return rows.map((row) => {
+    const key = `${Math.floor(Number(row.order) || 0)}::${String(row.group || "")}`;
+    const next = Number(counter.get(key) || 0) + 1;
+    counter.set(key, next);
+    return { ...row, subOrder: next };
+  });
+}
+
 function readStorage(key, fallbackValue) {
   try {
     const raw = localStorage.getItem(key);
@@ -429,7 +435,7 @@ function normalizeSnapshot(snapshot) {
     title: snapshot.title ?? "Player Radar (Template Mode)",
     subtitle: snapshot.subtitle ?? "Input metric CSV and export image",
     rows: normalizedRows,
-    rowReorderMode: snapshot.rowReorderMode === REORDER_MODE_VIEW ? REORDER_MODE_VIEW : REORDER_MODE_ORDER,
+    rowReorderMode: REORDER_MODE_ORDER,
     meta: { ...DEFAULT_META, ...(snapshot.meta || {}) },
     textStyle: { ...DEFAULT_TEXT_STYLE, ...(snapshot.textStyle || {}) },
     chartStyle: { ...DEFAULT_CHART_STYLE, ...(snapshot.chartStyle || {}) },
@@ -514,6 +520,19 @@ function inferMetricGroupAndOrder(column, metricText = "") {
   return { group: "其他", order: 4 };
 }
 
+function normalizeColumnKey(text) {
+  return String(text || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+function resolveImportedMinutes(columns) {
+  if (!Array.isArray(columns) || columns.length === 0) return "";
+  const exact = columns.find((item) => normalizeColumnKey(item?.column) === "minutes played");
+  const matched = exact || columns.find((item) => {
+    const key = normalizeColumnKey(item?.column);
+    return ["minute", "minutes", "mins", "playing time", "time played", "出场时间", "出场分钟", "分钟"].some((kw) => key.includes(kw));
+  });
+  return String(matched?.value ?? "").trim();
+}
+
 function App() {
   const [activePage, setActivePage] = useState("radar");
   const [title, setTitle] = useState("Player Radar (Template Mode)");
@@ -534,6 +553,7 @@ function App() {
   const [titlePanelOpen, setTitlePanelOpen] = useState(true);
   const [fontPanelOpen, setFontPanelOpen] = useState(true);
   const [imagePanelOpen, setImagePanelOpen] = useState(true);
+  const [csvPanelOpen, setCsvPanelOpen] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
   const [playerDataMeta, setPlayerDataMeta] = useState({ playerCount: 0, updatedAt: "", numericColumns: [] });
   const [datasetOptions, setDatasetOptions] = useState([]);
@@ -614,6 +634,31 @@ function App() {
     return { total, step, barWidth, startAngle, groupStarts };
   }, [sortedRows]);
 
+  const groupLabelLayouts = useMemo(() => {
+    return computeGroupLabelLayouts({
+      sortedRows,
+      stats,
+      textStyle,
+      chartStyle,
+      centerX: CENTER_X,
+      centerY: CENTER_Y,
+      innerRing: INNER_RING,
+      maxRadialLength: MAX_RADIAL_LENGTH,
+      metricLabelRadius: METRIC_LABEL_RADIUS
+    });
+  }, [
+    sortedRows,
+    stats,
+    textStyle.metricSize,
+    textStyle.groupSize,
+    textStyle.fontFamily,
+    chartStyle.groupSeparatorLength,
+    chartStyle.groupSeparatorOffset,
+    chartStyle.groupLabelRadius,
+    chartStyle.groupLabelOffsetX,
+    chartStyle.groupLabelOffsetY
+  ]);
+
   const updateCell = (index, field, value) => {
     setRows((prev) => {
       const next = [...prev];
@@ -661,18 +706,7 @@ function App() {
     setRows((prev) => {
       const target = index + direction;
       if (index < 0 || target < 0 || target >= prev.length) return prev;
-
-      let next =
-        rowReorderMode === REORDER_MODE_ORDER
-          ? prev.map((row) => ({ ...row }))
-          : [...prev];
-
-      const sourceSubOrder = Number(next[index].subOrder);
-      const normalizedSubOrder = Number.isFinite(sourceSubOrder) ? Math.max(1, Math.floor(sourceSubOrder)) : 1;
-      next[index] = {
-        ...next[index],
-        subOrder: Math.max(1, normalizedSubOrder + direction)
-      };
+      let next = rowReorderMode === REORDER_MODE_ORDER ? prev.map((row) => ({ ...row })) : [...prev];
 
       if (rowReorderMode === REORDER_MODE_ORDER) {
         const sourceOrder = Number(next[index].order);
@@ -688,7 +722,7 @@ function App() {
       }
 
       [next[index], next[target]] = [next[target], next[index]];
-      return next;
+      return resequenceSubOrder(next);
     });
     setError("");
   };
@@ -877,7 +911,7 @@ function App() {
     }
 
     const detailMap = new Map(selectedPlayerDetail.columns.map((item) => [String(item.column || ""), item]));
-    const nextRows = selectedMetricColumns
+    const importedRows = selectedMetricColumns
       .map((column, index) => {
         const detail = detailMap.get(column);
         if (!detail) return null;
@@ -887,14 +921,13 @@ function App() {
         const metric = getMetricDisplayNameFromColumn(column);
         const mappedGroup = getProjectGroupByColumn(column);
         const fallback = inferMetricGroupAndOrder(column, metric);
-        const group = mappedGroup || fallback.group;
-        const order = mappedGroup ? getProjectGroupOrder(mappedGroup) : fallback.order;
+        const group = normalizeImportedGroupName(mappedGroup || fallback.group);
         return {
           metric,
           value,
           group,
-          order,
-          subOrder: index + 1,
+          order: 0,
+          subOrder: 1,
           per90: String(detail.value ?? ""),
           tier: computeTierFromValue(value),
           color: "",
@@ -903,33 +936,41 @@ function App() {
       })
       .filter(Boolean);
 
-    if (nextRows.length === 0) {
+    if (importedRows.length === 0) {
       setPlayerDataError("当前勾选列没有可用百分比数据，请更换球员或勾选项。");
       return;
     }
 
-    nextRows.sort((a, b) => {
-      if (a.order !== b.order) return a.order - b.order;
-      return a._index - b._index;
-    });
+    const groupOrderMap = buildImportedGroupOrderMap(importedRows);
+    const nextRows = importedRows
+      .map((row) => ({ ...row, order: groupOrderMap.get(row.group) || groupOrderMap.size + 1 }))
+      .sort((a, b) => {
+        if (a.order !== b.order) return a.order - b.order;
+        return a._index - b._index;
+      });
     const groupCounter = new Map();
     const finalRows = nextRows.map(({ _index, ...item }) => {
-      const groupKey = String(item.group || "");
+      const groupKey = `${Number(item.order)}::${String(item.group || "")}`;
       const nextSubOrder = Number(groupCounter.get(groupKey) || 0) + 1;
       groupCounter.set(groupKey, nextSubOrder);
       return { ...item, subOrder: nextSubOrder };
     });
 
+    const importedPlayerName = String(selectedPlayerDetail?.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
+    const importedMinutes = resolveImportedMinutes(selectedPlayerDetail.columns);
+    const nextMeta = { ...meta, player: importedPlayerName || meta.player, minutes: importedMinutes };
+    const nextTitle = `${nextMeta.player} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
+    const nextSubtitle = `${nextMeta.season} ${nextMeta.league} Percentile Rankings & Per 90 Values`;
+
     setRows(finalRows);
-    setMeta((prev) => ({
-      ...prev,
-      player: selectedPlayerDetail.player || prev.player
-    }));
+    setMeta(nextMeta);
+    setTitle(nextTitle);
+    setSubtitle(nextSubtitle);
     setActivePage("radar");
     setPlayerDataError("");
     setPlayerDataMessage("");
     setError("");
-    setMessage(`已导入 ${finalRows.length} 个指标到雷达图生成器。`);
+    setMessage(`已导入 ${finalRows.length} 个指标并同步更新标题。`);
   };
 
   const updateMeta = (field, value) => {
@@ -954,10 +995,7 @@ function App() {
     }
     const num = Number(value);
     if (!Number.isFinite(num)) return;
-    const safe =
-      field === "ringStrokeWidth" || field === "innerRingStrokeWidth"
-        ? Math.min(8, Number(num.toFixed(1)))
-        : Number(num.toFixed(1));
+    const safe = field === "ringStrokeWidth" || field === "innerRingStrokeWidth" || field === "groupSeparatorWidth" ? Math.min(8, Number(num.toFixed(1))) : Number(num.toFixed(1));
     setChartStyle((prev) => ({ ...prev, [field]: safe }));
   };
 
@@ -1159,19 +1197,19 @@ function App() {
 
   useEffect(() => {
     if (!selectedDatasetId) return;
-    setPlayerSearchByDataset((prev) => {
-      if (prev[selectedDatasetId] === playerSearchQuery) return prev;
-      return { ...prev, [selectedDatasetId]: playerSearchQuery };
-    });
+    setPlayerSearchByDataset((prev) => (prev[selectedDatasetId] === playerSearchQuery ? prev : { ...prev, [selectedDatasetId]: playerSearchQuery }));
   }, [selectedDatasetId, playerSearchQuery]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
-    setSelectedPlayerByDataset((prev) => {
-      if (prev[selectedDatasetId] === selectedPlayerId) return prev;
-      return { ...prev, [selectedDatasetId]: selectedPlayerId };
-    });
+    setSelectedPlayerByDataset((prev) => (prev[selectedDatasetId] === selectedPlayerId ? prev : { ...prev, [selectedDatasetId]: selectedPlayerId }));
   }, [selectedDatasetId, selectedPlayerId]);
+
+  useEffect(() => {
+    if (activePage !== "player_data") return;
+    if (filteredPlayerOptions.length === 0) return;
+    if (!filteredPlayerOptions.some((item) => String(item.id) === String(selectedPlayerId))) setSelectedPlayerId(String(filteredPlayerOptions[0].id || ""));
+  }, [activePage, filteredPlayerOptions, selectedPlayerId]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
@@ -1277,7 +1315,8 @@ function App() {
   };
 
   const applyTitleTemplate = () => {
-    const titleText = `${meta.player} (${meta.age}, ${meta.position}, ${meta.minutes} mins.), ${meta.club}`;
+    const effectivePlayerName = String(meta.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
+    const titleText = `${effectivePlayerName} (${meta.age}, ${meta.position}, ${meta.minutes} mins.), ${meta.club}`;
     const subtitleText = `${meta.season} ${meta.league} Percentile Rankings & Per 90 Values`;
     setTitle(titleText);
     setSubtitle(subtitleText);
@@ -1505,15 +1544,11 @@ function App() {
                 <label>刻度字号</label>
                 <input type="number" max="48" value={textStyle.tickSize} onChange={(e) => updateTextStyle("tickSize", e.target.value)} />
 
-                <label>图例字号</label>
-                <input type="number" max="48" value={textStyle.legendSize} onChange={(e) => updateTextStyle("legendSize", e.target.value)} />
-
+                <label>图例字号</label><input type="number" max="48" value={textStyle.legendSize} onChange={(e) => updateTextStyle("legendSize", e.target.value)} />
                 <label>外圈线宽</label>
                 <input type="number" max="8" step="0.1" value={chartStyle.ringStrokeWidth} onChange={(e) => updateChartStyle("ringStrokeWidth", e.target.value)} />
-
                 <label>中心圆线宽</label>
                 <input type="number" max="8" step="0.1" value={chartStyle.innerRingStrokeWidth} onChange={(e) => updateChartStyle("innerRingStrokeWidth", e.target.value)} />
-
                 <label>圆线样式</label>
                 <select value={chartStyle.ringLineStyle} onChange={(e) => updateChartStyle("ringLineStyle", e.target.value)}>
                   <option value="dashed">虚线</option>
@@ -1525,7 +1560,9 @@ function App() {
 
                 <label>分组标题半径</label>
                 <input type="number" value={chartStyle.groupLabelRadius} onChange={(e) => updateChartStyle("groupLabelRadius", e.target.value)} />
-
+                <label>分组线粗细</label><input type="number" min="0.2" max="8" step="0.1" value={chartStyle.groupSeparatorWidth} onChange={(e) => updateChartStyle("groupSeparatorWidth", e.target.value)} />
+                <label>分组线长短</label><input type="number" min="-120" max="240" step="1" value={chartStyle.groupSeparatorLength} onChange={(e) => updateChartStyle("groupSeparatorLength", e.target.value)} />
+                <label>分组线偏移</label><input type="number" min="-120" max="240" step="1" value={chartStyle.groupSeparatorOffset} onChange={(e) => updateChartStyle("groupSeparatorOffset", e.target.value)} />
                 <label>分组标题X偏移</label>
                 <input type="number" value={chartStyle.groupLabelOffsetX} onChange={(e) => updateChartStyle("groupLabelOffsetX", e.target.value)} />
 
@@ -1556,24 +1593,26 @@ function App() {
                 />
 
                 <label>图片大小</label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2.5"
-                  step="0.01"
-                  value={centerImage.scale}
-                  onChange={(e) => updateCenterImageScale(e.target.value)}
-                  disabled={!centerImage.src}
-                />
-                <input
-                  type="number"
-                  min="0.5"
-                  max="2.5"
-                  step="0.01"
-                  value={centerImage.scale}
-                  onChange={(e) => updateCenterImageScale(e.target.value)}
-                  disabled={!centerImage.src}
-                />
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.5"
+                    step="0.01"
+                    value={centerImage.scale}
+                    onChange={(e) => updateCenterImageScale(e.target.value)}
+                    disabled={!centerImage.src}
+                  />
+                  <input
+                    type="number"
+                    min="0.5"
+                    max="2.5"
+                    step="0.01"
+                    value={centerImage.scale}
+                    onChange={(e) => updateCenterImageScale(e.target.value)}
+                    disabled={!centerImage.src}
+                  />
+                </div>
               </div>
 
               <p className="meta-title">左上角图片</p>
@@ -1589,12 +1628,10 @@ function App() {
                 />
 
                 <label>图片大小(px)</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={cornerImage.size}
-                  onChange={(e) => updateCornerImage("size", e.target.value)}
-                />
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input type="range" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
+                  <input type="number" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
+                </div>
 
                 <label>X 位置</label>
                 <input
@@ -1630,30 +1667,27 @@ function App() {
             onChange={onCsvFileChange}
           />
         </div>
-
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
 
-        <div className="title-row">
-          <label>粘贴 CSV 文本后导入（可选）</label>
-          <textarea
-            className="csv-input"
-            placeholder={"支持表头: metric,value,group,order,subOrder 或 指标,百分比,分组,顺序,组内顺序"}
-            value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
-          />
-          <button onClick={importCsvFromTextarea}>从文本导入 CSV</button>
-        </div>
-
-        <div className="table-tools">
-          <button onClick={addRow}>在表格中添加一行</button>
-          <div className="row-reorder-control">
-            <label>重排模式</label>
-            <select value={rowReorderMode} onChange={(e) => setRowReorderMode(e.target.value)}>
-              <option value={REORDER_MODE_ORDER}>同步 order（图表跟随）</option>
-              <option value={REORDER_MODE_VIEW}>仅表格顺序</option>
-            </select>
-          </div>
+        <div className="meta-section">
+          <button type="button" className="section-toggle" onClick={() => setCsvPanelOpen((prev) => !prev)}>
+            <span>粘贴 CSV 文本后导入（可选）</span>
+            <span>{csvPanelOpen ? "▾" : "▸"}</span>
+          </button>
+          {csvPanelOpen ? (
+            <div className="section-body">
+              <div className="title-row">
+                <textarea
+                  className="csv-input"
+                  placeholder={"支持表头: metric,value,group,order,subOrder 或 指标,百分比,分组,顺序,组内顺序"}
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                />
+                <button onClick={importCsvFromTextarea}>从文本导入 CSV</button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="table-wrap">
@@ -1866,24 +1900,12 @@ function App() {
             );
           })}
 
-          {stats.groupStarts.map((groupStart, idx) => {
-            const next = stats.groupStarts[idx + 1]?.index ?? sortedRows.length;
-            const boundaryAngle = stats.startAngle + groupStart.index * stats.step - stats.step / 2;
-            const x1 = CENTER_X + (INNER_RING - 16) * Math.cos(boundaryAngle);
-            const y1 = CENTER_Y + (INNER_RING - 16) * Math.sin(boundaryAngle);
-            const x2 = CENTER_X + (INNER_RING + MAX_RADIAL_LENGTH + 20) * Math.cos(boundaryAngle);
-            const y2 = CENTER_Y + (INNER_RING + MAX_RADIAL_LENGTH + 20) * Math.sin(boundaryAngle);
-
-            const midIndex = (groupStart.index + next - 1) / 2;
-            const midAngle = stats.startAngle + midIndex * stats.step;
-            const gx = CENTER_X + chartStyle.groupLabelRadius * Math.cos(midAngle) + chartStyle.groupLabelOffsetX;
-            const gy = CENTER_Y + chartStyle.groupLabelRadius * Math.sin(midAngle) + chartStyle.groupLabelOffsetY;
-
+          {groupLabelLayouts.map((item) => {
             return (
-              <g key={`${groupStart.group}-${idx}`}>
-                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#c1bbb2" strokeWidth="1.2" />
-                <text x={gx} y={gy} fill="#6f675d" fontSize={textStyle.groupSize} fontFamily={textStyle.fontFamily} fontWeight="700" textAnchor="middle">
-                  {groupStart.group}
+              <g key={item.key}>
+                <line x1={item.x1} y1={item.y1} x2={item.x2} y2={item.y2} stroke="#c1bbb2" strokeWidth={chartStyle.groupSeparatorWidth} />
+                <text x={item.gx} y={item.gy} fill="#6f675d" fontSize={textStyle.groupSize} fontFamily={textStyle.fontFamily} fontWeight="700" textAnchor="middle">
+                  {item.group}
                 </text>
               </g>
             );
