@@ -1633,21 +1633,11 @@ function App() {
                   <input type="number" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
                 </div>
 
-                <label>X 位置</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={cornerImage.x}
-                  onChange={(e) => updateCornerImage("x", e.target.value)}
-                />
-
-                <label>Y 位置</label>
-                <input
-                  type="number"
-                  step="1"
-                  value={cornerImage.y}
-                  onChange={(e) => updateCornerImage("y", e.target.value)}
-                />
+                <label>位置(X/Y)</label>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input type="number" step="1" value={cornerImage.x} onChange={(e) => updateCornerImage("x", e.target.value)} />
+                  <input type="number" step="1" value={cornerImage.y} onChange={(e) => updateCornerImage("y", e.target.value)} />
+                </div>
               </div>
             </div>
           ) : null}
