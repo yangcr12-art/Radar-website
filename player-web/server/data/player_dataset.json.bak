@@ -1,0 +1,7489 @@
+{
+  "version": 1,
+  "updatedAt": "2026-03-02T07:46:45.363250+00:00",
+  "source": {
+    "filename": "Search results (1).xlsx",
+    "sheet": "Search results (80)",
+    "rowCount": 80
+  },
+  "schema": {
+    "playerColumn": "player",
+    "numericColumns": [
+      "Minutes played",
+      "Duels per 90",
+      "Duels won, %",
+      "Successful defensive actions per 90",
+      "Aerial duels won, %",
+      "PAdj Interceptions",
+      "Shots per 90",
+      "Progressive runs per 90",
+      "Accelerations per 90",
+      "Accurate forward passes, %",
+      "Long passes per 90",
+      "Key passes per 90",
+      "Passes to final third per 90",
+      "Progressive passes per 90"
+    ],
+    "lowerBetterColumns": [],
+    "allColumns": [
+      "Player",
+      "Minutes played",
+      "Duels per 90",
+      "Duels won, %",
+      "Successful defensive actions per 90",
+      "Aerial duels won, %",
+      "PAdj Interceptions",
+      "Shots per 90",
+      "Progressive runs per 90",
+      "Accelerations per 90",
+      "Accurate forward passes, %",
+      "Long passes per 90",
+      "Key passes per 90",
+      "Passes to final third per 90",
+      "Progressive passes per 90"
+    ]
+  },
+  "players": [
+    {
+      "id": "lu_yongtao",
+      "player": "Lu Yongtao",
+      "raw": {
+        "Player": "Lu Yongtao",
+        "Minutes played": 960,
+        "Duels per 90": 21.94,
+        "Duels won, %": 46.15,
+        "Successful defensive actions per 90": 9.38,
+        "Aerial duels won, %": 40.74,
+        "PAdj Interceptions": 5.88,
+        "Shots per 90": 0.84,
+        "Progressive runs per 90": 0.56,
+        "Accelerations per 90": 0.19,
+        "Accurate forward passes, %": 64.29,
+        "Long passes per 90": 2.81,
+        "Key passes per 90": 0.09,
+        "Passes to final third per 90": 4.97,
+        "Progressive passes per 90": 3.56
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 960.0,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Duels per 90": {
+          "value": 21.94,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Duels won, %": {
+          "value": 46.15,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.38,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Aerial duels won, %": {
+          "value": 40.74,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "PAdj Interceptions": {
+          "value": 5.88,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Shots per 90": {
+          "value": 0.84,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Progressive runs per 90": {
+          "value": 0.56,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Accelerations per 90": {
+          "value": 0.19,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Accurate forward passes, %": {
+          "value": 64.29,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Long passes per 90": {
+          "value": 2.81,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Key passes per 90": {
+          "value": 0.09,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Passes to final third per 90": {
+          "value": 4.97,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Progressive passes per 90": {
+          "value": 3.56,
+          "rank": 74,
+          "percentile": 7.59
+        }
+      }
+    },
+    {
+      "id": "zhang_yuan",
+      "player": "Zhang Yuan",
+      "raw": {
+        "Player": "Zhang Yuan",
+        "Minutes played": 650,
+        "Duels per 90": 21.6,
+        "Duels won, %": 37.82,
+        "Successful defensive actions per 90": 7.48,
+        "Aerial duels won, %": 46.15,
+        "PAdj Interceptions": 5.18,
+        "Shots per 90": 0.69,
+        "Progressive runs per 90": 1.8,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 64.42,
+        "Long passes per 90": 4.02,
+        "Key passes per 90": 0.42,
+        "Passes to final third per 90": 9.42,
+        "Progressive passes per 90": 7.06
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 650.0,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Duels per 90": {
+          "value": 21.6,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Duels won, %": {
+          "value": 37.82,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.48,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Aerial duels won, %": {
+          "value": 46.15,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "PAdj Interceptions": {
+          "value": 5.18,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Shots per 90": {
+          "value": 0.69,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Progressive runs per 90": {
+          "value": 1.8,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 64.42,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Long passes per 90": {
+          "value": 4.02,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Key passes per 90": {
+          "value": 0.42,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Passes to final third per 90": {
+          "value": 9.42,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Progressive passes per 90": {
+          "value": 7.06,
+          "rank": 17,
+          "percentile": 79.75
+        }
+      }
+    },
+    {
+      "id": "wang_yu",
+      "player": "Wang Yu",
+      "raw": {
+        "Player": "Wang Yu",
+        "Minutes played": 629,
+        "Duels per 90": 17.03,
+        "Duels won, %": 54.62,
+        "Successful defensive actions per 90": 9.3,
+        "Aerial duels won, %": 52.94,
+        "PAdj Interceptions": 5.4,
+        "Shots per 90": 0.86,
+        "Progressive runs per 90": 0.72,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 75.32,
+        "Long passes per 90": 3.86,
+        "Key passes per 90": 0.14,
+        "Passes to final third per 90": 6.44,
+        "Progressive passes per 90": 4.58
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 629.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Duels per 90": {
+          "value": 17.03,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Duels won, %": {
+          "value": 54.62,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.3,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Aerial duels won, %": {
+          "value": 52.94,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "PAdj Interceptions": {
+          "value": 5.4,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Shots per 90": {
+          "value": 0.86,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Progressive runs per 90": {
+          "value": 0.72,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 75.32,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Long passes per 90": {
+          "value": 3.86,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Key passes per 90": {
+          "value": 0.14,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Passes to final third per 90": {
+          "value": 6.44,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Progressive passes per 90": {
+          "value": 4.58,
+          "rank": 62,
+          "percentile": 22.78
+        }
+      }
+    },
+    {
+      "id": "xiao_kun",
+      "player": "Xiao Kun",
+      "raw": {
+        "Player": "Xiao Kun",
+        "Minutes played": 458,
+        "Duels per 90": 18.28,
+        "Duels won, %": 51.61,
+        "Successful defensive actions per 90": 10.81,
+        "Aerial duels won, %": 35.0,
+        "PAdj Interceptions": 6.77,
+        "Shots per 90": 1.18,
+        "Progressive runs per 90": 0.59,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 68.06,
+        "Long passes per 90": 4.52,
+        "Key passes per 90": 0.2,
+        "Passes to final third per 90": 6.09,
+        "Progressive passes per 90": 5.11
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 458.0,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Duels per 90": {
+          "value": 18.28,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Duels won, %": {
+          "value": 51.61,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.81,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Aerial duels won, %": {
+          "value": 35.0,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "PAdj Interceptions": {
+          "value": 6.77,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Shots per 90": {
+          "value": 1.18,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Progressive runs per 90": {
+          "value": 0.59,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 68.06,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Long passes per 90": {
+          "value": 4.52,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Key passes per 90": {
+          "value": 0.2,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Passes to final third per 90": {
+          "value": 6.09,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Progressive passes per 90": {
+          "value": 5.11,
+          "rank": 49,
+          "percentile": 39.24
+        }
+      }
+    },
+    {
+      "id": "gao_tianyi",
+      "player": "Gao Tianyi",
+      "raw": {
+        "Player": "Gao Tianyi",
+        "Minutes played": 1849,
+        "Duels per 90": 21.47,
+        "Duels won, %": 45.12,
+        "Successful defensive actions per 90": 9.0,
+        "Aerial duels won, %": 36.84,
+        "PAdj Interceptions": 5.98,
+        "Shots per 90": 2.14,
+        "Progressive runs per 90": 2.34,
+        "Accelerations per 90": 0.29,
+        "Accurate forward passes, %": 68.93,
+        "Long passes per 90": 5.5,
+        "Key passes per 90": 0.58,
+        "Passes to final third per 90": 8.71,
+        "Progressive passes per 90": 8.86
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1849.0,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Duels per 90": {
+          "value": 21.47,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Duels won, %": {
+          "value": 45.12,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Aerial duels won, %": {
+          "value": 36.84,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "PAdj Interceptions": {
+          "value": 5.98,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Shots per 90": {
+          "value": 2.14,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Progressive runs per 90": {
+          "value": 2.34,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Accelerations per 90": {
+          "value": 0.29,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Accurate forward passes, %": {
+          "value": 68.93,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Long passes per 90": {
+          "value": 5.5,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Key passes per 90": {
+          "value": 0.58,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Passes to final third per 90": {
+          "value": 8.71,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Progressive passes per 90": {
+          "value": 8.86,
+          "rank": 3,
+          "percentile": 97.47
+        }
+      }
+    },
+    {
+      "id": "xinli_peng",
+      "player": "Xinli Peng",
+      "raw": {
+        "Player": "Xinli Peng",
+        "Minutes played": 952,
+        "Duels per 90": 19.29,
+        "Duels won, %": 55.39,
+        "Successful defensive actions per 90": 7.85,
+        "Aerial duels won, %": 12.5,
+        "PAdj Interceptions": 2.71,
+        "Shots per 90": 0.85,
+        "Progressive runs per 90": 1.04,
+        "Accelerations per 90": 0.09,
+        "Accurate forward passes, %": 69.47,
+        "Long passes per 90": 2.17,
+        "Key passes per 90": 0.28,
+        "Passes to final third per 90": 4.73,
+        "Progressive passes per 90": 4.07
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 952.0,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Duels per 90": {
+          "value": 19.29,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Duels won, %": {
+          "value": 55.39,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.85,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Aerial duels won, %": {
+          "value": 12.5,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "PAdj Interceptions": {
+          "value": 2.71,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Shots per 90": {
+          "value": 0.85,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Progressive runs per 90": {
+          "value": 1.04,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Accelerations per 90": {
+          "value": 0.09,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Accurate forward passes, %": {
+          "value": 69.47,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Long passes per 90": {
+          "value": 2.17,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Key passes per 90": {
+          "value": 0.28,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Passes to final third per 90": {
+          "value": 4.73,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Progressive passes per 90": {
+          "value": 4.07,
+          "rank": 72,
+          "percentile": 10.13
+        }
+      }
+    },
+    {
+      "id": "e__karzev",
+      "player": "E. Karzev",
+      "raw": {
+        "Player": "E. Karzev",
+        "Minutes played": 2468,
+        "Duels per 90": 16.26,
+        "Duels won, %": 47.09,
+        "Successful defensive actions per 90": 7.22,
+        "Aerial duels won, %": 48.0,
+        "PAdj Interceptions": 3.59,
+        "Shots per 90": 1.17,
+        "Progressive runs per 90": 0.95,
+        "Accelerations per 90": 0.04,
+        "Accurate forward passes, %": 62.3,
+        "Long passes per 90": 5.14,
+        "Key passes per 90": 0.11,
+        "Passes to final third per 90": 7.22,
+        "Progressive passes per 90": 5.94
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2468.0,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Duels per 90": {
+          "value": 16.26,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Duels won, %": {
+          "value": 47.09,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.22,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Aerial duels won, %": {
+          "value": 48.0,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "PAdj Interceptions": {
+          "value": 3.59,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Shots per 90": {
+          "value": 1.17,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Progressive runs per 90": {
+          "value": 0.95,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Accelerations per 90": {
+          "value": 0.04,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Accurate forward passes, %": {
+          "value": 62.3,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Long passes per 90": {
+          "value": 5.14,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Key passes per 90": {
+          "value": 0.11,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Passes to final third per 90": {
+          "value": 7.22,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Progressive passes per 90": {
+          "value": 5.94,
+          "rank": 32,
+          "percentile": 60.76
+        }
+      }
+    },
+    {
+      "id": "liao_chengjian",
+      "player": "Liao Chengjian",
+      "raw": {
+        "Player": "Liao Chengjian",
+        "Minutes played": 1255,
+        "Duels per 90": 18.57,
+        "Duels won, %": 48.65,
+        "Successful defensive actions per 90": 8.96,
+        "Aerial duels won, %": 47.92,
+        "PAdj Interceptions": 5.2,
+        "Shots per 90": 1.15,
+        "Progressive runs per 90": 0.07,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 70.63,
+        "Long passes per 90": 4.16,
+        "Key passes per 90": 0.29,
+        "Passes to final third per 90": 3.66,
+        "Progressive passes per 90": 5.16
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1255.0,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Duels per 90": {
+          "value": 18.57,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Duels won, %": {
+          "value": 48.65,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.96,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Aerial duels won, %": {
+          "value": 47.92,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "PAdj Interceptions": {
+          "value": 5.2,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Shots per 90": {
+          "value": 1.15,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Progressive runs per 90": {
+          "value": 0.07,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 70.63,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Long passes per 90": {
+          "value": 4.16,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Key passes per 90": {
+          "value": 0.29,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Passes to final third per 90": {
+          "value": 3.66,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Progressive passes per 90": {
+          "value": 5.16,
+          "rank": 46,
+          "percentile": 43.04
+        }
+      }
+    },
+    {
+      "id": "zhong_jinbao",
+      "player": "Zhong Jinbao",
+      "raw": {
+        "Player": "Zhong Jinbao",
+        "Minutes played": 847,
+        "Duels per 90": 17.96,
+        "Duels won, %": 43.2,
+        "Successful defensive actions per 90": 7.97,
+        "Aerial duels won, %": 26.47,
+        "PAdj Interceptions": 4.83,
+        "Shots per 90": 1.06,
+        "Progressive runs per 90": 0.74,
+        "Accelerations per 90": 0.11,
+        "Accurate forward passes, %": 57.65,
+        "Long passes per 90": 3.4,
+        "Key passes per 90": 0.32,
+        "Passes to final third per 90": 3.83,
+        "Progressive passes per 90": 4.68
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 847.0,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Duels per 90": {
+          "value": 17.96,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Duels won, %": {
+          "value": 43.2,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.97,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Aerial duels won, %": {
+          "value": 26.47,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "PAdj Interceptions": {
+          "value": 4.83,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Shots per 90": {
+          "value": 1.06,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Progressive runs per 90": {
+          "value": 0.74,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Accelerations per 90": {
+          "value": 0.11,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Accurate forward passes, %": {
+          "value": 57.65,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Long passes per 90": {
+          "value": 3.4,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Key passes per 90": {
+          "value": 0.32,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Passes to final third per 90": {
+          "value": 3.83,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Progressive passes per 90": {
+          "value": 4.68,
+          "rank": 60,
+          "percentile": 25.32
+        }
+      }
+    },
+    {
+      "id": "chen_po_liang",
+      "player": "Chen Po-liang",
+      "raw": {
+        "Player": "Chen Po-liang",
+        "Minutes played": 602,
+        "Duels per 90": 14.8,
+        "Duels won, %": 58.59,
+        "Successful defensive actions per 90": 8.52,
+        "Aerial duels won, %": 46.67,
+        "PAdj Interceptions": 6.34,
+        "Shots per 90": 0.3,
+        "Progressive runs per 90": 0.0,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 69.72,
+        "Long passes per 90": 4.34,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 8.22,
+        "Progressive passes per 90": 7.18
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 602.0,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Duels per 90": {
+          "value": 14.8,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Duels won, %": {
+          "value": 58.59,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.52,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Aerial duels won, %": {
+          "value": 46.67,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "PAdj Interceptions": {
+          "value": 6.34,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Shots per 90": {
+          "value": 0.3,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Progressive runs per 90": {
+          "value": 0.0,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 69.72,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Long passes per 90": {
+          "value": 4.34,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 8.22,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Progressive passes per 90": {
+          "value": 7.18,
+          "rank": 15,
+          "percentile": 82.28
+        }
+      }
+    },
+    {
+      "id": "yan_dinghao",
+      "player": "Yan Dinghao",
+      "raw": {
+        "Player": "Yan Dinghao",
+        "Minutes played": 1168,
+        "Duels per 90": 14.33,
+        "Duels won, %": 45.7,
+        "Successful defensive actions per 90": 7.01,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 5.15,
+        "Shots per 90": 1.0,
+        "Progressive runs per 90": 0.62,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 78.7,
+        "Long passes per 90": 6.7,
+        "Key passes per 90": 0.39,
+        "Passes to final third per 90": 9.48,
+        "Progressive passes per 90": 8.55
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1168.0,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Duels per 90": {
+          "value": 14.33,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Duels won, %": {
+          "value": 45.7,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.01,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 5.15,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Shots per 90": {
+          "value": 1.0,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Progressive runs per 90": {
+          "value": 0.62,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 78.7,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Long passes per 90": {
+          "value": 6.7,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Key passes per 90": {
+          "value": 0.39,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Passes to final third per 90": {
+          "value": 9.48,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Progressive passes per 90": {
+          "value": 8.55,
+          "rank": 5,
+          "percentile": 94.94
+        }
+      }
+    },
+    {
+      "id": "huang_jiahui",
+      "player": "Huang Jiahui",
+      "raw": {
+        "Player": "Huang Jiahui",
+        "Minutes played": 1904,
+        "Duels per 90": 14.37,
+        "Duels won, %": 51.97,
+        "Successful defensive actions per 90": 8.84,
+        "Aerial duels won, %": 32.61,
+        "PAdj Interceptions": 4.81,
+        "Shots per 90": 0.43,
+        "Progressive runs per 90": 0.24,
+        "Accelerations per 90": 0.05,
+        "Accurate forward passes, %": 71.22,
+        "Long passes per 90": 3.26,
+        "Key passes per 90": 0.05,
+        "Passes to final third per 90": 4.92,
+        "Progressive passes per 90": 5.34
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1904.0,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Duels per 90": {
+          "value": 14.37,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Duels won, %": {
+          "value": 51.97,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.84,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Aerial duels won, %": {
+          "value": 32.61,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "PAdj Interceptions": {
+          "value": 4.81,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Shots per 90": {
+          "value": 0.43,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Progressive runs per 90": {
+          "value": 0.24,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Accelerations per 90": {
+          "value": 0.05,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Accurate forward passes, %": {
+          "value": 71.22,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Long passes per 90": {
+          "value": 3.26,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Key passes per 90": {
+          "value": 0.05,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Passes to final third per 90": {
+          "value": 4.92,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Progressive passes per 90": {
+          "value": 5.34,
+          "rank": 43,
+          "percentile": 46.84
+        }
+      }
+    },
+    {
+      "id": "abudulam_abdurasul",
+      "player": "Abudulam Abdurasul",
+      "raw": {
+        "Player": "Abudulam Abdurasul",
+        "Minutes played": 563,
+        "Duels per 90": 13.59,
+        "Duels won, %": 40.0,
+        "Successful defensive actions per 90": 5.75,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 3.97,
+        "Shots per 90": 0.48,
+        "Progressive runs per 90": 0.96,
+        "Accelerations per 90": 0.16,
+        "Accurate forward passes, %": 72.22,
+        "Long passes per 90": 1.92,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 6.07,
+        "Progressive passes per 90": 3.52
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 563.0,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Duels per 90": {
+          "value": 13.59,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Duels won, %": {
+          "value": 40.0,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.75,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 3.97,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Shots per 90": {
+          "value": 0.48,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Progressive runs per 90": {
+          "value": 0.96,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Accelerations per 90": {
+          "value": 0.16,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Accurate forward passes, %": {
+          "value": 72.22,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Long passes per 90": {
+          "value": 1.92,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 6.07,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Progressive passes per 90": {
+          "value": 3.52,
+          "rank": 75,
+          "percentile": 6.33
+        }
+      }
+    },
+    {
+      "id": "guilherme_madruga",
+      "player": "Guilherme Madruga",
+      "raw": {
+        "Player": "Guilherme Madruga",
+        "Minutes played": 2367,
+        "Duels per 90": 20.53,
+        "Duels won, %": 53.15,
+        "Successful defensive actions per 90": 9.47,
+        "Aerial duels won, %": 63.39,
+        "PAdj Interceptions": 7.51,
+        "Shots per 90": 1.67,
+        "Progressive runs per 90": 0.72,
+        "Accelerations per 90": 0.11,
+        "Accurate forward passes, %": 75.53,
+        "Long passes per 90": 2.66,
+        "Key passes per 90": 0.23,
+        "Passes to final third per 90": 4.83,
+        "Progressive passes per 90": 4.94
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2367.0,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Duels per 90": {
+          "value": 20.53,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Duels won, %": {
+          "value": 53.15,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.47,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Aerial duels won, %": {
+          "value": 63.39,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "PAdj Interceptions": {
+          "value": 7.51,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Shots per 90": {
+          "value": 1.67,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Progressive runs per 90": {
+          "value": 0.72,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Accelerations per 90": {
+          "value": 0.11,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Accurate forward passes, %": {
+          "value": 75.53,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Long passes per 90": {
+          "value": 2.66,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Key passes per 90": {
+          "value": 0.23,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Passes to final third per 90": {
+          "value": 4.83,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Progressive passes per 90": {
+          "value": 4.94,
+          "rank": 55,
+          "percentile": 31.65
+        }
+      }
+    },
+    {
+      "id": "nené",
+      "player": "Nené",
+      "raw": {
+        "Player": "Nené",
+        "Minutes played": 2737,
+        "Duels per 90": 16.38,
+        "Duels won, %": 50.4,
+        "Successful defensive actions per 90": 8.62,
+        "Aerial duels won, %": 51.56,
+        "PAdj Interceptions": 6.1,
+        "Shots per 90": 1.28,
+        "Progressive runs per 90": 0.69,
+        "Accelerations per 90": 0.1,
+        "Accurate forward passes, %": 64.07,
+        "Long passes per 90": 4.93,
+        "Key passes per 90": 0.26,
+        "Passes to final third per 90": 7.23,
+        "Progressive passes per 90": 5.13
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2737.0,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Duels per 90": {
+          "value": 16.38,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Duels won, %": {
+          "value": 50.4,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.62,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Aerial duels won, %": {
+          "value": 51.56,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "PAdj Interceptions": {
+          "value": 6.1,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Shots per 90": {
+          "value": 1.28,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Progressive runs per 90": {
+          "value": 0.69,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Accelerations per 90": {
+          "value": 0.1,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Accurate forward passes, %": {
+          "value": 64.07,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Long passes per 90": {
+          "value": 4.93,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Key passes per 90": {
+          "value": 0.26,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Passes to final third per 90": {
+          "value": 7.23,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Progressive passes per 90": {
+          "value": 5.13,
+          "rank": 48,
+          "percentile": 40.51
+        }
+      }
+    },
+    {
+      "id": "yang_mingyang",
+      "player": "Yang Mingyang",
+      "raw": {
+        "Player": "Yang Mingyang",
+        "Minutes played": 2190,
+        "Duels per 90": 12.9,
+        "Duels won, %": 48.73,
+        "Successful defensive actions per 90": 6.62,
+        "Aerial duels won, %": 40.43,
+        "PAdj Interceptions": 3.94,
+        "Shots per 90": 1.03,
+        "Progressive runs per 90": 1.15,
+        "Accelerations per 90": 0.33,
+        "Accurate forward passes, %": 75.27,
+        "Long passes per 90": 2.75,
+        "Key passes per 90": 0.08,
+        "Passes to final third per 90": 5.92,
+        "Progressive passes per 90": 5.34
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2190.0,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Duels per 90": {
+          "value": 12.9,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Duels won, %": {
+          "value": 48.73,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.62,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Aerial duels won, %": {
+          "value": 40.43,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "PAdj Interceptions": {
+          "value": 3.94,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Shots per 90": {
+          "value": 1.03,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Progressive runs per 90": {
+          "value": 1.15,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Accelerations per 90": {
+          "value": 0.33,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Accurate forward passes, %": {
+          "value": 75.27,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Long passes per 90": {
+          "value": 2.75,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Key passes per 90": {
+          "value": 0.08,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Passes to final third per 90": {
+          "value": 5.92,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Progressive passes per 90": {
+          "value": 5.34,
+          "rank": 43,
+          "percentile": 46.84
+        }
+      }
+    },
+    {
+      "id": "e__sarić",
+      "player": "E. Sarić",
+      "raw": {
+        "Player": "E. Sarić",
+        "Minutes played": 2190,
+        "Duels per 90": 20.59,
+        "Duels won, %": 42.32,
+        "Successful defensive actions per 90": 7.4,
+        "Aerial duels won, %": 56.25,
+        "PAdj Interceptions": 4.79,
+        "Shots per 90": 1.93,
+        "Progressive runs per 90": 1.32,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 63.52,
+        "Long passes per 90": 4.19,
+        "Key passes per 90": 0.41,
+        "Passes to final third per 90": 5.71,
+        "Progressive passes per 90": 5.88
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2190.0,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Duels per 90": {
+          "value": 20.59,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Duels won, %": {
+          "value": 42.32,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.4,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Aerial duels won, %": {
+          "value": 56.25,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "PAdj Interceptions": {
+          "value": 4.79,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Shots per 90": {
+          "value": 1.93,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Progressive runs per 90": {
+          "value": 1.32,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 63.52,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Long passes per 90": {
+          "value": 4.19,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Key passes per 90": {
+          "value": 0.41,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Passes to final third per 90": {
+          "value": 5.71,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Progressive passes per 90": {
+          "value": 5.88,
+          "rank": 33,
+          "percentile": 59.49
+        }
+      }
+    },
+    {
+      "id": "matheus_jussa",
+      "player": "Matheus Jussa",
+      "raw": {
+        "Player": "Matheus Jussa",
+        "Minutes played": 2901,
+        "Duels per 90": 14.08,
+        "Duels won, %": 50.0,
+        "Successful defensive actions per 90": 7.35,
+        "Aerial duels won, %": 59.15,
+        "PAdj Interceptions": 5.76,
+        "Shots per 90": 0.68,
+        "Progressive runs per 90": 1.05,
+        "Accelerations per 90": 0.03,
+        "Accurate forward passes, %": 77.24,
+        "Long passes per 90": 3.32,
+        "Key passes per 90": 0.16,
+        "Passes to final third per 90": 8.84,
+        "Progressive passes per 90": 7.6
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2901.0,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Duels per 90": {
+          "value": 14.08,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Duels won, %": {
+          "value": 50.0,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.35,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Aerial duels won, %": {
+          "value": 59.15,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "PAdj Interceptions": {
+          "value": 5.76,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Shots per 90": {
+          "value": 0.68,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Progressive runs per 90": {
+          "value": 1.05,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Accelerations per 90": {
+          "value": 0.03,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Accurate forward passes, %": {
+          "value": 77.24,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Long passes per 90": {
+          "value": 3.32,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Key passes per 90": {
+          "value": 0.16,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Passes to final third per 90": {
+          "value": 8.84,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Progressive passes per 90": {
+          "value": 7.6,
+          "rank": 8,
+          "percentile": 91.14
+        }
+      }
+    },
+    {
+      "id": "b__jočić",
+      "player": "B. Jočić",
+      "raw": {
+        "Player": "B. Jočić",
+        "Minutes played": 2408,
+        "Duels per 90": 14.35,
+        "Duels won, %": 55.47,
+        "Successful defensive actions per 90": 8.63,
+        "Aerial duels won, %": 49.06,
+        "PAdj Interceptions": 6.45,
+        "Shots per 90": 0.49,
+        "Progressive runs per 90": 0.41,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 63.11,
+        "Long passes per 90": 4.63,
+        "Key passes per 90": 0.07,
+        "Passes to final third per 90": 4.9,
+        "Progressive passes per 90": 5.46
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2408.0,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Duels per 90": {
+          "value": 14.35,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Duels won, %": {
+          "value": 55.47,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.63,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Aerial duels won, %": {
+          "value": 49.06,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "PAdj Interceptions": {
+          "value": 6.45,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Shots per 90": {
+          "value": 0.49,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Progressive runs per 90": {
+          "value": 0.41,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 63.11,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Long passes per 90": {
+          "value": 4.63,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Key passes per 90": {
+          "value": 0.07,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Passes to final third per 90": {
+          "value": 4.9,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Progressive passes per 90": {
+          "value": 5.46,
+          "rank": 40,
+          "percentile": 50.63
+        }
+      }
+    },
+    {
+      "id": "zhao_yuhao",
+      "player": "Zhao Yuhao",
+      "raw": {
+        "Player": "Zhao Yuhao",
+        "Minutes played": 1230,
+        "Duels per 90": 15.15,
+        "Duels won, %": 53.62,
+        "Successful defensive actions per 90": 9.44,
+        "Aerial duels won, %": 47.95,
+        "PAdj Interceptions": 5.64,
+        "Shots per 90": 0.44,
+        "Progressive runs per 90": 0.07,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 63.78,
+        "Long passes per 90": 4.32,
+        "Key passes per 90": 0.07,
+        "Passes to final third per 90": 3.51,
+        "Progressive passes per 90": 4.24
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1230.0,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Duels per 90": {
+          "value": 15.15,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Duels won, %": {
+          "value": 53.62,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.44,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Aerial duels won, %": {
+          "value": 47.95,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "PAdj Interceptions": {
+          "value": 5.64,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Shots per 90": {
+          "value": 0.44,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Progressive runs per 90": {
+          "value": 0.07,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 63.78,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Long passes per 90": {
+          "value": 4.32,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Key passes per 90": {
+          "value": 0.07,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Passes to final third per 90": {
+          "value": 3.51,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Progressive passes per 90": {
+          "value": 4.24,
+          "rank": 70,
+          "percentile": 12.66
+        }
+      }
+    },
+    {
+      "id": "chi_zhongguo",
+      "player": "Chi Zhongguo",
+      "raw": {
+        "Player": "Chi Zhongguo",
+        "Minutes played": 614,
+        "Duels per 90": 11.29,
+        "Duels won, %": 51.95,
+        "Successful defensive actions per 90": 8.79,
+        "Aerial duels won, %": 44.44,
+        "PAdj Interceptions": 9.34,
+        "Shots per 90": 0.88,
+        "Progressive runs per 90": 0.88,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 80.0,
+        "Long passes per 90": 4.54,
+        "Key passes per 90": 0.29,
+        "Passes to final third per 90": 8.65,
+        "Progressive passes per 90": 6.45
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 614.0,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Duels per 90": {
+          "value": 11.29,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Duels won, %": {
+          "value": 51.95,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.79,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Aerial duels won, %": {
+          "value": 44.44,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "PAdj Interceptions": {
+          "value": 9.34,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Shots per 90": {
+          "value": 0.88,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Progressive runs per 90": {
+          "value": 0.88,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 80.0,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Long passes per 90": {
+          "value": 4.54,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Key passes per 90": {
+          "value": 0.29,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Passes to final third per 90": {
+          "value": 8.65,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Progressive passes per 90": {
+          "value": 6.45,
+          "rank": 23,
+          "percentile": 72.15
+        }
+      }
+    },
+    {
+      "id": "chow_tim",
+      "player": "Chow Tim",
+      "raw": {
+        "Player": "Chow Tim",
+        "Minutes played": 2754,
+        "Duels per 90": 14.08,
+        "Duels won, %": 49.19,
+        "Successful defensive actions per 90": 7.61,
+        "Aerial duels won, %": 43.93,
+        "PAdj Interceptions": 6.3,
+        "Shots per 90": 1.37,
+        "Progressive runs per 90": 0.36,
+        "Accelerations per 90": 0.13,
+        "Accurate forward passes, %": 73.41,
+        "Long passes per 90": 2.78,
+        "Key passes per 90": 0.39,
+        "Passes to final third per 90": 4.51,
+        "Progressive passes per 90": 4.8
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2754.0,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Duels per 90": {
+          "value": 14.08,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Duels won, %": {
+          "value": 49.19,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.61,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Aerial duels won, %": {
+          "value": 43.93,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "PAdj Interceptions": {
+          "value": 6.3,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Shots per 90": {
+          "value": 1.37,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Progressive runs per 90": {
+          "value": 0.36,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Accelerations per 90": {
+          "value": 0.13,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Accurate forward passes, %": {
+          "value": 73.41,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Long passes per 90": {
+          "value": 2.78,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Key passes per 90": {
+          "value": 0.39,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Passes to final third per 90": {
+          "value": 4.51,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Progressive passes per 90": {
+          "value": 4.8,
+          "rank": 58,
+          "percentile": 27.85
+        }
+      }
+    },
+    {
+      "id": "chen_xuhuang",
+      "player": "Chen Xuhuang",
+      "raw": {
+        "Player": "Chen Xuhuang",
+        "Minutes played": 1040,
+        "Duels per 90": 16.7,
+        "Duels won, %": 49.74,
+        "Successful defensive actions per 90": 8.91,
+        "Aerial duels won, %": 37.5,
+        "PAdj Interceptions": 5.22,
+        "Shots per 90": 0.35,
+        "Progressive runs per 90": 0.87,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 73.23,
+        "Long passes per 90": 3.72,
+        "Key passes per 90": 0.09,
+        "Passes to final third per 90": 5.19,
+        "Progressive passes per 90": 4.5
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1040.0,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Duels per 90": {
+          "value": 16.7,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Duels won, %": {
+          "value": 49.74,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.91,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Aerial duels won, %": {
+          "value": 37.5,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "PAdj Interceptions": {
+          "value": 5.22,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Shots per 90": {
+          "value": 0.35,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Progressive runs per 90": {
+          "value": 0.87,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 73.23,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Long passes per 90": {
+          "value": 3.72,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Key passes per 90": {
+          "value": 0.09,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Passes to final third per 90": {
+          "value": 5.19,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Progressive passes per 90": {
+          "value": 4.5,
+          "rank": 65,
+          "percentile": 18.99
+        }
+      }
+    },
+    {
+      "id": "filipe_augusto",
+      "player": "Filipe Augusto",
+      "raw": {
+        "Player": "Filipe Augusto",
+        "Minutes played": 2146,
+        "Duels per 90": 15.39,
+        "Duels won, %": 48.23,
+        "Successful defensive actions per 90": 8.05,
+        "Aerial duels won, %": 42.5,
+        "PAdj Interceptions": 4.89,
+        "Shots per 90": 1.05,
+        "Progressive runs per 90": 1.05,
+        "Accelerations per 90": 0.04,
+        "Accurate forward passes, %": 80.98,
+        "Long passes per 90": 3.02,
+        "Key passes per 90": 0.13,
+        "Passes to final third per 90": 6.75,
+        "Progressive passes per 90": 7.21
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2146.0,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Duels per 90": {
+          "value": 15.39,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Duels won, %": {
+          "value": 48.23,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.05,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Aerial duels won, %": {
+          "value": 42.5,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "PAdj Interceptions": {
+          "value": 4.89,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Shots per 90": {
+          "value": 1.05,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Progressive runs per 90": {
+          "value": 1.05,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Accelerations per 90": {
+          "value": 0.04,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Accurate forward passes, %": {
+          "value": 80.98,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Long passes per 90": {
+          "value": 3.02,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Key passes per 90": {
+          "value": 0.13,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Passes to final third per 90": {
+          "value": 6.75,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Progressive passes per 90": {
+          "value": 7.21,
+          "rank": 14,
+          "percentile": 83.54
+        }
+      }
+    },
+    {
+      "id": "cristian_salvador",
+      "player": "Cristian Salvador",
+      "raw": {
+        "Player": "Cristian Salvador",
+        "Minutes played": 2212,
+        "Duels per 90": 21.6,
+        "Duels won, %": 52.92,
+        "Successful defensive actions per 90": 10.25,
+        "Aerial duels won, %": 43.24,
+        "PAdj Interceptions": 5.12,
+        "Shots per 90": 0.81,
+        "Progressive runs per 90": 1.3,
+        "Accelerations per 90": 0.28,
+        "Accurate forward passes, %": 71.52,
+        "Long passes per 90": 4.23,
+        "Key passes per 90": 0.24,
+        "Passes to final third per 90": 5.9,
+        "Progressive passes per 90": 7.28
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2212.0,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Duels per 90": {
+          "value": 21.6,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Duels won, %": {
+          "value": 52.92,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.25,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Aerial duels won, %": {
+          "value": 43.24,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "PAdj Interceptions": {
+          "value": 5.12,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Shots per 90": {
+          "value": 0.81,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Progressive runs per 90": {
+          "value": 1.3,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Accelerations per 90": {
+          "value": 0.28,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Accurate forward passes, %": {
+          "value": 71.52,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Long passes per 90": {
+          "value": 4.23,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Key passes per 90": {
+          "value": 0.24,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Passes to final third per 90": {
+          "value": 5.9,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Progressive passes per 90": {
+          "value": 7.28,
+          "rank": 12,
+          "percentile": 86.08
+        }
+      }
+    },
+    {
+      "id": "piao_taoyu",
+      "player": "Piao Taoyu",
+      "raw": {
+        "Player": "Piao Taoyu",
+        "Minutes played": 2015,
+        "Duels per 90": 17.24,
+        "Duels won, %": 50.26,
+        "Successful defensive actions per 90": 10.72,
+        "Aerial duels won, %": 30.43,
+        "PAdj Interceptions": 6.23,
+        "Shots per 90": 0.4,
+        "Progressive runs per 90": 0.58,
+        "Accelerations per 90": 0.18,
+        "Accurate forward passes, %": 62.39,
+        "Long passes per 90": 6.03,
+        "Key passes per 90": 0.4,
+        "Passes to final third per 90": 7.37,
+        "Progressive passes per 90": 8.53
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2015.0,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Duels per 90": {
+          "value": 17.24,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Duels won, %": {
+          "value": 50.26,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.72,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Aerial duels won, %": {
+          "value": 30.43,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "PAdj Interceptions": {
+          "value": 6.23,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Shots per 90": {
+          "value": 0.4,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Progressive runs per 90": {
+          "value": 0.58,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Accelerations per 90": {
+          "value": 0.18,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Accurate forward passes, %": {
+          "value": 62.39,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Long passes per 90": {
+          "value": 6.03,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Key passes per 90": {
+          "value": 0.4,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Passes to final third per 90": {
+          "value": 7.37,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Progressive passes per 90": {
+          "value": 8.53,
+          "rank": 6,
+          "percentile": 93.67
+        }
+      }
+    },
+    {
+      "id": "xu_xin",
+      "player": "Xu Xin",
+      "raw": {
+        "Player": "Xu Xin",
+        "Minutes played": 864,
+        "Duels per 90": 13.96,
+        "Duels won, %": 43.28,
+        "Successful defensive actions per 90": 6.56,
+        "Aerial duels won, %": 28.57,
+        "PAdj Interceptions": 4.59,
+        "Shots per 90": 0.73,
+        "Progressive runs per 90": 0.52,
+        "Accelerations per 90": 0.1,
+        "Accurate forward passes, %": 67.44,
+        "Long passes per 90": 4.58,
+        "Key passes per 90": 0.21,
+        "Passes to final third per 90": 8.85,
+        "Progressive passes per 90": 6.77
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 864.0,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Duels per 90": {
+          "value": 13.96,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Duels won, %": {
+          "value": 43.28,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.56,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Aerial duels won, %": {
+          "value": 28.57,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "PAdj Interceptions": {
+          "value": 4.59,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Shots per 90": {
+          "value": 0.73,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Progressive runs per 90": {
+          "value": 0.52,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Accelerations per 90": {
+          "value": 0.1,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Accurate forward passes, %": {
+          "value": 67.44,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Long passes per 90": {
+          "value": 4.58,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Key passes per 90": {
+          "value": 0.21,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Passes to final third per 90": {
+          "value": 8.85,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Progressive passes per 90": {
+          "value": 6.77,
+          "rank": 18,
+          "percentile": 78.48
+        }
+      }
+    },
+    {
+      "id": "che_shiwei",
+      "player": "Che Shiwei",
+      "raw": {
+        "Player": "Che Shiwei",
+        "Minutes played": 881,
+        "Duels per 90": 16.14,
+        "Duels won, %": 44.3,
+        "Successful defensive actions per 90": 6.95,
+        "Aerial duels won, %": 47.62,
+        "PAdj Interceptions": 4.02,
+        "Shots per 90": 1.63,
+        "Progressive runs per 90": 0.61,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.11,
+        "Long passes per 90": 1.84,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 3.27,
+        "Progressive passes per 90": 3.17
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 881.0,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Duels per 90": {
+          "value": 16.14,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Duels won, %": {
+          "value": 44.3,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.95,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Aerial duels won, %": {
+          "value": 47.62,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "PAdj Interceptions": {
+          "value": 4.02,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Shots per 90": {
+          "value": 1.63,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Progressive runs per 90": {
+          "value": 0.61,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.11,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Long passes per 90": {
+          "value": 1.84,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 3.27,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Progressive passes per 90": {
+          "value": 3.17,
+          "rank": 77,
+          "percentile": 3.8
+        }
+      }
+    },
+    {
+      "id": "liao_lisheng",
+      "player": "Liao Lisheng",
+      "raw": {
+        "Player": "Liao Lisheng",
+        "Minutes played": 694,
+        "Duels per 90": 12.97,
+        "Duels won, %": 55.0,
+        "Successful defensive actions per 90": 8.56,
+        "Aerial duels won, %": 40.0,
+        "PAdj Interceptions": 6.19,
+        "Shots per 90": 0.91,
+        "Progressive runs per 90": 0.39,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.65,
+        "Long passes per 90": 5.71,
+        "Key passes per 90": 0.13,
+        "Passes to final third per 90": 6.74,
+        "Progressive passes per 90": 7.52
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 694.0,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Duels per 90": {
+          "value": 12.97,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Duels won, %": {
+          "value": 55.0,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.56,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Aerial duels won, %": {
+          "value": 40.0,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "PAdj Interceptions": {
+          "value": 6.19,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Shots per 90": {
+          "value": 0.91,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Progressive runs per 90": {
+          "value": 0.39,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.65,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Long passes per 90": {
+          "value": 5.71,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Key passes per 90": {
+          "value": 0.13,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Passes to final third per 90": {
+          "value": 6.74,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Progressive passes per 90": {
+          "value": 7.52,
+          "rank": 9,
+          "percentile": 89.87
+        }
+      }
+    },
+    {
+      "id": "luo_senwen",
+      "player": "Luo Senwen",
+      "raw": {
+        "Player": "Luo Senwen",
+        "Minutes played": 763,
+        "Duels per 90": 12.74,
+        "Duels won, %": 46.3,
+        "Successful defensive actions per 90": 8.49,
+        "Aerial duels won, %": 36.84,
+        "PAdj Interceptions": 6.69,
+        "Shots per 90": 0.59,
+        "Progressive runs per 90": 0.24,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.92,
+        "Long passes per 90": 4.25,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 5.9,
+        "Progressive passes per 90": 5.43
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 763.0,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Duels per 90": {
+          "value": 12.74,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Duels won, %": {
+          "value": 46.3,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.49,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Aerial duels won, %": {
+          "value": 36.84,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "PAdj Interceptions": {
+          "value": 6.69,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Shots per 90": {
+          "value": 0.59,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Progressive runs per 90": {
+          "value": 0.24,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.92,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Long passes per 90": {
+          "value": 4.25,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 5.9,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Progressive passes per 90": {
+          "value": 5.43,
+          "rank": 41,
+          "percentile": 49.37
+        }
+      }
+    },
+    {
+      "id": "wang_qiuming",
+      "player": "Wang Qiuming",
+      "raw": {
+        "Player": "Wang Qiuming",
+        "Minutes played": 2281,
+        "Duels per 90": 13.85,
+        "Duels won, %": 42.45,
+        "Successful defensive actions per 90": 4.73,
+        "Aerial duels won, %": 11.11,
+        "PAdj Interceptions": 2.54,
+        "Shots per 90": 0.99,
+        "Progressive runs per 90": 0.55,
+        "Accelerations per 90": 0.04,
+        "Accurate forward passes, %": 72.9,
+        "Long passes per 90": 0.91,
+        "Key passes per 90": 0.24,
+        "Passes to final third per 90": 1.78,
+        "Progressive passes per 90": 2.01
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2281.0,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Duels per 90": {
+          "value": 13.85,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Duels won, %": {
+          "value": 42.45,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.73,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Aerial duels won, %": {
+          "value": 11.11,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "PAdj Interceptions": {
+          "value": 2.54,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Shots per 90": {
+          "value": 0.99,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Progressive runs per 90": {
+          "value": 0.55,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Accelerations per 90": {
+          "value": 0.04,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Accurate forward passes, %": {
+          "value": 72.9,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Long passes per 90": {
+          "value": 0.91,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Key passes per 90": {
+          "value": 0.24,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Passes to final third per 90": {
+          "value": 1.78,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Progressive passes per 90": {
+          "value": 2.01,
+          "rank": 79,
+          "percentile": 1.27
+        }
+      }
+    },
+    {
+      "id": "he_chao",
+      "player": "He Chao",
+      "raw": {
+        "Player": "He Chao",
+        "Minutes played": 1417,
+        "Duels per 90": 13.34,
+        "Duels won, %": 50.0,
+        "Successful defensive actions per 90": 8.89,
+        "Aerial duels won, %": 37.93,
+        "PAdj Interceptions": 7.06,
+        "Shots per 90": 0.44,
+        "Progressive runs per 90": 0.13,
+        "Accelerations per 90": 0.06,
+        "Accurate forward passes, %": 67.72,
+        "Long passes per 90": 5.4,
+        "Key passes per 90": 0.19,
+        "Passes to final third per 90": 7.11,
+        "Progressive passes per 90": 4.89
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1417.0,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Duels per 90": {
+          "value": 13.34,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Duels won, %": {
+          "value": 50.0,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.89,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Aerial duels won, %": {
+          "value": 37.93,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "PAdj Interceptions": {
+          "value": 7.06,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Shots per 90": {
+          "value": 0.44,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Progressive runs per 90": {
+          "value": 0.13,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Accelerations per 90": {
+          "value": 0.06,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Accurate forward passes, %": {
+          "value": 67.72,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Long passes per 90": {
+          "value": 5.4,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Key passes per 90": {
+          "value": 0.19,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Passes to final third per 90": {
+          "value": 7.11,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Progressive passes per 90": {
+          "value": 4.89,
+          "rank": 56,
+          "percentile": 30.38
+        }
+      }
+    },
+    {
+      "id": "mao_weijie",
+      "player": "Mao Weijie",
+      "raw": {
+        "Player": "Mao Weijie",
+        "Minutes played": 1103,
+        "Duels per 90": 24.15,
+        "Duels won, %": 47.3,
+        "Successful defensive actions per 90": 10.28,
+        "Aerial duels won, %": 36.36,
+        "PAdj Interceptions": 3.9,
+        "Shots per 90": 1.06,
+        "Progressive runs per 90": 1.14,
+        "Accelerations per 90": 0.16,
+        "Accurate forward passes, %": 62.91,
+        "Long passes per 90": 3.43,
+        "Key passes per 90": 0.49,
+        "Passes to final third per 90": 4.57,
+        "Progressive passes per 90": 5.71
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1103.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Duels per 90": {
+          "value": 24.15,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Duels won, %": {
+          "value": 47.3,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.28,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Aerial duels won, %": {
+          "value": 36.36,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "PAdj Interceptions": {
+          "value": 3.9,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Shots per 90": {
+          "value": 1.06,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Progressive runs per 90": {
+          "value": 1.14,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Accelerations per 90": {
+          "value": 0.16,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Accurate forward passes, %": {
+          "value": 62.91,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Long passes per 90": {
+          "value": 3.43,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Key passes per 90": {
+          "value": 0.49,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Passes to final third per 90": {
+          "value": 4.57,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Progressive passes per 90": {
+          "value": 5.71,
+          "rank": 36,
+          "percentile": 55.7
+        }
+      }
+    },
+    {
+      "id": "zhao_yingjie",
+      "player": "Zhao Yingjie",
+      "raw": {
+        "Player": "Zhao Yingjie",
+        "Minutes played": 1329,
+        "Duels per 90": 13.07,
+        "Duels won, %": 45.08,
+        "Successful defensive actions per 90": 7.86,
+        "Aerial duels won, %": 40.91,
+        "PAdj Interceptions": 5.95,
+        "Shots per 90": 0.41,
+        "Progressive runs per 90": 0.2,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 63.19,
+        "Long passes per 90": 5.62,
+        "Key passes per 90": 0.07,
+        "Passes to final third per 90": 6.16,
+        "Progressive passes per 90": 4.81
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1329.0,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Duels per 90": {
+          "value": 13.07,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Duels won, %": {
+          "value": 45.08,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.86,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Aerial duels won, %": {
+          "value": 40.91,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "PAdj Interceptions": {
+          "value": 5.95,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Shots per 90": {
+          "value": 0.41,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Progressive runs per 90": {
+          "value": 0.2,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 63.19,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Long passes per 90": {
+          "value": 5.62,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Key passes per 90": {
+          "value": 0.07,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Passes to final third per 90": {
+          "value": 6.16,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Progressive passes per 90": {
+          "value": 4.81,
+          "rank": 57,
+          "percentile": 29.11
+        }
+      }
+    },
+    {
+      "id": "li_yuanyi",
+      "player": "Li Yuanyi",
+      "raw": {
+        "Player": "Li Yuanyi",
+        "Minutes played": 2180,
+        "Duels per 90": 11.89,
+        "Duels won, %": 48.61,
+        "Successful defensive actions per 90": 5.86,
+        "Aerial duels won, %": 48.84,
+        "PAdj Interceptions": 4.21,
+        "Shots per 90": 1.24,
+        "Progressive runs per 90": 0.78,
+        "Accelerations per 90": 0.12,
+        "Accurate forward passes, %": 75.08,
+        "Long passes per 90": 3.34,
+        "Key passes per 90": 0.45,
+        "Passes to final third per 90": 7.39,
+        "Progressive passes per 90": 6.23
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2180.0,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Duels per 90": {
+          "value": 11.89,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Duels won, %": {
+          "value": 48.61,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.86,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Aerial duels won, %": {
+          "value": 48.84,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "PAdj Interceptions": {
+          "value": 4.21,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Shots per 90": {
+          "value": 1.24,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Progressive runs per 90": {
+          "value": 0.78,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Accelerations per 90": {
+          "value": 0.12,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Accurate forward passes, %": {
+          "value": 75.08,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Long passes per 90": {
+          "value": 3.34,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Key passes per 90": {
+          "value": 0.45,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Passes to final third per 90": {
+          "value": 7.39,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Progressive passes per 90": {
+          "value": 6.23,
+          "rank": 26,
+          "percentile": 68.35
+        }
+      }
+    },
+    {
+      "id": "m__sarkaria",
+      "player": "M. Sarkaria",
+      "raw": {
+        "Player": "M. Sarkaria",
+        "Minutes played": 830,
+        "Duels per 90": 18.33,
+        "Duels won, %": 39.64,
+        "Successful defensive actions per 90": 2.93,
+        "Aerial duels won, %": 26.92,
+        "PAdj Interceptions": 0.89,
+        "Shots per 90": 1.08,
+        "Progressive runs per 90": 1.3,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 56.96,
+        "Long passes per 90": 3.14,
+        "Key passes per 90": 0.43,
+        "Passes to final third per 90": 4.12,
+        "Progressive passes per 90": 4.55
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 830.0,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Duels per 90": {
+          "value": 18.33,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Duels won, %": {
+          "value": 39.64,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Successful defensive actions per 90": {
+          "value": 2.93,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Aerial duels won, %": {
+          "value": 26.92,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "PAdj Interceptions": {
+          "value": 0.89,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Shots per 90": {
+          "value": 1.08,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Progressive runs per 90": {
+          "value": 1.3,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 56.96,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Long passes per 90": {
+          "value": 3.14,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Key passes per 90": {
+          "value": 0.43,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Passes to final third per 90": {
+          "value": 4.12,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Progressive passes per 90": {
+          "value": 4.55,
+          "rank": 63,
+          "percentile": 21.52
+        }
+      }
+    },
+    {
+      "id": "huang_zhengyu",
+      "player": "Huang Zhengyu",
+      "raw": {
+        "Player": "Huang Zhengyu",
+        "Minutes played": 1739,
+        "Duels per 90": 12.58,
+        "Duels won, %": 51.03,
+        "Successful defensive actions per 90": 7.35,
+        "Aerial duels won, %": 52.38,
+        "PAdj Interceptions": 4.53,
+        "Shots per 90": 0.31,
+        "Progressive runs per 90": 0.62,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 68.82,
+        "Long passes per 90": 5.69,
+        "Key passes per 90": 0.1,
+        "Passes to final third per 90": 6.42,
+        "Progressive passes per 90": 6.47
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1739.0,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Duels per 90": {
+          "value": 12.58,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Duels won, %": {
+          "value": 51.03,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.35,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Aerial duels won, %": {
+          "value": 52.38,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "PAdj Interceptions": {
+          "value": 4.53,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Shots per 90": {
+          "value": 0.31,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Progressive runs per 90": {
+          "value": 0.62,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 68.82,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Long passes per 90": {
+          "value": 5.69,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Key passes per 90": {
+          "value": 0.1,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Passes to final third per 90": {
+          "value": 6.42,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Progressive passes per 90": {
+          "value": 6.47,
+          "rank": 21,
+          "percentile": 74.68
+        }
+      }
+    },
+    {
+      "id": "zhong_haoran",
+      "player": "Zhong Haoran",
+      "raw": {
+        "Player": "Zhong Haoran",
+        "Minutes played": 1932,
+        "Duels per 90": 14.77,
+        "Duels won, %": 51.42,
+        "Successful defensive actions per 90": 8.99,
+        "Aerial duels won, %": 40.0,
+        "PAdj Interceptions": 5.25,
+        "Shots per 90": 0.61,
+        "Progressive runs per 90": 0.7,
+        "Accelerations per 90": 0.05,
+        "Accurate forward passes, %": 74.83,
+        "Long passes per 90": 4.38,
+        "Key passes per 90": 0.05,
+        "Passes to final third per 90": 6.38,
+        "Progressive passes per 90": 5.4
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1932.0,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Duels per 90": {
+          "value": 14.77,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Duels won, %": {
+          "value": 51.42,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.99,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Aerial duels won, %": {
+          "value": 40.0,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "PAdj Interceptions": {
+          "value": 5.25,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Shots per 90": {
+          "value": 0.61,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Progressive runs per 90": {
+          "value": 0.7,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Accelerations per 90": {
+          "value": 0.05,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Accurate forward passes, %": {
+          "value": 74.83,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Long passes per 90": {
+          "value": 4.38,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Key passes per 90": {
+          "value": 0.05,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Passes to final third per 90": {
+          "value": 6.38,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Progressive passes per 90": {
+          "value": 5.4,
+          "rank": 42,
+          "percentile": 48.1
+        }
+      }
+    },
+    {
+      "id": "li_tixiang",
+      "player": "Li Tixiang",
+      "raw": {
+        "Player": "Li Tixiang",
+        "Minutes played": 2927,
+        "Duels per 90": 14.02,
+        "Duels won, %": 55.04,
+        "Successful defensive actions per 90": 7.44,
+        "Aerial duels won, %": 48.48,
+        "PAdj Interceptions": 4.02,
+        "Shots per 90": 0.15,
+        "Progressive runs per 90": 1.05,
+        "Accelerations per 90": 0.31,
+        "Accurate forward passes, %": 71.6,
+        "Long passes per 90": 7.04,
+        "Key passes per 90": 0.22,
+        "Passes to final third per 90": 6.8,
+        "Progressive passes per 90": 6.21
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2927.0,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Duels per 90": {
+          "value": 14.02,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Duels won, %": {
+          "value": 55.04,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.44,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Aerial duels won, %": {
+          "value": 48.48,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "PAdj Interceptions": {
+          "value": 4.02,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Shots per 90": {
+          "value": 0.15,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Progressive runs per 90": {
+          "value": 1.05,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Accelerations per 90": {
+          "value": 0.31,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Accurate forward passes, %": {
+          "value": 71.6,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Long passes per 90": {
+          "value": 7.04,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Key passes per 90": {
+          "value": 0.22,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Passes to final third per 90": {
+          "value": 6.8,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Progressive passes per 90": {
+          "value": 6.21,
+          "rank": 28,
+          "percentile": 65.82
+        }
+      }
+    },
+    {
+      "id": "n__yennaris",
+      "player": "N. Yennaris",
+      "raw": {
+        "Player": "N. Yennaris",
+        "Minutes played": 2432,
+        "Duels per 90": 13.29,
+        "Duels won, %": 52.65,
+        "Successful defensive actions per 90": 7.85,
+        "Aerial duels won, %": 40.24,
+        "PAdj Interceptions": 4.89,
+        "Shots per 90": 0.59,
+        "Progressive runs per 90": 0.37,
+        "Accelerations per 90": 0.07,
+        "Accurate forward passes, %": 77.04,
+        "Long passes per 90": 2.52,
+        "Key passes per 90": 0.07,
+        "Passes to final third per 90": 5.07,
+        "Progressive passes per 90": 5.03
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2432.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Duels per 90": {
+          "value": 13.29,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Duels won, %": {
+          "value": 52.65,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.85,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Aerial duels won, %": {
+          "value": 40.24,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "PAdj Interceptions": {
+          "value": 4.89,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Shots per 90": {
+          "value": 0.59,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Progressive runs per 90": {
+          "value": 0.37,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Accelerations per 90": {
+          "value": 0.07,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Accurate forward passes, %": {
+          "value": 77.04,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Long passes per 90": {
+          "value": 2.52,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Key passes per 90": {
+          "value": 0.07,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Passes to final third per 90": {
+          "value": 5.07,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Progressive passes per 90": {
+          "value": 5.03,
+          "rank": 51,
+          "percentile": 36.71
+        }
+      }
+    },
+    {
+      "id": "zhang_yufeng",
+      "player": "Zhang Yufeng",
+      "raw": {
+        "Player": "Zhang Yufeng",
+        "Minutes played": 519,
+        "Duels per 90": 15.09,
+        "Duels won, %": 52.87,
+        "Successful defensive actions per 90": 8.15,
+        "Aerial duels won, %": 46.15,
+        "PAdj Interceptions": 4.05,
+        "Shots per 90": 0.35,
+        "Progressive runs per 90": 0.69,
+        "Accelerations per 90": 0.35,
+        "Accurate forward passes, %": 64.0,
+        "Long passes per 90": 2.25,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 4.51,
+        "Progressive passes per 90": 5.03
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 519.0,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Duels per 90": {
+          "value": 15.09,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Duels won, %": {
+          "value": 52.87,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.15,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Aerial duels won, %": {
+          "value": 46.15,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "PAdj Interceptions": {
+          "value": 4.05,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Shots per 90": {
+          "value": 0.35,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Progressive runs per 90": {
+          "value": 0.69,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Accelerations per 90": {
+          "value": 0.35,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Accurate forward passes, %": {
+          "value": 64.0,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Long passes per 90": {
+          "value": 2.25,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 4.51,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Progressive passes per 90": {
+          "value": 5.03,
+          "rank": 51,
+          "percentile": 36.71
+        }
+      }
+    },
+    {
+      "id": "zhang_jiaqi",
+      "player": "Zhang Jiaqi",
+      "raw": {
+        "Player": "Zhang Jiaqi",
+        "Minutes played": 462,
+        "Duels per 90": 14.42,
+        "Duels won, %": 51.35,
+        "Successful defensive actions per 90": 6.23,
+        "Aerial duels won, %": 45.16,
+        "PAdj Interceptions": 5.13,
+        "Shots per 90": 0.39,
+        "Progressive runs per 90": 0.0,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 75.0,
+        "Long passes per 90": 0.97,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 2.53,
+        "Progressive passes per 90": 2.92
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 462.0,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Duels per 90": {
+          "value": 14.42,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Duels won, %": {
+          "value": 51.35,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.23,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Aerial duels won, %": {
+          "value": 45.16,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "PAdj Interceptions": {
+          "value": 5.13,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Shots per 90": {
+          "value": 0.39,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Progressive runs per 90": {
+          "value": 0.0,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 75.0,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Long passes per 90": {
+          "value": 0.97,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 2.53,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Progressive passes per 90": {
+          "value": 2.92,
+          "rank": 78,
+          "percentile": 2.53
+        }
+      }
+    },
+    {
+      "id": "dawhan",
+      "player": "Dawhan",
+      "raw": {
+        "Player": "Dawhan",
+        "Minutes played": 2496,
+        "Duels per 90": 13.16,
+        "Duels won, %": 51.51,
+        "Successful defensive actions per 90": 6.13,
+        "Aerial duels won, %": 52.7,
+        "PAdj Interceptions": 6.19,
+        "Shots per 90": 0.5,
+        "Progressive runs per 90": 1.33,
+        "Accelerations per 90": 0.18,
+        "Accurate forward passes, %": 84.02,
+        "Long passes per 90": 2.6,
+        "Key passes per 90": 0.47,
+        "Passes to final third per 90": 6.96,
+        "Progressive passes per 90": 6.06
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2496.0,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Duels per 90": {
+          "value": 13.16,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Duels won, %": {
+          "value": 51.51,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.13,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Aerial duels won, %": {
+          "value": 52.7,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "PAdj Interceptions": {
+          "value": 6.19,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Shots per 90": {
+          "value": 0.5,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Progressive runs per 90": {
+          "value": 1.33,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Accelerations per 90": {
+          "value": 0.18,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Accurate forward passes, %": {
+          "value": 84.02,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Long passes per 90": {
+          "value": 2.6,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Key passes per 90": {
+          "value": 0.47,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Passes to final third per 90": {
+          "value": 6.96,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Progressive passes per 90": {
+          "value": 6.06,
+          "rank": 30,
+          "percentile": 63.29
+        }
+      }
+    },
+    {
+      "id": "h__wang",
+      "player": "H. Wang",
+      "raw": {
+        "Player": "H. Wang",
+        "Minutes played": 468,
+        "Duels per 90": 13.08,
+        "Duels won, %": 64.71,
+        "Successful defensive actions per 90": 10.0,
+        "Aerial duels won, %": 62.5,
+        "PAdj Interceptions": 6.12,
+        "Shots per 90": 1.35,
+        "Progressive runs per 90": 0.19,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 83.95,
+        "Long passes per 90": 2.5,
+        "Key passes per 90": 0.38,
+        "Passes to final third per 90": 5.96,
+        "Progressive passes per 90": 6.15
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 468.0,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Duels per 90": {
+          "value": 13.08,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Duels won, %": {
+          "value": 64.71,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.0,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Aerial duels won, %": {
+          "value": 62.5,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "PAdj Interceptions": {
+          "value": 6.12,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Shots per 90": {
+          "value": 1.35,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Progressive runs per 90": {
+          "value": 0.19,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 83.95,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Long passes per 90": {
+          "value": 2.5,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Key passes per 90": {
+          "value": 0.38,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Passes to final third per 90": {
+          "value": 5.96,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Progressive passes per 90": {
+          "value": 6.15,
+          "rank": 29,
+          "percentile": 64.56
+        }
+      }
+    },
+    {
+      "id": "matheus_índio",
+      "player": "Matheus Índio",
+      "raw": {
+        "Player": "Matheus Índio",
+        "Minutes played": 2499,
+        "Duels per 90": 16.24,
+        "Duels won, %": 53.88,
+        "Successful defensive actions per 90": 8.43,
+        "Aerial duels won, %": 36.14,
+        "PAdj Interceptions": 5.76,
+        "Shots per 90": 0.97,
+        "Progressive runs per 90": 1.3,
+        "Accelerations per 90": 0.18,
+        "Accurate forward passes, %": 73.15,
+        "Long passes per 90": 2.81,
+        "Key passes per 90": 0.22,
+        "Passes to final third per 90": 5.69,
+        "Progressive passes per 90": 5.26
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2499.0,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Duels per 90": {
+          "value": 16.24,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Duels won, %": {
+          "value": 53.88,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.43,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Aerial duels won, %": {
+          "value": 36.14,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "PAdj Interceptions": {
+          "value": 5.76,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Shots per 90": {
+          "value": 0.97,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Progressive runs per 90": {
+          "value": 1.3,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Accelerations per 90": {
+          "value": 0.18,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Accurate forward passes, %": {
+          "value": 73.15,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Long passes per 90": {
+          "value": 2.81,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Key passes per 90": {
+          "value": 0.22,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Passes to final third per 90": {
+          "value": 5.69,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Progressive passes per 90": {
+          "value": 5.26,
+          "rank": 45,
+          "percentile": 44.3
+        }
+      }
+    },
+    {
+      "id": "a__ioniţă",
+      "player": "A. Ioniţă",
+      "raw": {
+        "Player": "A. Ioniţă",
+        "Minutes played": 2091,
+        "Duels per 90": 18.51,
+        "Duels won, %": 48.6,
+        "Successful defensive actions per 90": 6.67,
+        "Aerial duels won, %": 51.28,
+        "PAdj Interceptions": 3.34,
+        "Shots per 90": 1.68,
+        "Progressive runs per 90": 2.71,
+        "Accelerations per 90": 0.22,
+        "Accurate forward passes, %": 65.38,
+        "Long passes per 90": 2.84,
+        "Key passes per 90": 0.43,
+        "Passes to final third per 90": 5.47,
+        "Progressive passes per 90": 5.16
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2091.0,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Duels per 90": {
+          "value": 18.51,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Duels won, %": {
+          "value": 48.6,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.67,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Aerial duels won, %": {
+          "value": 51.28,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "PAdj Interceptions": {
+          "value": 3.34,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Shots per 90": {
+          "value": 1.68,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Progressive runs per 90": {
+          "value": 2.71,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Accelerations per 90": {
+          "value": 0.22,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Accurate forward passes, %": {
+          "value": 65.38,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Long passes per 90": {
+          "value": 2.84,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Key passes per 90": {
+          "value": 0.43,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Passes to final third per 90": {
+          "value": 5.47,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Progressive passes per 90": {
+          "value": 5.16,
+          "rank": 46,
+          "percentile": 43.04
+        }
+      }
+    },
+    {
+      "id": "ye_chugui",
+      "player": "Ye Chugui",
+      "raw": {
+        "Player": "Ye Chugui",
+        "Minutes played": 1671,
+        "Duels per 90": 15.67,
+        "Duels won, %": 46.39,
+        "Successful defensive actions per 90": 7.49,
+        "Aerial duels won, %": 30.56,
+        "PAdj Interceptions": 4.42,
+        "Shots per 90": 1.24,
+        "Progressive runs per 90": 0.92,
+        "Accelerations per 90": 0.22,
+        "Accurate forward passes, %": 62.5,
+        "Long passes per 90": 2.59,
+        "Key passes per 90": 0.48,
+        "Passes to final third per 90": 3.72,
+        "Progressive passes per 90": 5.71
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1671.0,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Duels per 90": {
+          "value": 15.67,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Duels won, %": {
+          "value": 46.39,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.49,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Aerial duels won, %": {
+          "value": 30.56,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "PAdj Interceptions": {
+          "value": 4.42,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Shots per 90": {
+          "value": 1.24,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Progressive runs per 90": {
+          "value": 0.92,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Accelerations per 90": {
+          "value": 0.22,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Accurate forward passes, %": {
+          "value": 62.5,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Long passes per 90": {
+          "value": 2.59,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Key passes per 90": {
+          "value": 0.48,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Passes to final third per 90": {
+          "value": 3.72,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Progressive passes per 90": {
+          "value": 5.71,
+          "rank": 36,
+          "percentile": 55.7
+        }
+      }
+    },
+    {
+      "id": "zhang_huachen",
+      "player": "Zhang Huachen",
+      "raw": {
+        "Player": "Zhang Huachen",
+        "Minutes played": 1170,
+        "Duels per 90": 14.77,
+        "Duels won, %": 44.79,
+        "Successful defensive actions per 90": 8.69,
+        "Aerial duels won, %": 39.47,
+        "PAdj Interceptions": 6.2,
+        "Shots per 90": 0.77,
+        "Progressive runs per 90": 0.23,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 70.86,
+        "Long passes per 90": 4.15,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 5.46,
+        "Progressive passes per 90": 6.54
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1170.0,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Duels per 90": {
+          "value": 14.77,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Duels won, %": {
+          "value": 44.79,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.69,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Aerial duels won, %": {
+          "value": 39.47,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "PAdj Interceptions": {
+          "value": 6.2,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Shots per 90": {
+          "value": 0.77,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Progressive runs per 90": {
+          "value": 0.23,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 70.86,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Long passes per 90": {
+          "value": 4.15,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 5.46,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Progressive passes per 90": {
+          "value": 6.54,
+          "rank": 20,
+          "percentile": 75.95
+        }
+      }
+    },
+    {
+      "id": "xu_haoyang",
+      "player": "Xu Haoyang",
+      "raw": {
+        "Player": "Xu Haoyang",
+        "Minutes played": 1001,
+        "Duels per 90": 16.27,
+        "Duels won, %": 47.51,
+        "Successful defensive actions per 90": 9.08,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 6.25,
+        "Shots per 90": 0.81,
+        "Progressive runs per 90": 1.71,
+        "Accelerations per 90": 0.09,
+        "Accurate forward passes, %": 63.24,
+        "Long passes per 90": 4.95,
+        "Key passes per 90": 0.27,
+        "Passes to final third per 90": 6.65,
+        "Progressive passes per 90": 7.37
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1001.0,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Duels per 90": {
+          "value": 16.27,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Duels won, %": {
+          "value": 47.51,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.08,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 6.25,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Shots per 90": {
+          "value": 0.81,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Progressive runs per 90": {
+          "value": 1.71,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Accelerations per 90": {
+          "value": 0.09,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Accurate forward passes, %": {
+          "value": 63.24,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Long passes per 90": {
+          "value": 4.95,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Key passes per 90": {
+          "value": 0.27,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Passes to final third per 90": {
+          "value": 6.65,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Progressive passes per 90": {
+          "value": 7.37,
+          "rank": 10,
+          "percentile": 88.61
+        }
+      }
+    },
+    {
+      "id": "qian_jiegei",
+      "player": "Qian Jiegei",
+      "raw": {
+        "Player": "Qian Jiegei",
+        "Minutes played": 834,
+        "Duels per 90": 15.86,
+        "Duels won, %": 52.38,
+        "Successful defensive actions per 90": 8.31,
+        "Aerial duels won, %": 56.25,
+        "PAdj Interceptions": 3.24,
+        "Shots per 90": 0.32,
+        "Progressive runs per 90": 0.65,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 70.59,
+        "Long passes per 90": 2.59,
+        "Key passes per 90": 0.22,
+        "Passes to final third per 90": 5.5,
+        "Progressive passes per 90": 5.72
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 834.0,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Duels per 90": {
+          "value": 15.86,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Duels won, %": {
+          "value": 52.38,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.31,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Aerial duels won, %": {
+          "value": 56.25,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "PAdj Interceptions": {
+          "value": 3.24,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Shots per 90": {
+          "value": 0.32,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Progressive runs per 90": {
+          "value": 0.65,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 70.59,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Long passes per 90": {
+          "value": 2.59,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Key passes per 90": {
+          "value": 0.22,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Passes to final third per 90": {
+          "value": 5.5,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Progressive passes per 90": {
+          "value": 5.72,
+          "rank": 35,
+          "percentile": 56.96
+        }
+      }
+    },
+    {
+      "id": "zhang_xizhe",
+      "player": "Zhang Xizhe",
+      "raw": {
+        "Player": "Zhang Xizhe",
+        "Minutes played": 507,
+        "Duels per 90": 10.65,
+        "Duels won, %": 38.33,
+        "Successful defensive actions per 90": 3.02,
+        "Aerial duels won, %": 0.0,
+        "PAdj Interceptions": 3.04,
+        "Shots per 90": 2.31,
+        "Progressive runs per 90": 1.07,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 61.64,
+        "Long passes per 90": 3.91,
+        "Key passes per 90": 0.71,
+        "Passes to final third per 90": 6.57,
+        "Progressive passes per 90": 6.39
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 507.0,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Duels per 90": {
+          "value": 10.65,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Duels won, %": {
+          "value": 38.33,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Successful defensive actions per 90": {
+          "value": 3.02,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Aerial duels won, %": {
+          "value": 0.0,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "PAdj Interceptions": {
+          "value": 3.04,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Shots per 90": {
+          "value": 2.31,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Progressive runs per 90": {
+          "value": 1.07,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 61.64,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Long passes per 90": {
+          "value": 3.91,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Key passes per 90": {
+          "value": 0.71,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Passes to final third per 90": {
+          "value": 6.57,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Progressive passes per 90": {
+          "value": 6.39,
+          "rank": 24,
+          "percentile": 70.89
+        }
+      }
+    },
+    {
+      "id": "yang_haoyu",
+      "player": "Yang Haoyu",
+      "raw": {
+        "Player": "Yang Haoyu",
+        "Minutes played": 929,
+        "Duels per 90": 18.31,
+        "Duels won, %": 44.44,
+        "Successful defensive actions per 90": 7.17,
+        "Aerial duels won, %": 21.43,
+        "PAdj Interceptions": 3.46,
+        "Shots per 90": 1.07,
+        "Progressive runs per 90": 1.36,
+        "Accelerations per 90": 0.19,
+        "Accurate forward passes, %": 75.68,
+        "Long passes per 90": 1.45,
+        "Key passes per 90": 0.29,
+        "Passes to final third per 90": 3.39,
+        "Progressive passes per 90": 4.36
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 929.0,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Duels per 90": {
+          "value": 18.31,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Duels won, %": {
+          "value": 44.44,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.17,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Aerial duels won, %": {
+          "value": 21.43,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "PAdj Interceptions": {
+          "value": 3.46,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Shots per 90": {
+          "value": 1.07,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Progressive runs per 90": {
+          "value": 1.36,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Accelerations per 90": {
+          "value": 0.19,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Accurate forward passes, %": {
+          "value": 75.68,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Long passes per 90": {
+          "value": 1.45,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Key passes per 90": {
+          "value": 0.29,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Passes to final third per 90": {
+          "value": 3.39,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Progressive passes per 90": {
+          "value": 4.36,
+          "rank": 67,
+          "percentile": 16.46
+        }
+      }
+    },
+    {
+      "id": "yao_xuchen",
+      "player": "Yao Xuchen",
+      "raw": {
+        "Player": "Yao Xuchen",
+        "Minutes played": 680,
+        "Duels per 90": 14.03,
+        "Duels won, %": 41.51,
+        "Successful defensive actions per 90": 4.9,
+        "Aerial duels won, %": 13.33,
+        "PAdj Interceptions": 2.79,
+        "Shots per 90": 0.79,
+        "Progressive runs per 90": 0.66,
+        "Accelerations per 90": 0.13,
+        "Accurate forward passes, %": 64.2,
+        "Long passes per 90": 3.84,
+        "Key passes per 90": 0.13,
+        "Passes to final third per 90": 4.1,
+        "Progressive passes per 90": 5.03
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 680.0,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Duels per 90": {
+          "value": 14.03,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Duels won, %": {
+          "value": 41.51,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.9,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Aerial duels won, %": {
+          "value": 13.33,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "PAdj Interceptions": {
+          "value": 2.79,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Shots per 90": {
+          "value": 0.79,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Progressive runs per 90": {
+          "value": 0.66,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Accelerations per 90": {
+          "value": 0.13,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Accurate forward passes, %": {
+          "value": 64.2,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Long passes per 90": {
+          "value": 3.84,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Key passes per 90": {
+          "value": 0.13,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Passes to final third per 90": {
+          "value": 4.1,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Progressive passes per 90": {
+          "value": 5.03,
+          "rank": 51,
+          "percentile": 36.71
+        }
+      }
+    },
+    {
+      "id": "wu_xi",
+      "player": "Wu Xi",
+      "raw": {
+        "Player": "Wu Xi",
+        "Minutes played": 2737,
+        "Duels per 90": 13.09,
+        "Duels won, %": 50.75,
+        "Successful defensive actions per 90": 6.77,
+        "Aerial duels won, %": 42.99,
+        "PAdj Interceptions": 5.72,
+        "Shots per 90": 1.61,
+        "Progressive runs per 90": 0.72,
+        "Accelerations per 90": 0.03,
+        "Accurate forward passes, %": 68.88,
+        "Long passes per 90": 5.92,
+        "Key passes per 90": 0.49,
+        "Passes to final third per 90": 6.68,
+        "Progressive passes per 90": 7.37
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2737.0,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Duels per 90": {
+          "value": 13.09,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Duels won, %": {
+          "value": 50.75,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.77,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Aerial duels won, %": {
+          "value": 42.99,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "PAdj Interceptions": {
+          "value": 5.72,
+          "rank": 25,
+          "percentile": 69.62
+        },
+        "Shots per 90": {
+          "value": 1.61,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Progressive runs per 90": {
+          "value": 0.72,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Accelerations per 90": {
+          "value": 0.03,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Accurate forward passes, %": {
+          "value": 68.88,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Long passes per 90": {
+          "value": 5.92,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Key passes per 90": {
+          "value": 0.49,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Passes to final third per 90": {
+          "value": 6.68,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Progressive passes per 90": {
+          "value": 7.37,
+          "rank": 10,
+          "percentile": 88.61
+        }
+      }
+    },
+    {
+      "id": "zheng_kaimu",
+      "player": "Zheng Kaimu",
+      "raw": {
+        "Player": "Zheng Kaimu",
+        "Minutes played": 1039,
+        "Duels per 90": 16.63,
+        "Duels won, %": 53.13,
+        "Successful defensive actions per 90": 9.1,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 6.3,
+        "Shots per 90": 0.52,
+        "Progressive runs per 90": 0.09,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 64.89,
+        "Long passes per 90": 3.98,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 3.64,
+        "Progressive passes per 90": 4.68
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1039.0,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Duels per 90": {
+          "value": 16.63,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Duels won, %": {
+          "value": 53.13,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.1,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 6.3,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Shots per 90": {
+          "value": 0.52,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Progressive runs per 90": {
+          "value": 0.09,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 64.89,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Long passes per 90": {
+          "value": 3.98,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 3.64,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Progressive passes per 90": {
+          "value": 4.68,
+          "rank": 60,
+          "percentile": 25.32
+        }
+      }
+    },
+    {
+      "id": "zhang_yudong",
+      "player": "Zhang Yudong",
+      "raw": {
+        "Player": "Zhang Yudong",
+        "Minutes played": 1574,
+        "Duels per 90": 14.18,
+        "Duels won, %": 50.4,
+        "Successful defensive actions per 90": 7.72,
+        "Aerial duels won, %": 40.0,
+        "PAdj Interceptions": 4.4,
+        "Shots per 90": 0.34,
+        "Progressive runs per 90": 0.8,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 70.59,
+        "Long passes per 90": 2.74,
+        "Key passes per 90": 0.06,
+        "Passes to final third per 90": 3.6,
+        "Progressive passes per 90": 4.46
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1574.0,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Duels per 90": {
+          "value": 14.18,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Duels won, %": {
+          "value": 50.4,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.72,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Aerial duels won, %": {
+          "value": 40.0,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "PAdj Interceptions": {
+          "value": 4.4,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Shots per 90": {
+          "value": 0.34,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Progressive runs per 90": {
+          "value": 0.8,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 70.59,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Long passes per 90": {
+          "value": 2.74,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Key passes per 90": {
+          "value": 0.06,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Passes to final third per 90": {
+          "value": 3.6,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Progressive passes per 90": {
+          "value": 4.46,
+          "rank": 66,
+          "percentile": 17.72
+        }
+      }
+    },
+    {
+      "id": "zhang_xiuwei",
+      "player": "Zhang Xiuwei",
+      "raw": {
+        "Player": "Zhang Xiuwei",
+        "Minutes played": 1135,
+        "Duels per 90": 12.93,
+        "Duels won, %": 50.92,
+        "Successful defensive actions per 90": 8.48,
+        "Aerial duels won, %": 31.58,
+        "PAdj Interceptions": 4.08,
+        "Shots per 90": 0.56,
+        "Progressive runs per 90": 0.24,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.39,
+        "Long passes per 90": 1.67,
+        "Key passes per 90": 0.08,
+        "Passes to final third per 90": 4.12,
+        "Progressive passes per 90": 3.81
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1135.0,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Duels per 90": {
+          "value": 12.93,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Duels won, %": {
+          "value": 50.92,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.48,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Aerial duels won, %": {
+          "value": 31.58,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "PAdj Interceptions": {
+          "value": 4.08,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Shots per 90": {
+          "value": 0.56,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Progressive runs per 90": {
+          "value": 0.24,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.39,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Long passes per 90": {
+          "value": 1.67,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Key passes per 90": {
+          "value": 0.08,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Passes to final third per 90": {
+          "value": 4.12,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Progressive passes per 90": {
+          "value": 3.81,
+          "rank": 73,
+          "percentile": 8.86
+        }
+      }
+    },
+    {
+      "id": "long_wei",
+      "player": "Long Wei",
+      "raw": {
+        "Player": "Long Wei",
+        "Minutes played": 2102,
+        "Duels per 90": 12.67,
+        "Duels won, %": 50.34,
+        "Successful defensive actions per 90": 7.11,
+        "Aerial duels won, %": 33.33,
+        "PAdj Interceptions": 4.27,
+        "Shots per 90": 0.51,
+        "Progressive runs per 90": 0.56,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.08,
+        "Long passes per 90": 3.64,
+        "Key passes per 90": 0.04,
+        "Passes to final third per 90": 5.14,
+        "Progressive passes per 90": 4.54
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2102.0,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Duels per 90": {
+          "value": 12.67,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Duels won, %": {
+          "value": 50.34,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.11,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Aerial duels won, %": {
+          "value": 33.33,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "PAdj Interceptions": {
+          "value": 4.27,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Shots per 90": {
+          "value": 0.51,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Progressive runs per 90": {
+          "value": 0.56,
+          "rank": 55,
+          "percentile": 31.65
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.08,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Long passes per 90": {
+          "value": 3.64,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Key passes per 90": {
+          "value": 0.04,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Passes to final third per 90": {
+          "value": 5.14,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Progressive passes per 90": {
+          "value": 4.54,
+          "rank": 64,
+          "percentile": 20.25
+        }
+      }
+    },
+    {
+      "id": "kuai_jiwen",
+      "player": "Kuai Jiwen",
+      "raw": {
+        "Player": "Kuai Jiwen",
+        "Minutes played": 624,
+        "Duels per 90": 16.3,
+        "Duels won, %": 42.48,
+        "Successful defensive actions per 90": 3.17,
+        "Aerial duels won, %": 20.0,
+        "PAdj Interceptions": 2.46,
+        "Shots per 90": 2.45,
+        "Progressive runs per 90": 3.03,
+        "Accelerations per 90": 1.3,
+        "Accurate forward passes, %": 62.3,
+        "Long passes per 90": 1.88,
+        "Key passes per 90": 1.15,
+        "Passes to final third per 90": 4.04,
+        "Progressive passes per 90": 4.18
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 624.0,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Duels per 90": {
+          "value": 16.3,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Duels won, %": {
+          "value": 42.48,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Successful defensive actions per 90": {
+          "value": 3.17,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Aerial duels won, %": {
+          "value": 20.0,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "PAdj Interceptions": {
+          "value": 2.46,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Shots per 90": {
+          "value": 2.45,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Progressive runs per 90": {
+          "value": 3.03,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Accelerations per 90": {
+          "value": 1.3,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Accurate forward passes, %": {
+          "value": 62.3,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Long passes per 90": {
+          "value": 1.88,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Key passes per 90": {
+          "value": 1.15,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Passes to final third per 90": {
+          "value": 4.04,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Progressive passes per 90": {
+          "value": 4.18,
+          "rank": 71,
+          "percentile": 11.39
+        }
+      }
+    },
+    {
+      "id": "lin_chuangyi",
+      "player": "Lin Chuangyi",
+      "raw": {
+        "Player": "Lin Chuangyi",
+        "Minutes played": 1453,
+        "Duels per 90": 14.0,
+        "Duels won, %": 53.54,
+        "Successful defensive actions per 90": 6.19,
+        "Aerial duels won, %": 40.63,
+        "PAdj Interceptions": 3.13,
+        "Shots per 90": 1.49,
+        "Progressive runs per 90": 0.87,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 70.11,
+        "Long passes per 90": 3.22,
+        "Key passes per 90": 0.19,
+        "Passes to final third per 90": 4.65,
+        "Progressive passes per 90": 4.71
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1453.0,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Duels per 90": {
+          "value": 14.0,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Duels won, %": {
+          "value": 53.54,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.19,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Aerial duels won, %": {
+          "value": 40.63,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "PAdj Interceptions": {
+          "value": 3.13,
+          "rank": 69,
+          "percentile": 13.92
+        },
+        "Shots per 90": {
+          "value": 1.49,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Progressive runs per 90": {
+          "value": 0.87,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 70.11,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Long passes per 90": {
+          "value": 3.22,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Key passes per 90": {
+          "value": 0.19,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Passes to final third per 90": {
+          "value": 4.65,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Progressive passes per 90": {
+          "value": 4.71,
+          "rank": 59,
+          "percentile": 26.58
+        }
+      }
+    },
+    {
+      "id": "i__alimi",
+      "player": "I. Alimi",
+      "raw": {
+        "Player": "I. Alimi",
+        "Minutes played": 2389,
+        "Duels per 90": 19.18,
+        "Duels won, %": 53.44,
+        "Successful defensive actions per 90": 9.15,
+        "Aerial duels won, %": 54.95,
+        "PAdj Interceptions": 5.68,
+        "Shots per 90": 1.24,
+        "Progressive runs per 90": 0.83,
+        "Accelerations per 90": 0.08,
+        "Accurate forward passes, %": 70.16,
+        "Long passes per 90": 6.56,
+        "Key passes per 90": 0.19,
+        "Passes to final third per 90": 8.66,
+        "Progressive passes per 90": 9.15
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2389.0,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Duels per 90": {
+          "value": 19.18,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Duels won, %": {
+          "value": 53.44,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Successful defensive actions per 90": {
+          "value": 9.15,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Aerial duels won, %": {
+          "value": 54.95,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "PAdj Interceptions": {
+          "value": 5.68,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Shots per 90": {
+          "value": 1.24,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Progressive runs per 90": {
+          "value": 0.83,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Accelerations per 90": {
+          "value": 0.08,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Accurate forward passes, %": {
+          "value": 70.16,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Long passes per 90": {
+          "value": 6.56,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Key passes per 90": {
+          "value": 0.19,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Passes to final third per 90": {
+          "value": 8.66,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Progressive passes per 90": {
+          "value": 9.15,
+          "rank": 2,
+          "percentile": 98.73
+        }
+      }
+    },
+    {
+      "id": "liao_jintao",
+      "player": "Liao Jintao",
+      "raw": {
+        "Player": "Liao Jintao",
+        "Minutes played": 2576,
+        "Duels per 90": 13.31,
+        "Duels won, %": 54.59,
+        "Successful defensive actions per 90": 8.45,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 5.79,
+        "Shots per 90": 0.52,
+        "Progressive runs per 90": 0.52,
+        "Accelerations per 90": 0.07,
+        "Accurate forward passes, %": 65.89,
+        "Long passes per 90": 4.65,
+        "Key passes per 90": 0.1,
+        "Passes to final third per 90": 7.72,
+        "Progressive passes per 90": 6.29
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2576.0,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Duels per 90": {
+          "value": 13.31,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Duels won, %": {
+          "value": 54.59,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.45,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 5.79,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Shots per 90": {
+          "value": 0.52,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Progressive runs per 90": {
+          "value": 0.52,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Accelerations per 90": {
+          "value": 0.07,
+          "rank": 37,
+          "percentile": 54.43
+        },
+        "Accurate forward passes, %": {
+          "value": 65.89,
+          "rank": 57,
+          "percentile": 29.11
+        },
+        "Long passes per 90": {
+          "value": 4.65,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Key passes per 90": {
+          "value": 0.1,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Passes to final third per 90": {
+          "value": 7.72,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "Progressive passes per 90": {
+          "value": 6.29,
+          "rank": 25,
+          "percentile": 69.62
+        }
+      }
+    },
+    {
+      "id": "wang_shangyuan",
+      "player": "Wang Shangyuan",
+      "raw": {
+        "Player": "Wang Shangyuan",
+        "Minutes played": 2751,
+        "Duels per 90": 8.7,
+        "Duels won, %": 47.37,
+        "Successful defensive actions per 90": 4.06,
+        "Aerial duels won, %": 37.5,
+        "PAdj Interceptions": 3.07,
+        "Shots per 90": 0.56,
+        "Progressive runs per 90": 0.65,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 76.28,
+        "Long passes per 90": 6.87,
+        "Key passes per 90": 0.33,
+        "Passes to final third per 90": 9.26,
+        "Progressive passes per 90": 8.64
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2751.0,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Duels per 90": {
+          "value": 8.7,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Duels won, %": {
+          "value": 47.37,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.06,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Aerial duels won, %": {
+          "value": 37.5,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "PAdj Interceptions": {
+          "value": 3.07,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Shots per 90": {
+          "value": 0.56,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Progressive runs per 90": {
+          "value": 0.65,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 76.28,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Long passes per 90": {
+          "value": 6.87,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Key passes per 90": {
+          "value": 0.33,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Passes to final third per 90": {
+          "value": 9.26,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Progressive passes per 90": {
+          "value": 8.64,
+          "rank": 4,
+          "percentile": 96.2
+        }
+      }
+    },
+    {
+      "id": "xu_yue",
+      "player": "Xu Yue",
+      "raw": {
+        "Player": "Xu Yue",
+        "Minutes played": 491,
+        "Duels per 90": 12.46,
+        "Duels won, %": 48.53,
+        "Successful defensive actions per 90": 8.62,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 5.45,
+        "Shots per 90": 0.18,
+        "Progressive runs per 90": 0.37,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 62.22,
+        "Long passes per 90": 3.12,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 4.22,
+        "Progressive passes per 90": 3.3
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 491.0,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Duels per 90": {
+          "value": 12.46,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Duels won, %": {
+          "value": 48.53,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Successful defensive actions per 90": {
+          "value": 8.62,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 5.45,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Shots per 90": {
+          "value": 0.18,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Progressive runs per 90": {
+          "value": 0.37,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 62.22,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Long passes per 90": {
+          "value": 3.12,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 4.22,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Progressive passes per 90": {
+          "value": 3.3,
+          "rank": 76,
+          "percentile": 5.06
+        }
+      }
+    },
+    {
+      "id": "guo_hao",
+      "player": "Guo Hao",
+      "raw": {
+        "Player": "Guo Hao",
+        "Minutes played": 883,
+        "Duels per 90": 9.48,
+        "Duels won, %": 49.46,
+        "Successful defensive actions per 90": 5.61,
+        "Aerial duels won, %": 48.28,
+        "PAdj Interceptions": 3.88,
+        "Shots per 90": 0.41,
+        "Progressive runs per 90": 0.41,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 68.7,
+        "Long passes per 90": 3.36,
+        "Key passes per 90": 0.2,
+        "Passes to final third per 90": 5.81,
+        "Progressive passes per 90": 5.71
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 883.0,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Duels per 90": {
+          "value": 9.48,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Duels won, %": {
+          "value": 49.46,
+          "rank": 43,
+          "percentile": 46.84
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.61,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Aerial duels won, %": {
+          "value": 48.28,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "PAdj Interceptions": {
+          "value": 3.88,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Shots per 90": {
+          "value": 0.41,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Progressive runs per 90": {
+          "value": 0.41,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 68.7,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Long passes per 90": {
+          "value": 3.36,
+          "rank": 45,
+          "percentile": 44.3
+        },
+        "Key passes per 90": {
+          "value": 0.2,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Passes to final third per 90": {
+          "value": 5.81,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Progressive passes per 90": {
+          "value": 5.71,
+          "rank": 36,
+          "percentile": 55.7
+        }
+      }
+    },
+    {
+      "id": "i__amadou",
+      "player": "I. Amadou",
+      "raw": {
+        "Player": "I. Amadou",
+        "Minutes played": 721,
+        "Duels per 90": 11.36,
+        "Duels won, %": 52.75,
+        "Successful defensive actions per 90": 7.49,
+        "Aerial duels won, %": 47.62,
+        "PAdj Interceptions": 7.04,
+        "Shots per 90": 1.12,
+        "Progressive runs per 90": 1.0,
+        "Accelerations per 90": 0.12,
+        "Accurate forward passes, %": 74.4,
+        "Long passes per 90": 4.62,
+        "Key passes per 90": 0.12,
+        "Passes to final third per 90": 6.74,
+        "Progressive passes per 90": 7.24
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 721.0,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Duels per 90": {
+          "value": 11.36,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Duels won, %": {
+          "value": 52.75,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.49,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Aerial duels won, %": {
+          "value": 47.62,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "PAdj Interceptions": {
+          "value": 7.04,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Shots per 90": {
+          "value": 1.12,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Progressive runs per 90": {
+          "value": 1.0,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Accelerations per 90": {
+          "value": 0.12,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Accurate forward passes, %": {
+          "value": 74.4,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Long passes per 90": {
+          "value": 4.62,
+          "rank": 22,
+          "percentile": 73.42
+        },
+        "Key passes per 90": {
+          "value": 0.12,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Passes to final third per 90": {
+          "value": 6.74,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Progressive passes per 90": {
+          "value": 7.24,
+          "rank": 13,
+          "percentile": 84.81
+        }
+      }
+    },
+    {
+      "id": "zhang_chengdong",
+      "player": "Zhang Chengdong",
+      "raw": {
+        "Player": "Zhang Chengdong",
+        "Minutes played": 1822,
+        "Duels per 90": 11.76,
+        "Duels won, %": 49.58,
+        "Successful defensive actions per 90": 7.06,
+        "Aerial duels won, %": 39.13,
+        "PAdj Interceptions": 5.52,
+        "Shots per 90": 0.0,
+        "Progressive runs per 90": 0.15,
+        "Accelerations per 90": 0.05,
+        "Accurate forward passes, %": 70.13,
+        "Long passes per 90": 4.89,
+        "Key passes per 90": 0.05,
+        "Passes to final third per 90": 4.99,
+        "Progressive passes per 90": 6.47
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1822.0,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Duels per 90": {
+          "value": 11.76,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Duels won, %": {
+          "value": 49.58,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Successful defensive actions per 90": {
+          "value": 7.06,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Aerial duels won, %": {
+          "value": 39.13,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "PAdj Interceptions": {
+          "value": 5.52,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Shots per 90": {
+          "value": 0.0,
+          "rank": 80,
+          "percentile": 0.0
+        },
+        "Progressive runs per 90": {
+          "value": 0.15,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Accelerations per 90": {
+          "value": 0.05,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Accurate forward passes, %": {
+          "value": 70.13,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Long passes per 90": {
+          "value": 4.89,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Key passes per 90": {
+          "value": 0.05,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Passes to final third per 90": {
+          "value": 4.99,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "Progressive passes per 90": {
+          "value": 6.47,
+          "rank": 21,
+          "percentile": 74.68
+        }
+      }
+    },
+    {
+      "id": "xu_bin",
+      "player": "Xu Bin",
+      "raw": {
+        "Player": "Xu Bin",
+        "Minutes played": 2248,
+        "Duels per 90": 14.57,
+        "Duels won, %": 51.37,
+        "Successful defensive actions per 90": 10.41,
+        "Aerial duels won, %": 38.98,
+        "PAdj Interceptions": 7.5,
+        "Shots per 90": 0.2,
+        "Progressive runs per 90": 0.44,
+        "Accelerations per 90": 0.16,
+        "Accurate forward passes, %": 65.32,
+        "Long passes per 90": 5.2,
+        "Key passes per 90": 0.16,
+        "Passes to final third per 90": 7.25,
+        "Progressive passes per 90": 6.73
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2248.0,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Duels per 90": {
+          "value": 14.57,
+          "rank": 36,
+          "percentile": 55.7
+        },
+        "Duels won, %": {
+          "value": 51.37,
+          "rank": 27,
+          "percentile": 67.09
+        },
+        "Successful defensive actions per 90": {
+          "value": 10.41,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Aerial duels won, %": {
+          "value": 38.98,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "PAdj Interceptions": {
+          "value": 7.5,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Shots per 90": {
+          "value": 0.2,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Progressive runs per 90": {
+          "value": 0.44,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "Accelerations per 90": {
+          "value": 0.16,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Accurate forward passes, %": {
+          "value": 65.32,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Long passes per 90": {
+          "value": 5.2,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Key passes per 90": {
+          "value": 0.16,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Passes to final third per 90": {
+          "value": 7.25,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Progressive passes per 90": {
+          "value": 6.73,
+          "rank": 19,
+          "percentile": 77.22
+        }
+      }
+    },
+    {
+      "id": "s__fan",
+      "player": "S. Fan",
+      "raw": {
+        "Player": "S. Fan",
+        "Minutes played": 979,
+        "Duels per 90": 11.12,
+        "Duels won, %": 47.11,
+        "Successful defensive actions per 90": 4.78,
+        "Aerial duels won, %": 33.33,
+        "PAdj Interceptions": 3.33,
+        "Shots per 90": 0.28,
+        "Progressive runs per 90": 1.01,
+        "Accelerations per 90": 0.28,
+        "Accurate forward passes, %": 83.54,
+        "Long passes per 90": 3.59,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 6.16,
+        "Progressive passes per 90": 5.52
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 979.0,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Duels per 90": {
+          "value": 11.12,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Duels won, %": {
+          "value": 47.11,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.78,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Aerial duels won, %": {
+          "value": 33.33,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "PAdj Interceptions": {
+          "value": 3.33,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Shots per 90": {
+          "value": 0.28,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Progressive runs per 90": {
+          "value": 1.01,
+          "rank": 26,
+          "percentile": 68.35
+        },
+        "Accelerations per 90": {
+          "value": 0.28,
+          "rank": 10,
+          "percentile": 88.61
+        },
+        "Accurate forward passes, %": {
+          "value": 83.54,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Long passes per 90": {
+          "value": 3.59,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 6.16,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Progressive passes per 90": {
+          "value": 5.52,
+          "rank": 39,
+          "percentile": 51.9
+        }
+      }
+    },
+    {
+      "id": "mateus_vital",
+      "player": "Mateus Vital",
+      "raw": {
+        "Player": "Mateus Vital",
+        "Minutes played": 2784,
+        "Duels per 90": 15.19,
+        "Duels won, %": 49.79,
+        "Successful defensive actions per 90": 4.69,
+        "Aerial duels won, %": 38.24,
+        "PAdj Interceptions": 4.2,
+        "Shots per 90": 1.68,
+        "Progressive runs per 90": 3.1,
+        "Accelerations per 90": 0.32,
+        "Accurate forward passes, %": 83.54,
+        "Long passes per 90": 3.49,
+        "Key passes per 90": 0.45,
+        "Passes to final third per 90": 10.44,
+        "Progressive passes per 90": 8.34
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2784.0,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Duels per 90": {
+          "value": 15.19,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Duels won, %": {
+          "value": 49.79,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.69,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Aerial duels won, %": {
+          "value": 38.24,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "PAdj Interceptions": {
+          "value": 4.2,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Shots per 90": {
+          "value": 1.68,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Progressive runs per 90": {
+          "value": 3.1,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Accelerations per 90": {
+          "value": 0.32,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Accurate forward passes, %": {
+          "value": 83.54,
+          "rank": 4,
+          "percentile": 96.2
+        },
+        "Long passes per 90": {
+          "value": 3.49,
+          "rank": 42,
+          "percentile": 48.1
+        },
+        "Key passes per 90": {
+          "value": 0.45,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Passes to final third per 90": {
+          "value": 10.44,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Progressive passes per 90": {
+          "value": 8.34,
+          "rank": 7,
+          "percentile": 92.41
+        }
+      }
+    },
+    {
+      "id": "serginho",
+      "player": "Serginho",
+      "raw": {
+        "Player": "Serginho",
+        "Minutes played": 1980,
+        "Duels per 90": 13.73,
+        "Duels won, %": 47.68,
+        "Successful defensive actions per 90": 4.41,
+        "Aerial duels won, %": 51.02,
+        "PAdj Interceptions": 4.7,
+        "Shots per 90": 1.32,
+        "Progressive runs per 90": 2.14,
+        "Accelerations per 90": 0.32,
+        "Accurate forward passes, %": 68.58,
+        "Long passes per 90": 2.73,
+        "Key passes per 90": 0.77,
+        "Passes to final third per 90": 5.95,
+        "Progressive passes per 90": 6.0
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1980.0,
+          "rank": 31,
+          "percentile": 62.03
+        },
+        "Duels per 90": {
+          "value": 13.73,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Duels won, %": {
+          "value": 47.68,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.41,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "Aerial duels won, %": {
+          "value": 51.02,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "PAdj Interceptions": {
+          "value": 4.7,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Shots per 90": {
+          "value": 1.32,
+          "rank": 16,
+          "percentile": 81.01
+        },
+        "Progressive runs per 90": {
+          "value": 2.14,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Accelerations per 90": {
+          "value": 0.32,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Accurate forward passes, %": {
+          "value": 68.58,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Long passes per 90": {
+          "value": 2.73,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "Key passes per 90": {
+          "value": 0.77,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Passes to final third per 90": {
+          "value": 5.95,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Progressive passes per 90": {
+          "value": 6.0,
+          "rank": 31,
+          "percentile": 62.03
+        }
+      }
+    },
+    {
+      "id": "darlan",
+      "player": "Darlan",
+      "raw": {
+        "Player": "Darlan",
+        "Minutes played": 2231,
+        "Duels per 90": 13.47,
+        "Duels won, %": 47.6,
+        "Successful defensive actions per 90": 5.97,
+        "Aerial duels won, %": 23.81,
+        "PAdj Interceptions": 4.46,
+        "Shots per 90": 0.97,
+        "Progressive runs per 90": 1.69,
+        "Accelerations per 90": 0.24,
+        "Accurate forward passes, %": 68.04,
+        "Long passes per 90": 7.02,
+        "Key passes per 90": 0.48,
+        "Passes to final third per 90": 8.11,
+        "Progressive passes per 90": 7.18
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2231.0,
+          "rank": 20,
+          "percentile": 75.95
+        },
+        "Duels per 90": {
+          "value": 13.47,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Duels won, %": {
+          "value": 47.6,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.97,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Aerial duels won, %": {
+          "value": 23.81,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "PAdj Interceptions": {
+          "value": 4.46,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Shots per 90": {
+          "value": 0.97,
+          "rank": 35,
+          "percentile": 56.96
+        },
+        "Progressive runs per 90": {
+          "value": 1.69,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Accelerations per 90": {
+          "value": 0.24,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Accurate forward passes, %": {
+          "value": 68.04,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Long passes per 90": {
+          "value": 7.02,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Key passes per 90": {
+          "value": 0.48,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Passes to final third per 90": {
+          "value": 8.11,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "Progressive passes per 90": {
+          "value": 7.18,
+          "rank": 15,
+          "percentile": 82.28
+        }
+      }
+    },
+    {
+      "id": "hou_yongyong",
+      "player": "Hou Yongyong",
+      "raw": {
+        "Player": "Hou Yongyong",
+        "Minutes played": 2958,
+        "Duels per 90": 9.1,
+        "Duels won, %": 46.15,
+        "Successful defensive actions per 90": 3.53,
+        "Aerial duels won, %": 35.11,
+        "PAdj Interceptions": 2.31,
+        "Shots per 90": 1.37,
+        "Progressive runs per 90": 0.7,
+        "Accelerations per 90": 0.03,
+        "Accurate forward passes, %": 70.21,
+        "Long passes per 90": 1.19,
+        "Key passes per 90": 0.24,
+        "Passes to final third per 90": 2.04,
+        "Progressive passes per 90": 1.95
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2958.0,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Duels per 90": {
+          "value": 9.1,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Duels won, %": {
+          "value": 46.15,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Successful defensive actions per 90": {
+          "value": 3.53,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Aerial duels won, %": {
+          "value": 35.11,
+          "rank": 61,
+          "percentile": 24.05
+        },
+        "PAdj Interceptions": {
+          "value": 2.31,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Shots per 90": {
+          "value": 1.37,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Progressive runs per 90": {
+          "value": 0.7,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Accelerations per 90": {
+          "value": 0.03,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Accurate forward passes, %": {
+          "value": 70.21,
+          "rank": 34,
+          "percentile": 58.23
+        },
+        "Long passes per 90": {
+          "value": 1.19,
+          "rank": 78,
+          "percentile": 2.53
+        },
+        "Key passes per 90": {
+          "value": 0.24,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Passes to final third per 90": {
+          "value": 2.04,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Progressive passes per 90": {
+          "value": 1.95,
+          "rank": 80,
+          "percentile": 0.0
+        }
+      }
+    },
+    {
+      "id": "w__cyprien",
+      "player": "W. Cyprien",
+      "raw": {
+        "Player": "W. Cyprien",
+        "Minutes played": 838,
+        "Duels per 90": 13.75,
+        "Duels won, %": 49.22,
+        "Successful defensive actions per 90": 5.48,
+        "Aerial duels won, %": 21.43,
+        "PAdj Interceptions": 4.35,
+        "Shots per 90": 1.29,
+        "Progressive runs per 90": 0.64,
+        "Accelerations per 90": 0.11,
+        "Accurate forward passes, %": 69.28,
+        "Long passes per 90": 4.94,
+        "Key passes per 90": 0.32,
+        "Passes to final third per 90": 7.73,
+        "Progressive passes per 90": 9.34
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 838.0,
+          "rank": 62,
+          "percentile": 22.78
+        },
+        "Duels per 90": {
+          "value": 13.75,
+          "rank": 49,
+          "percentile": 39.24
+        },
+        "Duels won, %": {
+          "value": 49.22,
+          "rank": 44,
+          "percentile": 45.57
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.48,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Aerial duels won, %": {
+          "value": 21.43,
+          "rank": 73,
+          "percentile": 8.86
+        },
+        "PAdj Interceptions": {
+          "value": 4.35,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Shots per 90": {
+          "value": 1.29,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Progressive runs per 90": {
+          "value": 0.64,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Accelerations per 90": {
+          "value": 0.11,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Accurate forward passes, %": {
+          "value": 69.28,
+          "rank": 40,
+          "percentile": 50.63
+        },
+        "Long passes per 90": {
+          "value": 4.94,
+          "rank": 17,
+          "percentile": 79.75
+        },
+        "Key passes per 90": {
+          "value": 0.32,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Passes to final third per 90": {
+          "value": 7.73,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Progressive passes per 90": {
+          "value": 9.34,
+          "rank": 1,
+          "percentile": 100.0
+        }
+      }
+    },
+    {
+      "id": "daniel_penha",
+      "player": "Daniel Penha",
+      "raw": {
+        "Player": "Daniel Penha",
+        "Minutes played": 1144,
+        "Duels per 90": 15.42,
+        "Duels won, %": 44.9,
+        "Successful defensive actions per 90": 4.01,
+        "Aerial duels won, %": 35.71,
+        "PAdj Interceptions": 1.85,
+        "Shots per 90": 2.67,
+        "Progressive runs per 90": 2.05,
+        "Accelerations per 90": 0.55,
+        "Accurate forward passes, %": 63.85,
+        "Long passes per 90": 2.6,
+        "Key passes per 90": 0.55,
+        "Passes to final third per 90": 4.8,
+        "Progressive passes per 90": 6.22
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1144.0,
+          "rank": 47,
+          "percentile": 41.77
+        },
+        "Duels per 90": {
+          "value": 15.42,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Duels won, %": {
+          "value": 44.9,
+          "rank": 67,
+          "percentile": 16.46
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.01,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Aerial duels won, %": {
+          "value": 35.71,
+          "rank": 60,
+          "percentile": 25.32
+        },
+        "PAdj Interceptions": {
+          "value": 1.85,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Shots per 90": {
+          "value": 2.67,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Progressive runs per 90": {
+          "value": 2.05,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Accelerations per 90": {
+          "value": 0.55,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Accurate forward passes, %": {
+          "value": 63.85,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Long passes per 90": {
+          "value": 2.6,
+          "rank": 64,
+          "percentile": 20.25
+        },
+        "Key passes per 90": {
+          "value": 0.55,
+          "rank": 5,
+          "percentile": 94.94
+        },
+        "Passes to final third per 90": {
+          "value": 4.8,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Progressive passes per 90": {
+          "value": 6.22,
+          "rank": 27,
+          "percentile": 67.09
+        }
+      }
+    },
+    {
+      "id": "óscar_melendo",
+      "player": "Óscar Melendo",
+      "raw": {
+        "Player": "Óscar Melendo",
+        "Minutes played": 1140,
+        "Duels per 90": 12.39,
+        "Duels won, %": 49.04,
+        "Successful defensive actions per 90": 4.11,
+        "Aerial duels won, %": 37.5,
+        "PAdj Interceptions": 2.87,
+        "Shots per 90": 1.26,
+        "Progressive runs per 90": 1.89,
+        "Accelerations per 90": 0.16,
+        "Accurate forward passes, %": 70.42,
+        "Long passes per 90": 3.08,
+        "Key passes per 90": 0.32,
+        "Passes to final third per 90": 4.5,
+        "Progressive passes per 90": 4.97
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1140.0,
+          "rank": 48,
+          "percentile": 40.51
+        },
+        "Duels per 90": {
+          "value": 12.39,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Duels won, %": {
+          "value": 49.04,
+          "rank": 46,
+          "percentile": 43.04
+        },
+        "Successful defensive actions per 90": {
+          "value": 4.11,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Aerial duels won, %": {
+          "value": 37.5,
+          "rank": 53,
+          "percentile": 34.18
+        },
+        "PAdj Interceptions": {
+          "value": 2.87,
+          "rank": 72,
+          "percentile": 10.13
+        },
+        "Shots per 90": {
+          "value": 1.26,
+          "rank": 19,
+          "percentile": 77.22
+        },
+        "Progressive runs per 90": {
+          "value": 1.89,
+          "rank": 8,
+          "percentile": 91.14
+        },
+        "Accelerations per 90": {
+          "value": 0.16,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Accurate forward passes, %": {
+          "value": 70.42,
+          "rank": 33,
+          "percentile": 59.49
+        },
+        "Long passes per 90": {
+          "value": 3.08,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Key passes per 90": {
+          "value": 0.32,
+          "rank": 24,
+          "percentile": 70.89
+        },
+        "Passes to final third per 90": {
+          "value": 4.5,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Progressive passes per 90": {
+          "value": 4.97,
+          "rank": 54,
+          "percentile": 32.91
+        }
+      }
+    },
+    {
+      "id": "zhang_xiaobin",
+      "player": "Zhang Xiaobin",
+      "raw": {
+        "Player": "Zhang Xiaobin",
+        "Minutes played": 2071,
+        "Duels per 90": 9.78,
+        "Duels won, %": 52.0,
+        "Successful defensive actions per 90": 5.21,
+        "Aerial duels won, %": 51.52,
+        "PAdj Interceptions": 2.56,
+        "Shots per 90": 0.17,
+        "Progressive runs per 90": 0.22,
+        "Accelerations per 90": 0.0,
+        "Accurate forward passes, %": 67.26,
+        "Long passes per 90": 2.61,
+        "Key passes per 90": 0.09,
+        "Passes to final third per 90": 3.69,
+        "Progressive passes per 90": 4.3
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2071.0,
+          "rank": 28,
+          "percentile": 65.82
+        },
+        "Duels per 90": {
+          "value": 9.78,
+          "rank": 76,
+          "percentile": 5.06
+        },
+        "Duels won, %": {
+          "value": 52.0,
+          "rank": 21,
+          "percentile": 74.68
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.21,
+          "rank": 68,
+          "percentile": 15.19
+        },
+        "Aerial duels won, %": {
+          "value": 51.52,
+          "rank": 11,
+          "percentile": 87.34
+        },
+        "PAdj Interceptions": {
+          "value": 2.56,
+          "rank": 75,
+          "percentile": 6.33
+        },
+        "Shots per 90": {
+          "value": 0.17,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Progressive runs per 90": {
+          "value": 0.22,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Accelerations per 90": {
+          "value": 0.0,
+          "rank": 50,
+          "percentile": 37.97
+        },
+        "Accurate forward passes, %": {
+          "value": 67.26,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Long passes per 90": {
+          "value": 2.61,
+          "rank": 63,
+          "percentile": 21.52
+        },
+        "Key passes per 90": {
+          "value": 0.09,
+          "rank": 56,
+          "percentile": 30.38
+        },
+        "Passes to final third per 90": {
+          "value": 3.69,
+          "rank": 71,
+          "percentile": 11.39
+        },
+        "Progressive passes per 90": {
+          "value": 4.3,
+          "rank": 68,
+          "percentile": 15.19
+        }
+      }
+    },
+    {
+      "id": "lu_peng",
+      "player": "Lu Peng",
+      "raw": {
+        "Player": "Lu Peng",
+        "Minutes played": 1583,
+        "Duels per 90": 9.55,
+        "Duels won, %": 59.52,
+        "Successful defensive actions per 90": 6.99,
+        "Aerial duels won, %": 50.0,
+        "PAdj Interceptions": 4.13,
+        "Shots per 90": 0.11,
+        "Progressive runs per 90": 0.57,
+        "Accelerations per 90": 0.06,
+        "Accurate forward passes, %": 69.23,
+        "Long passes per 90": 3.01,
+        "Key passes per 90": 0.0,
+        "Passes to final third per 90": 4.61,
+        "Progressive passes per 90": 4.26
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 1583.0,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Duels per 90": {
+          "value": 9.55,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Duels won, %": {
+          "value": 59.52,
+          "rank": 2,
+          "percentile": 98.73
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.99,
+          "rank": 52,
+          "percentile": 35.44
+        },
+        "Aerial duels won, %": {
+          "value": 50.0,
+          "rank": 14,
+          "percentile": 83.54
+        },
+        "PAdj Interceptions": {
+          "value": 4.13,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Shots per 90": {
+          "value": 0.11,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "Progressive runs per 90": {
+          "value": 0.57,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Accelerations per 90": {
+          "value": 0.06,
+          "rank": 39,
+          "percentile": 51.9
+        },
+        "Accurate forward passes, %": {
+          "value": 69.23,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Long passes per 90": {
+          "value": 3.01,
+          "rank": 54,
+          "percentile": 32.91
+        },
+        "Key passes per 90": {
+          "value": 0.0,
+          "rank": 70,
+          "percentile": 12.66
+        },
+        "Passes to final third per 90": {
+          "value": 4.61,
+          "rank": 59,
+          "percentile": 26.58
+        },
+        "Progressive passes per 90": {
+          "value": 4.26,
+          "rank": 69,
+          "percentile": 13.92
+        }
+      }
+    },
+    {
+      "id": "cheng_jin",
+      "player": "Cheng Jin",
+      "raw": {
+        "Player": "Cheng Jin",
+        "Minutes played": 2002,
+        "Duels per 90": 10.88,
+        "Duels won, %": 49.59,
+        "Successful defensive actions per 90": 6.25,
+        "Aerial duels won, %": 0.0,
+        "PAdj Interceptions": 3.39,
+        "Shots per 90": 0.4,
+        "Progressive runs per 90": 1.93,
+        "Accelerations per 90": 0.22,
+        "Accurate forward passes, %": 72.92,
+        "Long passes per 90": 4.95,
+        "Key passes per 90": 0.4,
+        "Passes to final third per 90": 8.05,
+        "Progressive passes per 90": 5.84
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2002.0,
+          "rank": 30,
+          "percentile": 63.29
+        },
+        "Duels per 90": {
+          "value": 10.88,
+          "rank": 74,
+          "percentile": 7.59
+        },
+        "Duels won, %": {
+          "value": 49.59,
+          "rank": 41,
+          "percentile": 49.37
+        },
+        "Successful defensive actions per 90": {
+          "value": 6.25,
+          "rank": 58,
+          "percentile": 27.85
+        },
+        "Aerial duels won, %": {
+          "value": 0.0,
+          "rank": 79,
+          "percentile": 1.27
+        },
+        "PAdj Interceptions": {
+          "value": 3.39,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Shots per 90": {
+          "value": 0.4,
+          "rank": 65,
+          "percentile": 18.99
+        },
+        "Progressive runs per 90": {
+          "value": 1.93,
+          "rank": 7,
+          "percentile": 92.41
+        },
+        "Accelerations per 90": {
+          "value": 0.22,
+          "rank": 13,
+          "percentile": 84.81
+        },
+        "Accurate forward passes, %": {
+          "value": 72.92,
+          "rank": 23,
+          "percentile": 72.15
+        },
+        "Long passes per 90": {
+          "value": 4.95,
+          "rank": 15,
+          "percentile": 82.28
+        },
+        "Key passes per 90": {
+          "value": 0.4,
+          "rank": 18,
+          "percentile": 78.48
+        },
+        "Passes to final third per 90": {
+          "value": 8.05,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Progressive passes per 90": {
+          "value": 5.84,
+          "rank": 34,
+          "percentile": 58.23
+        }
+      }
+    },
+    {
+      "id": "guga",
+      "player": "Guga",
+      "raw": {
+        "Player": "Guga",
+        "Minutes played": 2588,
+        "Duels per 90": 12.55,
+        "Duels won, %": 51.25,
+        "Successful defensive actions per 90": 5.49,
+        "Aerial duels won, %": 38.1,
+        "PAdj Interceptions": 4.91,
+        "Shots per 90": 1.39,
+        "Progressive runs per 90": 1.81,
+        "Accelerations per 90": 0.42,
+        "Accurate forward passes, %": 85.8,
+        "Long passes per 90": 1.32,
+        "Key passes per 90": 0.49,
+        "Passes to final third per 90": 6.33,
+        "Progressive passes per 90": 5.08
+      },
+      "metrics": {
+        "Minutes played": {
+          "value": 2588.0,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Duels per 90": {
+          "value": 12.55,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Duels won, %": {
+          "value": 51.25,
+          "rank": 29,
+          "percentile": 64.56
+        },
+        "Successful defensive actions per 90": {
+          "value": 5.49,
+          "rank": 66,
+          "percentile": 17.72
+        },
+        "Aerial duels won, %": {
+          "value": 38.1,
+          "rank": 51,
+          "percentile": 36.71
+        },
+        "PAdj Interceptions": {
+          "value": 4.91,
+          "rank": 38,
+          "percentile": 53.16
+        },
+        "Shots per 90": {
+          "value": 1.39,
+          "rank": 12,
+          "percentile": 86.08
+        },
+        "Progressive runs per 90": {
+          "value": 1.81,
+          "rank": 9,
+          "percentile": 89.87
+        },
+        "Accelerations per 90": {
+          "value": 0.42,
+          "rank": 3,
+          "percentile": 97.47
+        },
+        "Accurate forward passes, %": {
+          "value": 85.8,
+          "rank": 1,
+          "percentile": 100.0
+        },
+        "Long passes per 90": {
+          "value": 1.32,
+          "rank": 77,
+          "percentile": 3.8
+        },
+        "Key passes per 90": {
+          "value": 0.49,
+          "rank": 6,
+          "percentile": 93.67
+        },
+        "Passes to final third per 90": {
+          "value": 6.33,
+          "rank": 32,
+          "percentile": 60.76
+        },
+        "Progressive passes per 90": {
+          "value": 5.08,
+          "rank": 50,
+          "percentile": 37.97
+        }
+      }
+    }
+  ],
+  "datasetId": "ds_20260302074645_314922"
+}

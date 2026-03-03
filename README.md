@@ -1,39 +1,31 @@
 # player
 
-一个面向足球数据分析的可复用出图项目：
-**把球员指标填进表格（CSV），自动导出雷达/径向分组图（pizza style）**。
+一个面向足球数据分析的可复用出图系统：  
+**CSV/Excel 输入 -> 雷达图与散点图分析 -> 可复现导出与规则化协作**。
 
-> 项目目标不是做“一张图”，而是做“稳定、可复用、可批量”的图表模板系统。
-
----
-
-## 0. 必读文档（开始改代码前）
-
-1. `README.md`：项目定位、目录、最小闭环
-2. `USAGE.md`：命令用法与参数说明
-3. `AGENTS.md`：协作红线与交付规则
-4. `contributing_ai.md`：AI 任务书与验收格式
-
-文档扩展：
-- `docs/PLAYER_CHART_TEMPLATE.md`：模板字段与出图细节
-- `docs/ROADMAP.md`：版本计划与优先级
-- `docs/ARCHITECTURE_RULES.md`：架构约束与自动化审核规则
-- `docs/GITHUB_WORKFLOW_AND_TAGS.md`：GitHub 更新流程与 Tag 标记规范
+> 目标不是“临时做一张图”，而是“稳定、可审计、可复现、可持续迭代”的图表系统。
 
 ---
 
-## 1. 快速开始（最小闭环）
+## 0. 必读文档（改代码前）
 
-### 1.1 安装依赖
+1. `README.md`：项目定位、最短闭环、文档地图
+2. `USAGE.md`：命令与功能行为事实源
+3. `AGENTS.md`：红线与口径契约（最高优先级）
+4. `contributing_ai.md`：AI 任务书与交付格式
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install matplotlib numpy
-```
+扩展文档：
+- `docs/PLAYER_CHART_TEMPLATE.md`
+- `docs/ARCHITECTURE_RULES.md`
+- `docs/ROADMAP.md`
+- `docs/GITHUB_WORKFLOW_AND_TAGS.md`
+- `player-web/README.md`
 
-### 1.2 使用模板生成图
+---
+
+## 1. 10 分钟最短闭环
+
+### 1.1 CLI（模板出图）
 
 ```bash
 python3 scripts/generate_player_radar.py \
@@ -43,6 +35,22 @@ python3 scripts/generate_player_radar.py \
   --subtitle "League Season Percentile Rankings & Per 90 Values"
 ```
 
+### 1.2 Web（可交互分析）
+
+```bash
+# 后端
+cd player-web/server
+python3 -m pip install -r requirements.txt
+python3 app.py
+
+# 前端
+cd ../
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+打开：`http://127.0.0.1:5173`
+
 ---
 
 ## 2. 项目结构
@@ -50,14 +58,20 @@ python3 scripts/generate_player_radar.py \
 ```text
 player/
 ├── scripts/
-│   └── generate_player_radar.py      # 主出图脚本
+│   ├── generate_player_radar.py
+│   └── audit_architecture.py
 ├── templates/
-│   └── player_chart_template.csv      # 填写模板
+│   └── player_chart_template.csv
 ├── docs/
-│   ├── PLAYER_CHART_TEMPLATE.md       # 字段说明/风格说明
-│   └── ROADMAP.md                     # 规划
+│   ├── PLAYER_CHART_TEMPLATE.md
+│   ├── ARCHITECTURE_RULES.md
+│   ├── ROADMAP.md
+│   └── GITHUB_WORKFLOW_AND_TAGS.md
+├── player-web/
+│   ├── src/
+│   ├── server/
+│   └── README.md
 ├── out/
-│   └── player_charts/                 # 导出图片（建议加入 .gitignore）
 ├── README.md
 ├── USAGE.md
 ├── AGENTS.md
@@ -66,38 +80,62 @@ player/
 
 ---
 
-## 3. 设计原则
+## 3. 当前能力（V3.3）
 
-- 模板优先：先定义输入表结构，再做图形渲染。
-- 可复用：同一套命令可对任意球员批量出图。
-- 可追溯：输入文件 + 命令 + 输出路径必须能复现结果。
-- 最小惊讶：参数简洁，默认值可直接使用。
-
----
-
-## 4. 当前能力
-
-- 支持按分组绘制径向条形图（pizza/radar hybrid）
-- 支持每个指标显示 percentile 与 per90 文本
-- 支持 tier 自动配色与手动颜色覆盖
-- 支持导出高分辨率 PNG
+- 雷达图：模板化输入、分组排序、自动 tier、SVG/PNG 导出
+- 球员数据页：导入 Excel、排名/百分比计算、一键导入雷达图
+- 散点图生成器：X/Y 轴选择、筛选、平均线、样式控制、球员详情联动
+- 项目对应表：字段中英映射与分组维护
+- 球队对应表：球队中英映射、颜色/形状维护、同步球员数据球队
+- 散点图球队样式联动：按球队映射应用颜色/形状，未匹配回退黑色
 
 ---
 
-## 5. 下一步建议
+## 4. 核心原则
 
-1. 增加批量命令（目录扫描后自动导出全部球员图）
-2. 增加主题配置（俱乐部配色、字体、背景风格）
-3. 增加数据校验报告（缺失字段、异常值、重复指标）
+- 模板优先：先定义输入字段，再设计展示
+- 口径稳定：统计规则优先于 UI 效果
+- 可追溯：每个展示值可追溯到原字段
+- 可复现：命令、输入、输出路径可复跑
+- 可审计：默认值与语义变化必须落文档
 
 ---
 
-## 6. 架构审核
+## 5. 经验教训（摘要）
 
-项目提供架构自动审核脚本（阻断式）：
+1. 筛选与统计基准必须分离
+- 可见点过滤不应改变全局统计口径（如平均线）。
+
+2. 布局优化不能改变业务行为
+- UI 居中/容器策略不能导致交互语义漂移。
+
+3. 回退策略必须文档化
+- 缺列、未匹配、空值都必须有明确且可预测的回退。
+
+4. 默认值是产品规则的一部分
+- 默认开关、默认样式、默认排序都必须在 `USAGE.md` 可查。
+
+---
+
+## 6. 最低验证
 
 ```bash
 python3 scripts/audit_architecture.py
+
+python3 scripts/generate_player_radar.py \
+  --input templates/player_chart_template.csv \
+  --output out/player_charts/smoke_test.png \
+  --title "Smoke Test" \
+  --subtitle "Template Validation"
 ```
 
-规则见 `docs/ARCHITECTURE_RULES.md` 与 `scripts/audit_rules.yml`。
+Web 改动建议补充：
+
+```bash
+cd player-web
+npm run build
+```
+
+---
+
+_最后更新：2026-03-03_

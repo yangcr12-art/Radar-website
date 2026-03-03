@@ -1,100 +1,97 @@
-# Player Chart Template
+# PLAYER_CHART_TEMPLATE
 
-本文件说明如何使用 `player` 项目模板生成与 `ref/01.png` 同类型图表。
-
----
-
-## 1. 图表类型
-
-当前模板生成的是：
-- **径向分组条形图（pizza/radial bar）**
-- 不是传统“折线连接”的经典雷达图
-
-适合场景：
-- 球员多维能力对比
-- Percentile + Per90 联合展示
+本文件定义球员图模板字段语义、约束与常见错误修复方式。  
+字段口径与 `AGENTS.md`、`USAGE.md` 保持一致。
 
 ---
 
-## 2. 输入模板
+## 1) 标准字段
 
-模板文件：`templates/player_chart_template.csv`
+必填：
 
-字段说明：
+- `metric`：指标名称
+- `value`：百分位值（0-100）
+- `group`：指标分组
+- `order`：分组顺序（整数）
 
-- `metric`（必填）：指标名称
-- `value`（必填）：百分位，范围 `0-100`
-- `group`（必填）：分组名称（Passing/Shooting 等）
-- `order`（必填）：分组顺序（整数）
-- `per90`（可选）：每90或原始值文本
-- `tier`（可选）：`elite/above_avg/avg/bottom`
-- `color`（可选）：手动颜色（hex），优先级高于 `tier`
+可选：
 
-网页端补充规则：
-- Web UI 中 `tier` 会按 `value` 自动计算（仍保持 `value` 为唯一数值依据）
+- `subOrder`：组内排序（整数）
+- `per90`：每 90 数值，仅展示
+- `tier`：颜色层级（`elite/above_avg/avg/bottom`）
+- `color`：手动颜色覆盖（hex）
 
 ---
 
-## 3. 导图命令
+## 2) 字段语义与计算影响
 
-```bash
-python3 scripts/generate_player_radar.py \
-  --input templates/player_chart_template.csv \
-  --output out/player_charts/player_demo.png \
-  --title "Player Name (Age, Pos, Minutes)" \
-  --subtitle "League Season Percentile Rankings & Per 90 Values"
+- `value`：唯一参与长度计算的核心数值
+- `per90`：不参与长度计算，仅用于文本标注
+- `group + order`：决定分区归属与主排序
+- `subOrder`：同分区内排序细化
+- `tier/color`：只影响视觉，不改变数值
+
+---
+
+## 3) 约束
+
+- `value` 必须在 `0-100`
+- `order/subOrder` 应为整数
+- `metric/group` 不得为空
+- `color` 建议为合法 hex（如 `#2f7fc4`）
+
+---
+
+## 4) 与 Web 一键导入口径对齐
+
+从“球员数据”一键导入时：
+
+- `value = 百分比`
+- `per90 = 该球员原始列值`
+- `metric` 优先中文映射
+- `group` 优先项目对应表配置
+
+这是一致性规则，不应在导入流程中被改写。
+
+---
+
+## 5) 示例
+
+```csv
+metric,value,group,order,subOrder,per90,tier,color
+Long Pass %,71.43,Passing,1,1,6.12,above_avg,
+Aerial Win %,44.00,Defending,2,1,3.21,avg,
+npxG,38.00,Shooting,4,2,0.38,avg,#d97706
 ```
 
 ---
 
-## 4. 视觉规则
+## 6) 常见错误与修复
 
-- 条形长度由 `value` 决定
-- 小标签显示 `per90`
-- 每个 `group` 会形成一个扇区
-- `tier` 决定默认颜色分层
+1. `value` 超出范围
+- 错误：`value=132`
+- 修复：改为 `0-100` 区间内百分位
 
-默认 tier 配色：
-- `elite`：绿色
-- `above_avg`：棕黄色
-- `avg`：橙色
-- `bottom`：红色
+2. `order` 非整数
+- 错误：`order=2.5`
+- 修复：改为整数并按分组规则重排
 
----
+3. 混淆 `value` 与 `per90`
+- 错误：把原始数值写入 `value`
+- 修复：`value` 保持百分位，原始值放 `per90`
 
-## 5. 批量生产建议
-
-目录建议：
-
-```text
-data/player_charts/
-  player_a.csv
-  player_b.csv
-  player_c.csv
-```
-
-批量导出示例：
-
-```bash
-for f in data/player_charts/*.csv; do
-  base=$(basename "$f" .csv)
-  python3 scripts/generate_player_radar.py \
-    --input "$f" \
-    --output "out/player_charts/${base}.png" \
-    --title "$base" \
-    --subtitle "Percentile Radar"
-done
-```
+4. `tier` 与 `value`冲突
+- Web 默认会按 `value` 自动联动 `tier`
+- 若手动维护，需保证语义一致
 
 ---
 
-## 6. 质量检查清单
+## 7) 经验教训
 
-- `value` 是否都在 0-100
-- `metric` 是否重复或空值
-- `group/order` 是否满足预期顺序
-- 输出标题是否包含球员基本信息
+- 模板字段越清晰，后续页面功能越稳定。
+- “可视化需求”不应倒逼字段语义漂移。
+- 导入链路必须把来源字段写清楚，避免后续统计争议。
 
 ---
 
-_最后更新：2026-03-01_
+_最后更新：2026-03-03_

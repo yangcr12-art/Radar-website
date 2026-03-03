@@ -1,60 +1,127 @@
 # Architecture Rules
 
-本文件定义 `player` 项目网页端与后端服务的架构约束，用于保证可维护与可扩展。
+本文件定义 `player` 项目的架构约束与审核原则，用于保证长期可维护、可审计、可复现。
 
-## 1) 前端架构（Feature-Sliced）
+---
 
-目录分层：
-- `player-web/src/app`：应用壳、入口级装配
-- `player-web/src/pages`：页面级组件
-- `player-web/src/widgets`：页面复合区块
-- `player-web/src/features`：用户动作能力
-- `player-web/src/entities`：核心业务实体
-- `player-web/src/shared`：通用 API / UI / 工具
+## 1) 前端架构约束（player-web）
 
-依赖方向：
-- `pages` 可依赖 `widgets/features/entities/shared`
-- `features` 可依赖 `entities/shared`
-- `entities` 仅依赖 `shared`
-- `shared` 不依赖其他层
+推荐分层：
 
-禁止项：
-- `pages/*` 直接调用 `fetch`
-- `pages/*` 直接操作 `localStorage`
-- 新功能继续堆叠到超大单文件（如单文件 > 2000 行）
-
-## 2) 后端架构（模块化 Flask）
-
-目录分层：
-- `player-web/server/app.py`：HTTP 入口与路由编排
-- `player-web/server/server_core/services`：业务逻辑（排名、规整、导入规则）
+- `src/pages`：页面级组件
+- `src/hooks`：页面复用状态逻辑
+- `src/utils`：纯函数、映射、存储工具
+- `src/api`：后端 API 客户端
+- `src/styles.css`：全局样式
 
 依赖方向：
-- 路由层不内嵌复杂排名算法
-- 业务口径单点在 `services` 维护
+
+- `pages` 可依赖 `hooks/utils/api`
+- `hooks` 可依赖 `utils/api`
+- `utils` 不依赖 `pages`
+- `api` 不依赖 `pages`
 
 禁止项：
-- 在多个文件重复实现同一排名口径
-- 修改口径而不更新文档与审核规则
 
-## 3) 自动化审核（阻断）
+- 页面组件直接内嵌复杂数据规整逻辑（应抽到 `hooks/utils`）
+- 页面组件直接重复实现同一映射规则
+- 继续堆叠超大单文件而不拆分（建议 >1500 行开始拆）
 
-审核脚本：`python3 scripts/audit_architecture.py`
+---
 
-规则来源：`scripts/audit_rules.yml`
+## 2) 后端架构约束（Flask）
 
-输出：
+目录约束：
+
+- `player-web/server/app.py`：HTTP 入口与路由
+- `player-web/server/server_core/services`：业务计算与导入规则
+
+禁止项：
+
+- 在路由层重复实现业务口径
+- 同一业务规则在多处复制
+- 修改服务口径而不更新文档
+
+---
+
+## 3) 数据与状态边界
+
+1. 单次会话状态
+- 前端组件状态用于交互临时态
+
+2. 前端持久化状态
+- 仅存 UI 配置和映射草稿（localStorage）
+
+3. 后端持久化状态
+- 用于跨端口/跨域名一致读取草稿与版本
+
+规则：
+
+- 任何新增持久化键必须有命名规范和迁移策略
+- 同一语义不应在前后端保存两套冲突状态
+
+---
+
+## 4) 统计口径分层
+
+必须分离以下概念：
+
+- 数据统计基准（如全量有效点平均值）
+- 可见筛选结果（当前范围内显示点）
+- 视觉样式控制（颜色、形状、字号、边框等）
+
+禁止：
+
+- 用样式或筛选行为改变统计口径
+
+---
+
+## 5) 文档-代码一致性规则
+
+以下变更必须同步文档：
+
+- 默认值变化
+- 回退策略变化
+- 字段语义变化
+- 页面导航变化
+- 命令入口变化
+
+最低同步文档：
+
+- `USAGE.md`
+- 如涉及全局规则，再同步 `AGENTS.md`
+
+---
+
+## 6) 自动化审核（阻断）
+
+审核命令：
+
+```bash
+python3 scripts/audit_architecture.py
+```
+
+产物：
+
 - `out/architecture_audit_report.json`
 - `out/architecture_audit_report.md`
 
-阻断策略：
-- 任一规则违规，脚本返回非零退出码。
+规则文件：
 
-## 4) 执行要求
+- `scripts/audit_rules.yml`
 
-本地：
-- 开发前或提交前运行：`python3 scripts/audit_architecture.py`
+策略：
 
-CI：
-- 每次 push / PR 必跑架构审核、前端 build、Python smoke。
+- 任一规则违规 -> 非零退出码 -> 阻断。
 
+---
+
+## 7) 经验教训（架构视角）
+
+1. 页面体验优化应落在布局层，不能泄露到业务规则层。
+2. 状态持久化必须单点定义，避免“同语义多存储源”漂移。
+3. 回退策略应由工具层统一实现，不应散落在多个页面临时判断。
+
+---
+
+_最后更新：2026-03-03_
