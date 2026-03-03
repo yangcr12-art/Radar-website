@@ -69,6 +69,9 @@ player/
 │   └── GITHUB_WORKFLOW_AND_TAGS.md
 ├── player-web/
 │   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── app/constants.ts
 │   ├── server/
 │   └── README.md
 ├── out/
@@ -90,6 +93,13 @@ player/
 - 图表姓名联动：散点图显示优先中文名，雷达标题支持 `English 中文`（空格分隔）
 - 球队对应表：球队中英映射、颜色/形状维护、同步球员数据球队
 - 散点图球队样式联动：按球队映射应用颜色/形状，未匹配回退黑色
+- Web 前端源码：`player-web/src` 已统一迁移为 TypeScript（`.ts/.tsx`）
+
+## 3.1 Web 技术栈（简化）
+
+- 保持 `React + Vite` 主体，不新增路由/状态管理框架
+- 源码统一为 TypeScript，减少脚本混用维护成本
+- 本地存储键名与后端 API 保持兼容，保障现有数据可直接读取
 
 ---
 

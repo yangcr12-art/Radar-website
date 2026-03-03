@@ -55,6 +55,7 @@ git push -u origin feature/<topic>
 - 影响范围
 - 验证命令与结果
 - 是否涉及口径/默认值变化
+- 若涉及前端：确认 `player-web/src` 未新增 `.js/.jsx`
 
 ---
 

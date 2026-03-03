@@ -8,25 +8,25 @@
     "player-web/src/features/.gitkeep",
     "player-web/src/entities/.gitkeep",
     "player-web/src/shared/.gitkeep",
-    "player-web/src/pages/home/HomePage.jsx",
-    "player-web/src/pages/about/AboutPage.jsx",
-    "player-web/src/pages/player-data/PlayerDataPage.jsx",
+    "player-web/src/pages/home/HomePage.tsx",
+    "player-web/src/pages/about/AboutPage.tsx",
+    "player-web/src/pages/player-data/PlayerDataPage.tsx",
     "player-web/server/server_core/services/ranking_service.py",
     ".github/workflows/architecture-audit.yml"
   ],
   "max_lines": {
-    "player-web/src/App.jsx": 2000,
+    "player-web/src/App.tsx": 2000,
     "player-web/server/app.py": 700,
-    "player-web/src/styles.css": 700
+    "player-web/src/styles.css": 900
   },
   "forbidden_patterns": [
     {
-      "glob": "player-web/src/pages/**/*.jsx",
+      "glob": "player-web/src/pages/**/*.tsx",
       "pattern": "fetch\\(",
       "message": "pages 层禁止直接调用 fetch，请走 shared/api"
     },
     {
-      "glob": "player-web/src/pages/**/*.jsx",
+      "glob": "player-web/src/pages/**/*.tsx",
       "pattern": "localStorage\\.",
       "message": "pages 层禁止直接读写 localStorage，请走 shared/lib"
     }

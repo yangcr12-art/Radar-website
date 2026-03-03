@@ -64,6 +64,7 @@ Risk Notes:
 - 不提交产物：`out/` 下导出图不纳入仓库。
 - 不伪造验证：未运行命令必须明确说明。
 - 后端改动（`player-web/server/app.py` 或后端依赖）必须重启并验健康检查。
+- 前端改动统一使用 TypeScript：`player-web/src` 不新增 `.js/.jsx`。
 
 ---
 

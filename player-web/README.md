@@ -2,6 +2,8 @@
 
 `player-web` 是 `player` 项目的可交互前端，覆盖雷达图编辑、球员数据分析、散点图生成与映射配置。
 
+前端技术栈：`React + Vite + TypeScript`（`src` 仅 `.ts/.tsx`）。
+
 ---
 
 ## 1) 页面导航
@@ -22,6 +24,12 @@
 ---
 
 ## 2) 启动方式
+
+可选一键启动（仓库根目录执行，会先等待后端健康后再起前端）：
+
+```bash
+bash scripts/start_player_web_dev.sh
+```
 
 ## 2.1 启动后端
 
@@ -64,6 +72,7 @@ VITE_STORAGE_API_BASE=http://127.0.0.1:8787 npm run dev -- --host 127.0.0.1 --po
 ## 3.2 球员数据
 
 - 导入 Excel（需包含 `player`）
+- 导入前检查后端健康；后端不可达时导入按钮禁用并提示
 - 展示列值/排名/百分比
 - 搜索并选择球员
 - 勾选指标一键导入雷达图
@@ -119,6 +128,7 @@ VITE_STORAGE_API_BASE=http://127.0.0.1:8787 npm run dev -- --host 127.0.0.1 --po
 - 前端 localStorage：映射和配置等前端持久化数据
 - 后端状态服务：草稿/版本统一保存与跨端口读取
 - 导入数据集：后端维护，支持切换与删除
+- 兼容策略：localStorage 键名与后端 API 字段保持兼容，不做破坏式迁移
 
 ---
 
@@ -129,6 +139,12 @@ VITE_STORAGE_API_BASE=http://127.0.0.1:8787 npm run dev -- --host 127.0.0.1 --po
 ```bash
 cd player-web
 npm run build
+```
+
+导入链路冒烟（后端需已启动）：
+
+```bash
+bash scripts/smoke_test_dataset_import.sh
 ```
 
 全仓建议最小验证：

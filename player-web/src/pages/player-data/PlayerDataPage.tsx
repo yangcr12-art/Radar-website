@@ -10,6 +10,7 @@ function PlayerDataPage(props) {
     datasetOptions,
     onPlayerExcelUploadClick,
     playerDataImporting,
+    backendHealth,
     handleDeleteCurrentDataset,
     playerExcelInputRef,
     onPlayerExcelChange,
@@ -32,6 +33,7 @@ function PlayerDataPage(props) {
     handleToggleMetricColumn,
     formatPlayerDataColumnLabel
   } = props;
+  const backendOnline = backendHealth === "online";
 
   return (
     <section className="info-page">
@@ -53,8 +55,8 @@ function PlayerDataPage(props) {
             </select>
           </div>
           <div className="btn-row">
-            <button onClick={onPlayerExcelUploadClick} disabled={playerDataImporting}>
-              {playerDataImporting ? "导入中..." : "导入 Excel"}
+            <button onClick={onPlayerExcelUploadClick} disabled={playerDataImporting || !backendOnline}>
+              {playerDataImporting ? "导入中..." : backendOnline ? "导入 Excel" : "后端未连接"}
             </button>
             <button onClick={handleDeleteCurrentDataset} disabled={!selectedDatasetId || playerDataImporting}>
               删除当前数据集
@@ -88,6 +90,7 @@ function PlayerDataPage(props) {
               ))}
             </select>
           </div>
+          {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
           {playerDataMessage ? <p className="msg ok">{playerDataMessage}</p> : null}
           {playerDataError ? <p className="msg err">{playerDataError}</p> : null}
         </div>

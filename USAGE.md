@@ -62,15 +62,35 @@ python3 scripts/generate_player_radar.py \
 cd /Users/yangchangran/xiangmu
 ```
 
-建议使用两个终端分别启动后端和前端。
+推荐（默认）：一键启动（自动检查后端健康，不健康则自动拉起后端，再启动前端）
 
 ```bash
-# 1) 后端
+bash scripts/start_player_web_dev.sh
+```
+
+启动后可验证后端健康：
+
+```bash
+curl -s http://127.0.0.1:8787/api/health
+```
+
+备选：双终端手动启动（调试时使用）
+
+```bash
+# 1) 后端（终端 A）
 cd player-web/server
 python3 -m pip install -r requirements.txt
 python3 app.py
+```
 
-# 2) 前端
+后端启动后，建议至少验证一次健康检查：
+
+```bash
+curl -s http://127.0.0.1:8787/api/health
+```
+
+```bash
+# 2) 前端（终端 B）
 cd /Users/yangchangran/xiangmu/player-web
 npm install
 npm run dev -- --host 127.0.0.1 --port 5173
@@ -79,6 +99,12 @@ npm run dev -- --host 127.0.0.1 --port 5173
 可选环境变量：
 
 - `VITE_STORAGE_API_BASE`：后端地址，默认 `http://127.0.0.1:8787`
+
+Web 技术事实：
+
+- 前端源码位于 `player-web/src`
+- 源码统一为 TypeScript（`.ts/.tsx`）
+- 不变更现有后端接口路径与 JSON 字段口径
 
 ---
 
@@ -103,6 +129,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 - 支持导入 Excel（`.xlsx`）
 - 必须包含 `player` 列，按宽表读取（一行一个球员）
+- 导入前会检查后端健康状态；当 `http://127.0.0.1:8787/api/health` 不可用时，导入按钮禁用并提示
 - 数值列自动参与排名与百分比
 - 支持按数据集切换、删除、搜索球员、选择球员
 - 支持按数据集勾选指标，一键导入雷达图生成器
@@ -114,6 +141,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - `metric` 优先使用项目对应表中文名
 - `group` 优先使用项目对应表配置
 - 导入到雷达图后，标题模板中的球员英文名、中文名、年龄、位置会同步更新（中文来自姓名对应表）
+- 导入到雷达图后，会自动清除雷达图左上角图片（避免沿用上一个球员照片）
 
 ## 4.3 散点图生成器
 
@@ -183,6 +211,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 球队映射未命中：黑色
 - 球队形状未配置或非法：回退圆形
 - 数据集无球队列：不启用球队样式
+- localStorage 键名：保持 `player_web_*_v1` 兼容，不做破坏式改名
 
 ---
 
@@ -220,6 +249,12 @@ python3 scripts/audit_architecture.py
 
 任一规则违规，命令返回非零退出码。
 
+导入链路冒烟测试（需后端已启动）：
+
+```bash
+bash scripts/smoke_test_dataset_import.sh
+```
+
 ---
 
 ## 8. GitHub 更新与 Tag
@@ -243,6 +278,10 @@ git push -u origin feature/<topic>
 
 - `2026-03-03 / V3.3`
   - 导航品牌更新为 `生成器V3.3`
+- `2026-03-03 / V3.3.1`
+  - 球员数据页导入新增后端健康门禁：后端离线时禁用“导入 Excel”并提示
+  - 新增一键启动命令：`bash scripts/start_player_web_dev.sh`
+  - 新增导入冒烟命令：`bash scripts/smoke_test_dataset_import.sh`
   - 新增“姓名对应表”页面，位于“项目对应表”之后
   - 姓名对应表新增 Excel 导入能力（姓名列识别 + 保留已有中文）
   - 姓名对应表导入支持中文球队映射与离线中文名补全
@@ -250,6 +289,11 @@ git push -u origin feature/<topic>
   - 散点图球队映射颜色/形状口径明确
   - 散点图平均线统计与筛选口径分离并文档化
   - 文档体系升级为规则化操作手册
+- `2026-03-03 / V3.3-TS`
+  - 前端 `player-web/src` 全量迁移为 TypeScript（`.ts/.tsx`）
+  - 保持 `React + Vite` 框架不变，未新增路由/状态管理依赖
+  - `index.html` 入口更新为 `/src/main.tsx`
+  - 保持 localStorage 键名与后端接口兼容，现有内容可直接读取
 
 ---
 

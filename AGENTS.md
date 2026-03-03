@@ -57,6 +57,10 @@
 - 修改 `player-web/server/app.py` 或后端依赖/配置后，交付前必须重启后端。
 - 至少验证一次：`curl -s http://127.0.0.1:8787/api/health` 返回 `ok: true`。
 
+6. 前端实现语言统一
+- `player-web/src` 仅允许 TypeScript（`.ts/.tsx`）。
+- 不允许新增 `.js/.jsx` 源文件导致口径分叉。
+
 ---
 
 ## 2) 图表语义口径

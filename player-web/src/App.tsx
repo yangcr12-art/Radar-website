@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
+import { checkHealth, deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
 import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
@@ -13,159 +13,33 @@ import { getNameMappingRowsByEnglish, normalizePlayerName } from "./utils/nameMa
 import { getProjectGroupByColumn, getProjectZhByColumn } from "./utils/projectMappingStore";
 import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 import { formatDateTime, formatPresetTime } from "./utils/timeFormat";
-const DEFAULT_TIER_COLORS = {
-  elite: "#0099FF",
-  above_avg: "#16a34a",
-  avg: "#f2b700",
-  bottom: "#d32f2f"
-};
-const TIER_LABELS = {
-  elite: "顶级",
-  above_avg: "良好",
-  avg: "中等",
-  bottom: "较弱"
-};
-const TIER_ALIASES = {
-  elite: "elite",
-  顶级: "elite",
-  above_avg: "above_avg",
-  良好: "above_avg",
-  avg: "avg",
-  中等: "avg",
-  bottom: "bottom",
-  较弱: "bottom"
-};
-const HEADER_ALIASES = {
-  metric: "metric",
-  指标: "metric",
-  value: "value",
-  百分比: "value",
-  百分位: "value",
-  group: "group",
-  分组: "group",
-  order: "order",
-  顺序: "order",
-  subOrder: "subOrder",
-  groupOrder: "subOrder",
-  intraOrder: "subOrder",
-  组内顺序: "subOrder",
-  组内排序: "subOrder",
-  per90: "per90",
-  每90: "per90",
-  tier: "tier",
-  层级: "tier",
-  color: "color",
-  颜色: "color"
-};
-const INITIAL_ROWS = [
-  { metric: "Long Pass %", group: "Passing", value: 71.43, per90: "", tier: "elite", order: 1, color: "" },
-  { metric: "Cross + Smart Complete %", group: "Passing", value: 33.33, per90: "", tier: "above_avg", order: 1, color: "" },
-  { metric: "Short & Med Pass %", group: "Passing", value: 76.72, per90: "", tier: "above_avg", order: 1, color: "" },
-  { metric: "Aerial Win %", group: "Defending", value: 44.0, per90: "", tier: "elite", order: 2, color: "" },
-  { metric: "Tackles + Int (PAdj)", group: "Defending", value: 57.0, per90: "2.57", tier: "above_avg", order: 2, color: "" },
-  { metric: "Defensive Actions", group: "Defending", value: 64.0, per90: "3.57", tier: "above_avg", order: 2, color: "" },
-  { metric: "Prog Pass", group: "Progression", value: 48.0, per90: "2.08", tier: "above_avg", order: 3, color: "" },
-  { metric: "Prog Carry", group: "Progression", value: 36.0, per90: "1.33", tier: "above_avg", order: 3, color: "" },
-  { metric: "Dribble Success %", group: "Progression", value: 56.0, per90: "0.34", tier: "elite", order: 3, color: "" },
-  { metric: "Touches in Pen", group: "Shooting", value: 18.0, per90: "2.48", tier: "bottom", order: 4, color: "" },
-  { metric: "npxG per Shot", group: "Shooting", value: 28.0, per90: "2.11", tier: "above_avg", order: 4, color: "" },
-  { metric: "Shots", group: "Shooting", value: 23.53, per90: "0.18", tier: "elite", order: 4, color: "" },
-  { metric: "Goals/Shot on Target %", group: "Shooting", value: 50.0, per90: "0.50", tier: "elite", order: 4, color: "" },
-  { metric: "npxG", group: "Shooting", value: 38.0, per90: "0.38", tier: "above_avg", order: 4, color: "" },
-  { metric: "Second Assists", group: "Creation", value: 66.0, per90: "0.06", tier: "elite", order: 5, color: "" },
-  { metric: "Smart Passes", group: "Creation", value: 12.0, per90: "0.00", tier: "bottom", order: 5, color: "" },
-  { metric: "xA per Assist", group: "Creation", value: 6.0, per90: "0.06", tier: "bottom", order: 5, color: "" },
-  { metric: "Expected Assists", group: "Creation", value: 3.0, per90: "0.03", tier: "bottom", order: 5, color: "" },
-  { metric: "Assists", group: "Creation", value: 8.0, per90: "0.53", tier: "bottom", order: 5, color: "" }
-];
-const REQUIRED_COLUMNS = ["metric", "value", "group", "order"];
-const OPTIONAL_COLUMNS = ["subOrder", "per90", "tier", "color"];
-const ALL_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
-const FONT_OPTIONS = [
-  { label: "苹方 / PingFang", value: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif' },
-  { label: "微软雅黑 / YaHei", value: '"Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif' },
-  { label: "思源黑体 / Noto Sans SC", value: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif' },
-  { label: "宋体 / SimSun", value: '"SimSun", "Songti SC", serif' },
-  { label: "系统无衬线", value: 'system-ui, -apple-system, "Segoe UI", sans-serif' }
-];
-const STORAGE_KEYS = {
-  draft: "player_web_current_draft_v1",
-  presets: "player_web_saved_presets_v1",
-  selectedPresetId: "player_web_selected_preset_id_v1",
-  localMigrated: "player_web_local_migrated_to_backend_v1",
-  metricSelectionsByDataset: "player_web_metric_selection_by_dataset_v1",
-  playerSearchByDataset: "player_web_player_search_by_dataset_v1",
-  selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1",
-  scatterConfigByDataset: "player_web_scatter_config_by_dataset_v1"
-};
-const REORDER_MODE_VIEW = "view";
-const REORDER_MODE_ORDER = "order";
-const NAV_ITEMS = [
-  { key: "home", label: "主页" },
-  { key: "player_data", label: "球员数据" },
-  { key: "radar", label: "雷达图生成器" },
-  { key: "scatter_plot", label: "散点图生成器" },
-  { key: "project_mapping", label: "项目对应表" },
-  { key: "name_mapping", label: "姓名对应表" },
-  { key: "team_mapping", label: "球队对应表" },
-  { key: "about", label: "About" }
-];
-const METRIC_GROUP_RULES = [
-  { group: "对抗", order: 2, keywords: ["duel", "aerial", "对抗", "空中对抗"] },
-  { group: "防守", order: 3, keywords: ["def", "tackle", "interception", "foul", "防守", "抢断", "拦截", "犯规", "padj"] },
-  { group: "传球", order: 1, keywords: ["pass", "cross", "assist", "progressive pass", "传球", "长传", "关键传球", "向前传球", "推进传球"] }
-];
-const DEFAULT_META = {
-  player: "Alberto Quiles Piosa",
-  playerZh: "",
-  age: "30",
-  position: "CF",
-  minutes: "2901",
-  club: "Tianjin Tigers",
-  league: "Chinese Super League",
-  season: "2025"
-};
-const DEFAULT_TEXT_STYLE = {
-  fontFamily: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
-  titleSize: 28,
-  subtitleSize: 16,
-  metricSize: 14,
-  groupSize: 16,
-  per90Size: 12,
-  tickSize: 12,
-  legendSize: 14
-};
-const DEFAULT_CHART_STYLE = {
-  ringStrokeWidth: 1,
-  innerRingStrokeWidth: 2,
-  ringLineStyle: "dashed",
-  ringDasharray: "4 8",
-  groupSeparatorWidth: 1.2,
-  groupSeparatorLength: 0,
-  groupSeparatorOffset: 0,
-  groupLabelRadius: 540,
-  groupLabelOffsetX: 0,
-  groupLabelOffsetY: 0
-};
-const DEFAULT_CENTER_IMAGE = {
-  src: "",
-  scale: 1
-};
-const DEFAULT_CORNER_IMAGE = {
-  src: "",
-  size: 130,
-  x: 60,
-  y: 120
-};
-
-const CANVAS_WIDTH = 1240;
-const CANVAS_HEIGHT = 1240;
-const CENTER_X = 620;
-const CENTER_Y = 660;
-const INNER_RING = 118;
-const MAX_RADIAL_LENGTH = 320;
-const METRIC_LABEL_RADIUS = INNER_RING + MAX_RADIAL_LENGTH + 30;
-const BAR_INNER_GAP = 6;
+import {
+  ALL_COLUMNS,
+  BAR_INNER_GAP,
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  CENTER_X,
+  CENTER_Y,
+  DEFAULT_CENTER_IMAGE,
+  DEFAULT_CHART_STYLE,
+  DEFAULT_CORNER_IMAGE,
+  DEFAULT_META,
+  DEFAULT_TEXT_STYLE,
+  DEFAULT_TIER_COLORS,
+  FONT_OPTIONS,
+  HEADER_ALIASES,
+  INITIAL_ROWS,
+  INNER_RING,
+  MAX_RADIAL_LENGTH,
+  METRIC_GROUP_RULES,
+  METRIC_LABEL_RADIUS,
+  NAV_ITEMS,
+  REQUIRED_COLUMNS,
+  REORDER_MODE_ORDER,
+  STORAGE_KEYS,
+  TIER_ALIASES,
+  TIER_LABELS
+} from "./app/constants";
 
 function polarPoint(radius, angle) {
   return {
@@ -573,6 +447,7 @@ function App() {
   const [playerDataImporting, setPlayerDataImporting] = useState(false);
   const [playerDataMessage, setPlayerDataMessage] = useState("");
   const [playerDataError, setPlayerDataError] = useState("");
+  const [backendHealth, setBackendHealth] = useState("checking");
   const [playerDetailReloadTick, setPlayerDetailReloadTick] = useState(0);
   const [metricSelectionsByDataset, setMetricSelectionsByDataset] = useState(() => {
     const raw = readStorage(STORAGE_KEYS.metricSelectionsByDataset, {});
@@ -808,6 +683,17 @@ function App() {
     }
   };
 
+  const verifyBackendHealth = async () => {
+    try {
+      await checkHealth();
+      setBackendHealth("online");
+      return true;
+    } catch {
+      setBackendHealth("offline");
+      return false;
+    }
+  };
+
   const {
     scatterConfig,
     updateScatterConfig,
@@ -873,6 +759,10 @@ function App() {
     setPlayerDataMessage("");
     setPlayerDataError("");
     try {
+      const backendReady = await verifyBackendHealth();
+      if (!backendReady) {
+        throw new Error("后端未就绪：请先启动 player-web/server/app.py 并确认 /api/health 可访问");
+      }
       const res = await importPlayerExcel(file);
       setPlayerDataMessage(`导入成功：${res.playerCount} 名球员，${res.numericColumnCount} 个数值列`);
       const nextDatasetId = await loadDatasets(String(res.datasetId || ""));
@@ -997,10 +887,16 @@ function App() {
     const nextTitle = `${titlePlayerName} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
     const nextSubtitle = `${nextMeta.season} ${nextMeta.league} Percentile Rankings & Per 90 Values`;
 
-    setRows(finalRows);
-    setMeta(nextMeta);
-    setTitle(nextTitle);
-    setSubtitle(nextSubtitle);
+    // Import updates data/title/meta, and resets corner image to avoid stale player photos.
+    const currentSnapshot = getSnapshot();
+    applySnapshot({
+      ...currentSnapshot,
+      rows: finalRows,
+      meta: nextMeta,
+      title: nextTitle,
+      subtitle: nextSubtitle,
+      cornerImage: DEFAULT_CORNER_IMAGE
+    });
     setActivePage("radar");
     setPlayerDataError("");
     setPlayerDataMessage("");
@@ -1203,6 +1099,24 @@ function App() {
       }
     };
   }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, isHydrated]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const ok = await verifyBackendHealth();
+      if (cancelled) return;
+      if (!ok && activePage === "player_data" && !playerDataImporting) {
+        setPlayerDataError("后端未连接：请启动 player-web/server/app.py（默认 127.0.0.1:8787）");
+      }
+    };
+    run();
+    const timer = setInterval(run, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePage, playerDataImporting]);
 
   useEffect(() => {
     const hydratePlayerDataPage = async () => {
@@ -1997,6 +1911,7 @@ function App() {
             datasetOptions={datasetOptions}
             onPlayerExcelUploadClick={onPlayerExcelUploadClick}
             playerDataImporting={playerDataImporting}
+            backendHealth={backendHealth}
             handleDeleteCurrentDataset={handleDeleteCurrentDataset}
             playerExcelInputRef={playerExcelInputRef}
             onPlayerExcelChange={onPlayerExcelChange}
