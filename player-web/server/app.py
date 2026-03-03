@@ -217,6 +217,35 @@ def _to_cell_value(value: Any) -> Any:
     return str(value).strip()
 
 
+def _normalize_header_name(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("_", " ")
+    return " ".join(text.split())
+
+
+def _pick_name_column(headers: list[str]) -> tuple[int, str]:
+    candidates = {"player", "name", "player name", "姓名", "球员", "球员姓名"}
+    for idx, header in enumerate(headers):
+        normalized = _normalize_header_name(header)
+        if normalized in candidates:
+            return idx, header
+    return -1, ""
+
+
+def _pick_team_column(headers: list[str]) -> tuple[int, str]:
+    exact_candidates = {"team", "club", "squad", "球队", "俱乐部"}
+    for idx, header in enumerate(headers):
+        normalized = _normalize_header_name(header)
+        if normalized in exact_candidates:
+            return idx, header
+
+    keyword_candidates = ("team", "club", "squad", "球队", "俱乐部")
+    for idx, header in enumerate(headers):
+        normalized = _normalize_header_name(header)
+        if any(keyword in normalized for keyword in keyword_candidates):
+            return idx, header
+    return -1, ""
+
+
 def _is_lower_better_column(column_name: str) -> bool:
     return _svc_is_lower_better_column(column_name)
 
@@ -444,6 +473,65 @@ def import_player_data_excel():
             "updatedAt": doc["updatedAt"],
             "playerCount": len(parsed_players),
             "numericColumnCount": len(numeric_columns),
+        }
+    )
+
+
+@app.route("/api/name-mapping/import-excel", methods=["POST"])
+def import_name_mapping_excel():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"ok": False, "error": "missing file"}), 400
+    if not file.filename.lower().endswith(".xlsx"):
+        return jsonify({"ok": False, "error": "only .xlsx is supported"}), 400
+
+    try:
+        wb = load_workbook(file, data_only=True, read_only=True)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"invalid excel file: {exc}"}), 400
+
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    if len(rows) < 2:
+        return jsonify({"ok": False, "error": "excel must contain header and data rows"}), 400
+
+    headers = [str(_to_cell_value(x)).strip() for x in rows[0]]
+    name_col_idx, name_col = _pick_name_column(headers)
+    if name_col_idx < 0:
+        return jsonify({"ok": False, "error": "missing required name column (Player/Name)"}), 400
+    team_col_idx, team_col = _pick_team_column(headers)
+
+    names: list[str] = []
+    items: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for excel_row in rows[1:]:
+        cells = list(excel_row)
+        name_value = cells[name_col_idx] if name_col_idx < len(cells) else None
+        name = str(_to_cell_value(name_value)).strip()
+        if not name:
+            continue
+        key = name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        names.append(name)
+        team_value = cells[team_col_idx] if team_col_idx >= 0 and team_col_idx < len(cells) else None
+        team_en = str(_to_cell_value(team_value)).strip()
+        items.append({"name": name, "teamEn": team_en})
+
+    if not names:
+        return jsonify({"ok": False, "error": "no valid name rows found"}), 400
+
+    return jsonify(
+        {
+            "ok": True,
+            "names": names,
+            "items": items,
+            "count": len(names),
+            "sheet": ws.title,
+            "column": name_col,
+            "teamColumn": team_col,
         }
     )
 

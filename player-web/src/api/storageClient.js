@@ -115,3 +115,12 @@ export function fetchPlayerById(playerId, datasetId = "") {
   const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
   return request(`/api/player-data/player/${encodeURIComponent(playerId)}${query}`, { method: "GET" });
 }
+
+export function importNameExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/name-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}

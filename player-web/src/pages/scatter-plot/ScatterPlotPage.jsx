@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getTeamMappingRowsByEnglish, normalizeTeamName } from "../../utils/teamMappingStore";
+import { getNameMappingRowsByEnglish, normalizePlayerName } from "../../utils/nameMappingStore";
 
 const CHART_WIDTH = 1160;
 const CHART_HEIGHT = 680;
@@ -122,6 +123,7 @@ function ScatterPlotPage(props) {
     datasetOptions,
     selectedDatasetId,
     setSelectedDatasetId,
+    onDeleteCurrentDataset,
     scatterLoading,
     scatterError,
     scatterDoc,
@@ -168,6 +170,7 @@ function ScatterPlotPage(props) {
   const yMin = toFiniteNumber(scatterConfig?.yMin);
   const yMax = toFiniteNumber(scatterConfig?.yMax);
   const teamMappingByEnglish = useMemo(() => getTeamMappingRowsByEnglish(), [selectedDatasetId]);
+  const nameMappingByEnglish = useMemo(() => getNameMappingRowsByEnglish(), []);
   const teamColumn = useMemo(() => {
     const fromSchema = pickTeamColumn(allColumns);
     if (fromSchema) return fromSchema;
@@ -183,10 +186,15 @@ function ScatterPlotPage(props) {
         const x = toFiniteNumber(raw[xCol]);
         const y = toFiniteNumber(raw[yCol]);
         if (x === null || y === null) return null;
-        const name = String(player?.player || "");
+        const playerEn = String(player?.player || "");
+        const playerZh = String(nameMappingByEnglish.get(normalizePlayerName(playerEn).toLowerCase())?.zh || "").trim();
+        const playerDisplay = playerZh || playerEn;
         return {
           id: String(player?.id || ""),
-          player: name,
+          player: playerDisplay,
+          playerEn,
+          playerZh,
+          playerDisplay,
           x,
           y,
           raw,
@@ -194,11 +202,16 @@ function ScatterPlotPage(props) {
         };
       })
       .filter(Boolean);
-  }, [players, xCol, yCol]);
+  }, [players, xCol, yCol, nameMappingByEnglish]);
 
   const basePoints = useMemo(() => {
     if (!searchQuery) return allAxisPoints;
-    return allAxisPoints.filter((point) => point.player.toLowerCase().includes(searchQuery));
+    return allAxisPoints.filter((point) => {
+      const en = String(point.playerEn || "").toLowerCase();
+      const zh = String(point.playerZh || "").toLowerCase();
+      const display = String(point.playerDisplay || "").toLowerCase();
+      return en.includes(searchQuery) || zh.includes(searchQuery) || display.includes(searchQuery);
+    });
   }, [allAxisPoints, searchQuery]);
 
   const axisBounds = useMemo(() => {
@@ -394,6 +407,11 @@ function ScatterPlotPage(props) {
                   <span>有效点数</span>
                   <strong>{`${points.length}/${players.length}`}</strong>
                 </div>
+                <div className="btn-row">
+                  <button className="danger" onClick={onDeleteCurrentDataset} disabled={!selectedDatasetId || scatterLoading}>
+                    删除当前数据集
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>
@@ -579,7 +597,7 @@ function ScatterPlotPage(props) {
                       <option value="">{playerOptions.length === 0 ? "暂无可选球员" : "请选择球员（可选）"}</option>
                       {playerOptions.map((point) => (
                         <option key={`player-${point.id}`} value={point.id}>
-                          {point.player}
+                          {point.playerDisplay}
                         </option>
                       ))}
                     </select>
@@ -860,7 +878,7 @@ function ScatterPlotPage(props) {
                         onMouseEnter={(e) => {
                           const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
                           setHoverInfo({
-                            player: point.player,
+                            player: point.playerDisplay,
                             x: point.x,
                             y: point.y,
                             left: e.clientX - rect.left + 10,
@@ -901,7 +919,7 @@ function ScatterPlotPage(props) {
                             fontSize="11"
                             fontWeight={selected ? "700" : "500"}
                           >
-                            {point.player}
+                            {point.playerDisplay}
                           </text>
                         ) : null}
                       </g>
@@ -925,7 +943,7 @@ function ScatterPlotPage(props) {
             {!selectedPoint ? <p>点击散点后在此查看详情。</p> : null}
             {selectedPoint ? (
               <div className="scatter-detail-grid">
-                <p>{`球员：${selectedPoint.player}`}</p>
+                <p>{`球员：${selectedPoint.playerDisplay}`}</p>
                 <p>{`X 值（${formatPlayerDataColumnLabel(xCol)}）：${selectedPoint.x}`}</p>
                 <p>{`Y 值（${formatPlayerDataColumnLabel(yCol)}）：${selectedPoint.y}`}</p>
                 <p>{`X 百分位：${selectedPoint.metrics?.[xCol]?.percentile ?? "-"}`}</p>

@@ -4,10 +4,12 @@ import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
 import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
+import NameMappingPage from "./pages/name-mapping/NameMappingPage";
 import ScatterPlotPage from "./pages/scatter-plot/ScatterPlotPage";
 import TeamMappingPage from "./pages/team-mapping/TeamMappingPage";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
+import { getNameMappingRowsByEnglish, normalizePlayerName } from "./utils/nameMappingStore";
 import { getProjectGroupByColumn, getProjectZhByColumn } from "./utils/projectMappingStore";
 import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 import { formatDateTime, formatPresetTime } from "./utils/timeFormat";
@@ -100,10 +102,11 @@ const REORDER_MODE_VIEW = "view";
 const REORDER_MODE_ORDER = "order";
 const NAV_ITEMS = [
   { key: "home", label: "主页" },
-  { key: "radar", label: "雷达图生成器" },
   { key: "player_data", label: "球员数据" },
+  { key: "radar", label: "雷达图生成器" },
   { key: "scatter_plot", label: "散点图生成器" },
   { key: "project_mapping", label: "项目对应表" },
+  { key: "name_mapping", label: "姓名对应表" },
   { key: "team_mapping", label: "球队对应表" },
   { key: "about", label: "About" }
 ];
@@ -114,6 +117,7 @@ const METRIC_GROUP_RULES = [
 ];
 const DEFAULT_META = {
   player: "Alberto Quiles Piosa",
+  playerZh: "",
   age: "30",
   position: "CF",
   minutes: "2901",
@@ -185,6 +189,15 @@ function annularSectorPath(a0, a1, rInner, rOuter) {
     `A ${rInner} ${rInner} 0 ${largeArc} 0 ${innerStart.x} ${innerStart.y}`,
     "Z"
   ].join(" ");
+}
+
+function formatRadarTitlePlayerName(enName, manualZh = "") {
+  const en = String(enName || "").trim();
+  if (!en) return "";
+  const manual = String(manualZh || "").trim();
+  if (manual) return `${en} ${manual}`;
+  const zh = String(getNameMappingRowsByEnglish().get(normalizePlayerName(en).toLowerCase())?.zh || "").trim();
+  return zh ? `${en} ${zh}` : en;
 }
 
 function colorToAlpha(hex, alpha = 0.22) {
@@ -503,6 +516,26 @@ function resolveImportedMinutes(columns) {
   const matched = exact || columns.find((item) => {
     const key = normalizeColumnKey(item?.column);
     return ["minute", "minutes", "mins", "playing time", "time played", "出场时间", "出场分钟", "分钟"].some((kw) => key.includes(kw));
+  });
+  return String(matched?.value ?? "").trim();
+}
+
+function resolveImportedAge(columns) {
+  if (!Array.isArray(columns) || columns.length === 0) return "";
+  const exact = columns.find((item) => normalizeColumnKey(item?.column) === "age");
+  const matched = exact || columns.find((item) => {
+    const key = normalizeColumnKey(item?.column);
+    return ["age", "年龄"].some((kw) => key.includes(kw));
+  });
+  return String(matched?.value ?? "").trim();
+}
+
+function resolveImportedPosition(columns) {
+  if (!Array.isArray(columns) || columns.length === 0) return "";
+  const exact = columns.find((item) => normalizeColumnKey(item?.column) === "position");
+  const matched = exact || columns.find((item) => {
+    const key = normalizeColumnKey(item?.column);
+    return ["position", "pos", "位置"].some((kw) => key.includes(kw));
   });
   return String(matched?.value ?? "").trim();
 }
@@ -948,8 +981,20 @@ function App() {
 
     const importedPlayerName = String(selectedPlayerDetail?.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
     const importedMinutes = resolveImportedMinutes(selectedPlayerDetail.columns);
-    const nextMeta = { ...meta, player: importedPlayerName || meta.player, minutes: importedMinutes };
-    const nextTitle = `${nextMeta.player} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
+    const importedAge = resolveImportedAge(selectedPlayerDetail.columns);
+    const importedPosition = resolveImportedPosition(selectedPlayerDetail.columns);
+    const effectiveImportedName = importedPlayerName || String(meta.player || "").trim();
+    const importedPlayerZh = String(getNameMappingRowsByEnglish().get(normalizePlayerName(effectiveImportedName).toLowerCase())?.zh || "").trim();
+    const nextMeta = {
+      ...meta,
+      player: effectiveImportedName,
+      playerZh: importedPlayerZh,
+      age: importedAge || meta.age,
+      position: importedPosition || meta.position,
+      minutes: importedMinutes || meta.minutes
+    };
+    const titlePlayerName = formatRadarTitlePlayerName(nextMeta.player, nextMeta.playerZh);
+    const nextTitle = `${titlePlayerName} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
     const nextSubtitle = `${nextMeta.season} ${nextMeta.league} Percentile Rankings & Per 90 Values`;
 
     setRows(finalRows);
@@ -1306,7 +1351,8 @@ function App() {
 
   const applyTitleTemplate = () => {
     const effectivePlayerName = String(meta.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
-    const titleText = `${effectivePlayerName} (${meta.age}, ${meta.position}, ${meta.minutes} mins.), ${meta.club}`;
+    const titlePlayerName = formatRadarTitlePlayerName(effectivePlayerName, meta.playerZh);
+    const titleText = `${titlePlayerName} (${meta.age}, ${meta.position}, ${meta.minutes} mins.), ${meta.club}`;
     const subtitleText = `${meta.season} ${meta.league} Percentile Rankings & Per 90 Values`;
     setTitle(titleText);
     setSubtitle(subtitleText);
@@ -1487,6 +1533,7 @@ function App() {
             <div className="section-body">
               <div className="meta-grid">
                 <input placeholder="球员名" value={meta.player} onChange={(e) => updateMeta("player", e.target.value)} />
+                <input placeholder="中文名(可选)" value={meta.playerZh} onChange={(e) => updateMeta("playerZh", e.target.value)} />
                 <input placeholder="年龄" value={meta.age} onChange={(e) => updateMeta("age", e.target.value)} />
                 <input placeholder="位置" value={meta.position} onChange={(e) => updateMeta("position", e.target.value)} />
                 <input placeholder="分钟" value={meta.minutes} onChange={(e) => updateMeta("minutes", e.target.value)} />
@@ -1939,6 +1986,7 @@ function App() {
         {activePage === "radar" ? radarPage : null}
         {activePage === "about" ? <AboutPage /> : null}
         {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
+        {activePage === "name_mapping" ? <NameMappingPage /> : null}
         {activePage === "team_mapping" ? <TeamMappingPage /> : null}
         {activePage === "player_data" ? (
           <PlayerDataPage
@@ -1977,6 +2025,7 @@ function App() {
             datasetOptions={datasetOptions}
             selectedDatasetId={selectedDatasetId}
             setSelectedDatasetId={setSelectedDatasetId}
+            onDeleteCurrentDataset={handleDeleteCurrentDataset}
             scatterLoading={scatterDataLoading}
             scatterError={scatterDataError}
             scatterDoc={scatterDatasetDoc}
