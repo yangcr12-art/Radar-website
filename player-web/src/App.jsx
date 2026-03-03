@@ -1,21 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  deletePlayerDataset,
-  fetchPlayerById,
-  fetchPlayerDatasets,
-  fetchPlayerList,
-  fetchState,
-  importPlayerExcel,
-  migrateFromLocal,
-  saveState
-} from "./api/storageClient";
+import { deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
 import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
 import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
+import ScatterPlotPage from "./pages/scatter-plot/ScatterPlotPage";
+import TeamMappingPage from "./pages/team-mapping/TeamMappingPage";
+import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
 import { getProjectGroupByColumn, getProjectZhByColumn } from "./utils/projectMappingStore";
 import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
+import { formatDateTime, formatPresetTime } from "./utils/timeFormat";
 const DEFAULT_TIER_COLORS = {
   elite: "#0099FF",
   above_avg: "#16a34a",
@@ -60,7 +55,6 @@ const HEADER_ALIASES = {
   color: "color",
   颜色: "color"
 };
-
 const INITIAL_ROWS = [
   { metric: "Long Pass %", group: "Passing", value: 71.43, per90: "", tier: "elite", order: 1, color: "" },
   { metric: "Cross + Smart Complete %", group: "Passing", value: 33.33, per90: "", tier: "above_avg", order: 1, color: "" },
@@ -82,7 +76,6 @@ const INITIAL_ROWS = [
   { metric: "Expected Assists", group: "Creation", value: 3.0, per90: "0.03", tier: "bottom", order: 5, color: "" },
   { metric: "Assists", group: "Creation", value: 8.0, per90: "0.53", tier: "bottom", order: 5, color: "" }
 ];
-
 const REQUIRED_COLUMNS = ["metric", "value", "group", "order"];
 const OPTIONAL_COLUMNS = ["subOrder", "per90", "tier", "color"];
 const ALL_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
@@ -100,7 +93,8 @@ const STORAGE_KEYS = {
   localMigrated: "player_web_local_migrated_to_backend_v1",
   metricSelectionsByDataset: "player_web_metric_selection_by_dataset_v1",
   playerSearchByDataset: "player_web_player_search_by_dataset_v1",
-  selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1"
+  selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1",
+  scatterConfigByDataset: "player_web_scatter_config_by_dataset_v1"
 };
 const REORDER_MODE_VIEW = "view";
 const REORDER_MODE_ORDER = "order";
@@ -108,7 +102,9 @@ const NAV_ITEMS = [
   { key: "home", label: "主页" },
   { key: "radar", label: "雷达图生成器" },
   { key: "player_data", label: "球员数据" },
+  { key: "scatter_plot", label: "散点图生成器" },
   { key: "project_mapping", label: "项目对应表" },
+  { key: "team_mapping", label: "球队对应表" },
   { key: "about", label: "About" }
 ];
 const METRIC_GROUP_RULES = [
@@ -461,28 +457,6 @@ function normalizePersistedState(input) {
   return { draft, presets, selectedPresetId };
 }
 
-function formatPresetTime(isoText) {
-  if (!isoText) return "";
-  const date = new Date(isoText);
-  if (Number.isNaN(date.getTime())) return "";
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mm = String(date.getMinutes()).padStart(2, "0");
-  const ss = String(date.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
-}
-
-function formatDateTime(isoText) {
-  if (!isoText) return "";
-  const date = new Date(isoText);
-  if (Number.isNaN(date.getTime())) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mm = String(date.getMinutes()).padStart(2, "0");
-  return `${y}-${m}-${d} ${hh}:${mm}`;
-}
-
 function formatPlayerDataColumnLabel(column) {
   const en = String(column || "").trim();
   const zh = getProjectZhByColumn(en);
@@ -800,6 +774,22 @@ function App() {
       return "";
     }
   };
+
+  const {
+    scatterConfig,
+    updateScatterConfig,
+    scatterDataLoading,
+    scatterDataError,
+    scatterDatasetDoc
+  } = useScatterPlotState({
+    activePage,
+    selectedDatasetId,
+    loadDatasets,
+    isHydrated,
+    readStorage,
+    writeStorage,
+    storageKey: STORAGE_KEYS.scatterConfigByDataset
+  });
 
   const loadPlayerList = async (datasetId, preferredPlayerId = "") => {
     setPlayerDataLoading(true);
@@ -1930,7 +1920,7 @@ function App() {
   return (
     <div className="app-shell">
       <header className="top-nav">
-        <div className="brand">雷达图生成器V3.1</div>
+        <div className="brand">生成器V3.3</div>
         <nav className="nav-list" aria-label="Primary Navigation">
           {NAV_ITEMS.map((item) => (
             <button
@@ -1949,6 +1939,7 @@ function App() {
         {activePage === "radar" ? radarPage : null}
         {activePage === "about" ? <AboutPage /> : null}
         {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
+        {activePage === "team_mapping" ? <TeamMappingPage /> : null}
         {activePage === "player_data" ? (
           <PlayerDataPage
             playerDataMeta={playerDataMeta}
@@ -1981,9 +1972,21 @@ function App() {
             formatPlayerDataColumnLabel={formatPlayerDataColumnLabel}
           />
         ) : null}
+        {activePage === "scatter_plot" ? (
+          <ScatterPlotPage
+            datasetOptions={datasetOptions}
+            selectedDatasetId={selectedDatasetId}
+            setSelectedDatasetId={setSelectedDatasetId}
+            scatterLoading={scatterDataLoading}
+            scatterError={scatterDataError}
+            scatterDoc={scatterDatasetDoc}
+            scatterConfig={scatterConfig}
+            onScatterConfigChange={updateScatterConfig}
+            formatPlayerDataColumnLabel={formatPlayerDataColumnLabel}
+          />
+        ) : null}
       </main>
     </div>
   );
 }
-
 export default App;

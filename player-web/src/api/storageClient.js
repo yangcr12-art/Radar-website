@@ -93,8 +93,9 @@ export function importPlayerExcel(file) {
   });
 }
 
-export function fetchPlayerDataset() {
-  return request("/api/player-data", { method: "GET" });
+export function fetchPlayerDataset(datasetId = "") {
+  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+  return request(`/api/player-data${query}`, { method: "GET" });
 }
 
 export function fetchPlayerDatasets() {
