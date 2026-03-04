@@ -12,6 +12,9 @@ const POINT_SIZE_DEFAULT = 5.2;
 const POINT_STROKE_WIDTH_MIN = 0;
 const POINT_STROKE_WIDTH_MAX = 6;
 const POINT_STROKE_WIDTH_DEFAULT = 1.2;
+const PLAYER_NAME_FONT_SIZE_MIN = 8;
+const PLAYER_NAME_FONT_SIZE_MAX = 20;
+const PLAYER_NAME_FONT_SIZE_DEFAULT = 11;
 
 function pickTeamColumn(columns) {
   const list = Array.isArray(columns) ? columns : [];
@@ -150,11 +153,16 @@ function ScatterPlotPage(props) {
   const axisLabelFontSize = Number.isFinite(axisLabelFontSizeRaw) ? Math.max(10, Math.min(32, axisLabelFontSizeRaw)) : 13;
   const axisLabelFontWeight = String(scatterConfig?.axisLabelFontWeight || "500");
   const axisLabelColor = String(scatterConfig?.axisLabelColor || "#4f453b");
+  const chartBackgroundColor = String(scatterConfig?.chartBackgroundColor || "#f8f5ef");
   const avgLineColor = String(scatterConfig?.avgLineColor || "#d97706");
   const avgLineWidthRaw = Number(scatterConfig?.avgLineWidth);
   const avgLineWidth = Number.isFinite(avgLineWidthRaw) ? Math.max(0.5, Math.min(6, avgLineWidthRaw)) : 1.6;
   const showAverageLines = scatterConfig?.showAverageLines !== false;
   const showPointPlayerNames = Boolean(scatterConfig?.showPointPlayerNames);
+  const pointPlayerNameFontSizeRaw = Number(scatterConfig?.pointPlayerNameFontSize);
+  const pointPlayerNameFontSize = Number.isFinite(pointPlayerNameFontSizeRaw)
+    ? clamp(pointPlayerNameFontSizeRaw, PLAYER_NAME_FONT_SIZE_MIN, PLAYER_NAME_FONT_SIZE_MAX)
+    : PLAYER_NAME_FONT_SIZE_DEFAULT;
   const pointSizeRaw = Number(scatterConfig?.pointSize);
   const pointSize = Number.isFinite(pointSizeRaw) ? clamp(pointSizeRaw, POINT_SIZE_MIN, POINT_SIZE_MAX) : POINT_SIZE_DEFAULT;
   const selectedPointSize = pointSize + 1.6;
@@ -693,6 +701,15 @@ function ScatterPlotPage(props) {
                       onChange={(e) => onScatterConfigChange({ avgLineColor: e.target.value })}
                     />
                   </div>
+                  <div className="title-row">
+                    <label>背景颜色</label>
+                    <input
+                      type="color"
+                      className="square-color-picker"
+                      value={chartBackgroundColor}
+                      onChange={(e) => onScatterConfigChange({ chartBackgroundColor: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -713,6 +730,27 @@ function ScatterPlotPage(props) {
                   />
                   <span>显示球员名字</span>
                 </label>
+                <div className="scatter-inline-row scatter-inline-size-row">
+                  <label>名字字号</label>
+                  <input
+                    className="scatter-inline-number"
+                    type="number"
+                    min={PLAYER_NAME_FONT_SIZE_MIN}
+                    max={PLAYER_NAME_FONT_SIZE_MAX}
+                    step="1"
+                    value={pointPlayerNameFontSize}
+                    onChange={(e) => onScatterConfigChange({ pointPlayerNameFontSize: Number(e.target.value) })}
+                  />
+                  <input
+                    className="scatter-inline-slider"
+                    type="range"
+                    min={PLAYER_NAME_FONT_SIZE_MIN}
+                    max={PLAYER_NAME_FONT_SIZE_MAX}
+                    step="1"
+                    value={pointPlayerNameFontSize}
+                    onChange={(e) => onScatterConfigChange({ pointPlayerNameFontSize: Number(e.target.value) })}
+                  />
+                </div>
                 <div className="scatter-inline-row scatter-inline-size-row">
                   <label>点大小</label>
                   <input
@@ -780,7 +818,7 @@ function ScatterPlotPage(props) {
             {selectedDatasetId && canDraw && chart && points.length > 0 ? (
               <div className="scatter-chart-wrap">
                 <svg viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`} className="scatter-svg">
-                  <rect x="0" y="0" width={CHART_WIDTH} height={CHART_HEIGHT} fill="#f8f5ef" />
+                  <rect x="0" y="0" width={CHART_WIDTH} height={CHART_HEIGHT} fill={chartBackgroundColor} />
                   <line
                     x1={MARGIN.left}
                     y1={CHART_HEIGHT - MARGIN.bottom}
@@ -916,7 +954,7 @@ function ScatterPlotPage(props) {
                             y={point.cy - 10}
                             textAnchor="middle"
                             fill={selected ? "#0b7a75" : "#4f453b"}
-                            fontSize="11"
+                            fontSize={pointPlayerNameFontSize}
                             fontWeight={selected ? "700" : "500"}
                           >
                             {point.playerDisplay}

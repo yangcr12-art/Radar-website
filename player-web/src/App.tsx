@@ -435,6 +435,7 @@ function App() {
   const [fontPanelOpen, setFontPanelOpen] = useState(true);
   const [imagePanelOpen, setImagePanelOpen] = useState(true);
   const [csvPanelOpen, setCsvPanelOpen] = useState(true);
+  const [dataTablePanelOpen, setDataTablePanelOpen] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
   const [playerDataMeta, setPlayerDataMeta] = useState({ playerCount: 0, updatedAt: "", numericColumns: [] });
   const [datasetOptions, setDatasetOptions] = useState([]);
@@ -920,7 +921,7 @@ function App() {
   };
 
   const updateChartStyle = (field, value) => {
-    if (field === "ringLineStyle" || field === "ringDasharray") {
+    if (field === "ringLineStyle" || field === "ringDasharray" || field === "backgroundColor") {
       setChartStyle((prev) => ({ ...prev, [field]: value }));
       return;
     }
@@ -1387,7 +1388,7 @@ function App() {
       canvas.height = 1600;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      ctx.fillStyle = "#f8f5ef";
+      ctx.fillStyle = chartStyle.backgroundColor || "#f8f5ef";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
@@ -1519,6 +1520,13 @@ function App() {
 
                 <label>分组标题Y偏移</label>
                 <input type="number" value={chartStyle.groupLabelOffsetY} onChange={(e) => updateChartStyle("groupLabelOffsetY", e.target.value)} />
+                <label>右图背景色</label>
+                <input
+                  type="color"
+                  className="square-color-picker"
+                  value={chartStyle.backgroundColor || "#f8f5ef"}
+                  onChange={(e) => updateChartStyle("backgroundColor", e.target.value)}
+                />
               </div>
             </div>
           ) : null}
@@ -1531,10 +1539,39 @@ function App() {
           </button>
           {imagePanelOpen ? (
             <div className="section-body">
-              <p className="meta-title">中心图片</p>
-              <div className="image-grid">
-                <button onClick={onCenterImageClick}>选择电脑图片</button>
-                <button onClick={clearCenterImage} disabled={!centerImage.src}>清除图片</button>
+              <p className="meta-title image-subtitle">中心图片</p>
+              <div className="image-option-grid">
+                <div className="image-option-card">
+                  <label>选择图片</label>
+                  <button onClick={onCenterImageClick}>选择电脑图片</button>
+                </div>
+                <div className="image-option-card">
+                  <label>清除图片</label>
+                  <button onClick={clearCenterImage} disabled={!centerImage.src}>清除图片</button>
+                </div>
+                <div className="image-option-card">
+                  <label>图片大小</label>
+                  <div className="image-size-controls">
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.5"
+                      step="0.01"
+                      value={centerImage.scale}
+                      onChange={(e) => updateCenterImageScale(e.target.value)}
+                      disabled={!centerImage.src}
+                    />
+                    <input
+                      type="number"
+                      min="0.5"
+                      max="2.5"
+                      step="0.01"
+                      value={centerImage.scale}
+                      onChange={(e) => updateCenterImageScale(e.target.value)}
+                      disabled={!centerImage.src}
+                    />
+                  </div>
+                </div>
                 <input
                   ref={centerImageInputRef}
                   type="file"
@@ -1542,34 +1579,32 @@ function App() {
                   className="hidden-file"
                   onChange={onCenterImageChange}
                 />
-
-                <label>图片大小</label>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2.5"
-                    step="0.01"
-                    value={centerImage.scale}
-                    onChange={(e) => updateCenterImageScale(e.target.value)}
-                    disabled={!centerImage.src}
-                  />
-                  <input
-                    type="number"
-                    min="0.5"
-                    max="2.5"
-                    step="0.01"
-                    value={centerImage.scale}
-                    onChange={(e) => updateCenterImageScale(e.target.value)}
-                    disabled={!centerImage.src}
-                  />
-                </div>
               </div>
 
-              <p className="meta-title">左上角图片</p>
-              <div className="image-grid">
-                <button onClick={onCornerImageClick}>选择电脑图片</button>
-                <button onClick={clearCornerImage} disabled={!cornerImage.src}>清除图片</button>
+              <p className="meta-title image-subtitle">左上角图片</p>
+              <div className="image-option-grid">
+                <div className="image-option-card">
+                  <label>选择图片</label>
+                  <button onClick={onCornerImageClick}>选择电脑图片</button>
+                </div>
+                <div className="image-option-card">
+                  <label>清除图片</label>
+                  <button onClick={clearCornerImage} disabled={!cornerImage.src}>清除图片</button>
+                </div>
+                <div className="image-option-card">
+                  <label>图片大小(px)</label>
+                  <div className="image-size-controls">
+                    <input type="range" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
+                    <input type="number" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
+                  </div>
+                </div>
+                <div className="image-option-card">
+                  <label>位置(X/Y)</label>
+                  <div className="image-position-inputs">
+                    <input type="number" step="1" value={cornerImage.x} onChange={(e) => updateCornerImage("x", e.target.value)} />
+                    <input type="number" step="1" value={cornerImage.y} onChange={(e) => updateCornerImage("y", e.target.value)} />
+                  </div>
+                </div>
                 <input
                   ref={cornerImageInputRef}
                   type="file"
@@ -1577,18 +1612,6 @@ function App() {
                   className="hidden-file"
                   onChange={onCornerImageChange}
                 />
-
-                <label>图片大小(px)</label>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="range" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
-                  <input type="number" min="20" max="400" step="1" value={cornerImage.size} onChange={(e) => updateCornerImage("size", e.target.value)} />
-                </div>
-
-                <label>位置(X/Y)</label>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <input type="number" step="1" value={cornerImage.x} onChange={(e) => updateCornerImage("x", e.target.value)} />
-                  <input type="number" step="1" value={cornerImage.y} onChange={(e) => updateCornerImage("y", e.target.value)} />
-                </div>
               </div>
             </div>
           ) : null}
@@ -1631,115 +1654,127 @@ function App() {
           ) : null}
         </div>
 
-        <div className="table-wrap">
-          <table className="radar-data-table">
-            <colgroup>
-              <col className="col-metric" />
-              <col className="col-group" />
-              <col className="col-value" />
-              <col className="col-per90" />
-              <col className="col-tier" />
-              <col className="col-order" />
-              <col className="col-suborder" />
-              <col className="col-up" />
-              <col className="col-down" />
-              <col className="col-delete" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>metric*</th>
-                <th>group*</th>
-                <th>value*</th>
-                <th>per90</th>
-                <th>tier(自动)</th>
-                <th>order*</th>
-                <th>组内顺序</th>
-                <th>上移</th>
-                <th>下移</th>
-                <th>删除</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr key={index}>
-                  <td>
-                    <input value={row.metric} onChange={(e) => updateCell(index, "metric", e.target.value)} />
-                  </td>
-                  <td>
-                    <input value={row.group} onChange={(e) => updateCell(index, "group", e.target.value)} />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      max="100"
-                      step="0.01"
-                      value={row.value}
-                      onChange={(e) => updateCell(index, "value", e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input value={row.per90} onChange={(e) => updateCell(index, "per90", e.target.value)} />
-                  </td>
-                  <td>
-                    <input value={`${TIER_LABELS[row.tier] || "中等"} (${row.tier || "avg"})`} readOnly />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="1"
-                      value={row.order}
-                      onChange={(e) => updateCell(index, "order", e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="1"
-                      value={row.subOrder}
-                      onChange={(e) => updateCell(index, "subOrder", e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="move-btn"
-                      onClick={() => moveRow(index, -1)}
-                      disabled={index === 0}
-                    >
-                      上移
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="move-btn"
-                      onClick={() => moveRow(index, 1)}
-                      disabled={index === rows.length - 1}
-                    >
-                      下移
-                    </button>
-                  </td>
-                  <td>
-                    <button className="danger" onClick={() => removeRow(index)}>
-                      删除
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="meta-section">
+          <button type="button" className="section-toggle" onClick={() => setDataTablePanelOpen((prev) => !prev)}>
+            <span>数据表</span>
+            <span>{dataTablePanelOpen ? "▾" : "▸"}</span>
+          </button>
+          {dataTablePanelOpen ? (
+            <div className="table-wrap">
+              <table className="radar-data-table">
+                <colgroup>
+                  <col className="col-metric" />
+                  <col className="col-group" />
+                  <col className="col-value" />
+                  <col className="col-per90" />
+                  <col className="col-tier" />
+                  <col className="col-order" />
+                  <col className="col-suborder" />
+                  <col className="col-up" />
+                  <col className="col-down" />
+                  <col className="col-delete" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>metric*</th>
+                    <th>group*</th>
+                    <th>value*</th>
+                    <th>per90</th>
+                    <th>tier(自动)</th>
+                    <th>order*</th>
+                    <th>组内顺序</th>
+                    <th>上移</th>
+                    <th>下移</th>
+                    <th>删除</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={index}>
+                      <td>
+                        <input value={row.metric} onChange={(e) => updateCell(index, "metric", e.target.value)} />
+                      </td>
+                      <td>
+                        <input value={row.group} onChange={(e) => updateCell(index, "group", e.target.value)} />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          max="100"
+                          step="0.01"
+                          value={row.value}
+                          onChange={(e) => updateCell(index, "value", e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input value={row.per90} onChange={(e) => updateCell(index, "per90", e.target.value)} />
+                      </td>
+                      <td>
+                        <input value={`${TIER_LABELS[row.tier] || "中等"} (${row.tier || "avg"})`} readOnly />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          step="1"
+                          value={row.order}
+                          onChange={(e) => updateCell(index, "order", e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          step="1"
+                          value={row.subOrder}
+                          onChange={(e) => updateCell(index, "subOrder", e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="move-btn"
+                          onClick={() => moveRow(index, -1)}
+                          disabled={index === 0}
+                        >
+                          上移
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="move-btn"
+                          onClick={() => moveRow(index, 1)}
+                          disabled={index === rows.length - 1}
+                        >
+                          下移
+                        </button>
+                      </td>
+                      <td>
+                        <button className="danger" onClick={() => removeRow(index)}>
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </div>
       </div>
 
       <div className="right-panel">
         <div className="right-sticky">
-          <svg id="radar-svg" viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}>
+          <svg
+            id="radar-svg"
+            viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
+            style={{ backgroundColor: chartStyle.backgroundColor || "#f8f5ef" }}
+          >
           <defs>
             <clipPath id="center-image-clip">
               <circle cx={CENTER_X} cy={CENTER_Y} r={INNER_RING - 2} />
             </clipPath>
           </defs>
-          <rect x="0" y="0" width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill="#f8f5ef" />
+          <rect x="0" y="0" width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill={chartStyle.backgroundColor || "#f8f5ef"} />
 
           {cornerImage.src ? (
             <image
@@ -1772,7 +1807,7 @@ function App() {
             );
           })}
 
-          <circle cx={CENTER_X} cy={CENTER_Y} r={INNER_RING} fill="#f8f5ef" stroke="none" />
+          <circle cx={CENTER_X} cy={CENTER_Y} r={INNER_RING} fill={chartStyle.backgroundColor || "#f8f5ef"} stroke="none" />
 
           {centerImage.src ? (
             <image

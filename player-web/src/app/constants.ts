@@ -134,6 +134,7 @@ export const DEFAULT_TEXT_STYLE = {
 };
 
 export const DEFAULT_CHART_STYLE = {
+  backgroundColor: "#f8f5ef",
   ringStrokeWidth: 1,
   innerRingStrokeWidth: 2,
   ringLineStyle: "dashed",

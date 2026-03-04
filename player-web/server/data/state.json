@@ -1,390 +1,390 @@
 {
   "version": 1,
-  "updatedAt": "2026-03-03T14:27:08.628583+00:00",
+  "updatedAt": "2026-03-04T14:10:10.813953+00:00",
   "data": {
     "draft": {
       "title": "Yang Zihao 杨梓豪 (28, LB, LWB, 1636 mins.), ",
       "subtitle": "2025 中超 Percentile Rankings & Per 90 Values",
       "rows": [
         {
+          "color": "",
+          "group": "传球",
           "metric": "传中",
-          "value": 26.76,
-          "group": "传球",
           "order": 1,
-          "subOrder": 1,
           "per90": "1.71",
+          "subOrder": 1,
           "tier": "bottom",
-          "color": ""
+          "value": 26.76
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "传中成功率（%）",
-          "value": 92.96,
-          "group": "传球",
           "order": 1,
-          "subOrder": 2,
           "per90": "45.16",
+          "subOrder": 2,
           "tier": "elite",
-          "color": ""
+          "value": 92.96
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "传球",
-          "value": 25.35,
-          "group": "传球",
           "order": 1,
-          "subOrder": 3,
           "per90": "29.54",
+          "subOrder": 3,
           "tier": "bottom",
-          "color": ""
+          "value": 25.35
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "传球成功率（%）",
-          "value": 33.8,
-          "group": "传球",
           "order": 1,
-          "subOrder": 4,
           "per90": "75.79",
+          "subOrder": 4,
           "tier": "bottom",
-          "color": ""
+          "value": 33.8
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "向前传球",
-          "value": 36.62,
-          "group": "传球",
           "order": 1,
-          "subOrder": 5,
           "per90": "11.88",
+          "subOrder": 5,
           "tier": "avg",
-          "color": ""
+          "value": 36.62
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "预期助攻（xA）",
-          "value": 28.17,
-          "group": "传球",
           "order": 1,
-          "subOrder": 6,
           "per90": "0.03",
+          "subOrder": 6,
           "tier": "bottom",
-          "color": ""
+          "value": 28.17
         },
         {
+          "color": "",
+          "group": "传球",
           "metric": "传入前场三区",
-          "value": 36.62,
-          "group": "传球",
           "order": 1,
-          "subOrder": 7,
           "per90": "3.8",
-          "tier": "avg",
-          "color": ""
-        },
-        {
-          "metric": "传入前场三区成功率（%）",
-          "value": 26.76,
-          "group": "传球",
-          "order": 1,
-          "subOrder": 8,
-          "per90": "59.42",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "对抗次数",
-          "value": 64.79,
-          "group": "对抗",
-          "order": 2,
-          "subOrder": 1,
-          "per90": "16.67",
-          "tier": "avg",
-          "color": ""
-        },
-        {
-          "metric": "对抗成功率（%）",
-          "value": 36.62,
-          "group": "对抗",
-          "order": 2,
-          "subOrder": 2,
-          "per90": "49.17",
-          "tier": "avg",
-          "color": ""
-        },
-        {
-          "metric": "空中对抗",
-          "value": 76.06,
-          "group": "对抗",
-          "order": 2,
-          "subOrder": 3,
-          "per90": "2.97",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "空中对抗成功率（%）",
-          "value": 83.1,
-          "group": "对抗",
-          "order": 2,
-          "subOrder": 4,
-          "per90": "53.7",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "成功防守动作",
-          "value": 29.58,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 1,
-          "per90": "7.26",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "防守对抗",
-          "value": 80.28,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 2,
-          "per90": "8.42",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "滑铲",
-          "value": 14.08,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 3,
-          "per90": "0.06",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "PAdj 滑铲",
-          "value": 12.68,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 4,
-          "per90": "0.07",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "封堵射门",
-          "value": 77.46,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 5,
-          "per90": "0.28",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "拦截",
-          "value": 14.08,
-          "group": "防守",
-          "order": 3,
-          "subOrder": 6,
-          "per90": "2.75",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "PAdj 拦截",
-          "value": 9.86,
-          "group": "防守",
-          "order": 3,
           "subOrder": 7,
-          "per90": "3.7",
+          "tier": "avg",
+          "value": 36.62
+        },
+        {
+          "color": "",
+          "group": "传球",
+          "metric": "传入前场三区成功率（%）",
+          "order": 1,
+          "per90": "59.42",
+          "subOrder": 8,
           "tier": "bottom",
-          "color": ""
+          "value": 26.76
         },
         {
-          "metric": "出场场次",
-          "value": 83.1,
-          "group": "基本",
-          "order": 4,
+          "color": "",
+          "group": "对抗",
+          "metric": "对抗次数",
+          "order": 2,
+          "per90": "16.67",
           "subOrder": 1,
-          "per90": "26",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "犯规",
-          "value": 38.03,
-          "group": "纪律",
-          "order": 5,
-          "subOrder": 1,
-          "per90": "1.21",
           "tier": "avg",
-          "color": ""
+          "value": 64.79
         },
         {
-          "metric": "黄牌",
-          "value": 94.37,
-          "group": "纪律",
-          "order": 5,
+          "color": "",
+          "group": "对抗",
+          "metric": "对抗成功率（%）",
+          "order": 2,
+          "per90": "49.17",
           "subOrder": 2,
-          "per90": "6",
-          "tier": "elite",
-          "color": ""
+          "tier": "avg",
+          "value": 36.62
         },
         {
-          "metric": "黄牌",
-          "value": 83.1,
-          "group": "纪律",
-          "order": 5,
+          "color": "",
+          "group": "对抗",
+          "metric": "空中对抗",
+          "order": 2,
+          "per90": "2.97",
           "subOrder": 3,
-          "per90": "0.33",
           "tier": "above_avg",
-          "color": ""
+          "value": 76.06
         },
         {
-          "metric": "红牌",
-          "value": 81.69,
-          "group": "纪律",
-          "order": 5,
+          "color": "",
+          "group": "对抗",
+          "metric": "空中对抗成功率（%）",
+          "order": 2,
+          "per90": "53.7",
           "subOrder": 4,
-          "per90": "0",
           "tier": "above_avg",
-          "color": ""
+          "value": 83.1
         },
         {
-          "metric": "红牌",
-          "value": 81.69,
-          "group": "纪律",
-          "order": 5,
-          "subOrder": 5,
-          "per90": "0",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "成功进攻动作",
-          "value": 16.9,
-          "group": "进攻",
-          "order": 6,
+          "color": "",
+          "group": "防守",
+          "metric": "成功防守动作",
+          "order": 3,
+          "per90": "7.26",
           "subOrder": 1,
-          "per90": "1.05",
           "tier": "bottom",
-          "color": ""
+          "value": 29.58
         },
         {
-          "metric": "进球",
-          "value": 66.2,
-          "group": "进攻",
-          "order": 6,
+          "color": "",
+          "group": "防守",
+          "metric": "防守对抗",
+          "order": 3,
+          "per90": "8.42",
           "subOrder": 2,
-          "per90": "0",
           "tier": "above_avg",
-          "color": ""
+          "value": 80.28
         },
         {
-          "metric": "预期进球（xG）",
-          "value": 43.66,
-          "group": "进攻",
-          "order": 6,
-          "subOrder": 3,
-          "per90": "0.02",
-          "tier": "avg",
-          "color": ""
-        },
-        {
-          "metric": "射门",
-          "value": 54.93,
-          "group": "进攻",
-          "order": 6,
-          "subOrder": 4,
-          "per90": "6",
-          "tier": "avg",
-          "color": ""
-        },
-        {
-          "metric": "进球转化率（%）",
-          "value": 66.2,
-          "group": "进攻",
-          "order": 6,
-          "subOrder": 5,
-          "per90": "0",
-          "tier": "above_avg",
-          "color": ""
-        },
-        {
-          "metric": "传入小禁区传中",
-          "value": 16.9,
-          "group": "进攻",
-          "order": 6,
-          "subOrder": 6,
+          "color": "",
+          "group": "防守",
+          "metric": "滑铲",
+          "order": 3,
           "per90": "0.06",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "盘带",
-          "value": 12.68,
-          "group": "推进",
-          "order": 7,
-          "subOrder": 1,
-          "per90": "0.77",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "盘带成功率（%）",
-          "value": 2.82,
-          "group": "推进",
-          "order": 7,
-          "subOrder": 2,
-          "per90": "28.57",
-          "tier": "bottom",
-          "color": ""
-        },
-        {
-          "metric": "推进跑动",
-          "value": 12.68,
-          "group": "推进",
-          "order": 7,
           "subOrder": 3,
-          "per90": "0.55",
           "tier": "bottom",
-          "color": ""
+          "value": 14.08
         },
         {
-          "metric": "推进传球",
-          "value": 38.03,
-          "group": "推进",
-          "order": 7,
+          "color": "",
+          "group": "防守",
+          "metric": "PAdj 滑铲",
+          "order": 3,
+          "per90": "0.07",
           "subOrder": 4,
-          "per90": "6.44",
-          "tier": "avg",
-          "color": ""
+          "tier": "bottom",
+          "value": 12.68
         },
         {
-          "metric": "推进传球成功率（%）",
-          "value": 14.08,
-          "group": "推进",
-          "order": 7,
+          "color": "",
+          "group": "防守",
+          "metric": "封堵射门",
+          "order": 3,
+          "per90": "0.28",
           "subOrder": 5,
-          "per90": "62.39",
-          "tier": "bottom",
-          "color": ""
+          "tier": "above_avg",
+          "value": 77.46
         },
         {
-          "metric": "关键传球",
-          "value": 33.8,
-          "group": "机会",
-          "order": 8,
+          "color": "",
+          "group": "防守",
+          "metric": "拦截",
+          "order": 3,
+          "per90": "2.75",
+          "subOrder": 6,
+          "tier": "bottom",
+          "value": 14.08
+        },
+        {
+          "color": "",
+          "group": "防守",
+          "metric": "PAdj 拦截",
+          "order": 3,
+          "per90": "3.7",
+          "subOrder": 7,
+          "tier": "bottom",
+          "value": 9.86
+        },
+        {
+          "color": "",
+          "group": "基本",
+          "metric": "出场场次",
+          "order": 4,
+          "per90": "26",
           "subOrder": 1,
-          "per90": "0.17",
-          "tier": "bottom",
-          "color": ""
+          "tier": "above_avg",
+          "value": 83.1
         },
         {
-          "metric": "传入禁区",
-          "value": 50.7,
-          "group": "机会",
-          "order": 8,
-          "subOrder": 2,
-          "per90": "2.31",
+          "color": "",
+          "group": "纪律",
+          "metric": "犯规",
+          "order": 5,
+          "per90": "1.21",
+          "subOrder": 1,
           "tier": "avg",
-          "color": ""
+          "value": 38.03
+        },
+        {
+          "color": "",
+          "group": "纪律",
+          "metric": "黄牌",
+          "order": 5,
+          "per90": "6",
+          "subOrder": 2,
+          "tier": "elite",
+          "value": 94.37
+        },
+        {
+          "color": "",
+          "group": "纪律",
+          "metric": "黄牌",
+          "order": 5,
+          "per90": "0.33",
+          "subOrder": 3,
+          "tier": "above_avg",
+          "value": 83.1
+        },
+        {
+          "color": "",
+          "group": "纪律",
+          "metric": "红牌",
+          "order": 5,
+          "per90": "0",
+          "subOrder": 4,
+          "tier": "above_avg",
+          "value": 81.69
+        },
+        {
+          "color": "",
+          "group": "纪律",
+          "metric": "红牌",
+          "order": 5,
+          "per90": "0",
+          "subOrder": 5,
+          "tier": "above_avg",
+          "value": 81.69
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "成功进攻动作",
+          "order": 6,
+          "per90": "1.05",
+          "subOrder": 1,
+          "tier": "bottom",
+          "value": 16.9
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "进球",
+          "order": 6,
+          "per90": "0",
+          "subOrder": 2,
+          "tier": "above_avg",
+          "value": 66.2
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "预期进球（xG）",
+          "order": 6,
+          "per90": "0.02",
+          "subOrder": 3,
+          "tier": "avg",
+          "value": 43.66
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "射门",
+          "order": 6,
+          "per90": "6",
+          "subOrder": 4,
+          "tier": "avg",
+          "value": 54.93
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "进球转化率（%）",
+          "order": 6,
+          "per90": "0",
+          "subOrder": 5,
+          "tier": "above_avg",
+          "value": 66.2
+        },
+        {
+          "color": "",
+          "group": "进攻",
+          "metric": "传入小禁区传中",
+          "order": 6,
+          "per90": "0.06",
+          "subOrder": 6,
+          "tier": "bottom",
+          "value": 16.9
+        },
+        {
+          "color": "",
+          "group": "推进",
+          "metric": "盘带",
+          "order": 7,
+          "per90": "0.77",
+          "subOrder": 1,
+          "tier": "bottom",
+          "value": 12.68
+        },
+        {
+          "color": "",
+          "group": "推进",
+          "metric": "盘带成功率（%）",
+          "order": 7,
+          "per90": "28.57",
+          "subOrder": 2,
+          "tier": "bottom",
+          "value": 2.82
+        },
+        {
+          "color": "",
+          "group": "推进",
+          "metric": "推进跑动",
+          "order": 7,
+          "per90": "0.55",
+          "subOrder": 3,
+          "tier": "bottom",
+          "value": 12.68
+        },
+        {
+          "color": "",
+          "group": "推进",
+          "metric": "推进传球",
+          "order": 7,
+          "per90": "6.44",
+          "subOrder": 4,
+          "tier": "avg",
+          "value": 38.03
+        },
+        {
+          "color": "",
+          "group": "推进",
+          "metric": "推进传球成功率（%）",
+          "order": 7,
+          "per90": "62.39",
+          "subOrder": 5,
+          "tier": "bottom",
+          "value": 14.08
+        },
+        {
+          "color": "",
+          "group": "机会",
+          "metric": "关键传球",
+          "order": 8,
+          "per90": "0.17",
+          "subOrder": 1,
+          "tier": "bottom",
+          "value": 33.8
+        },
+        {
+          "color": "",
+          "group": "机会",
+          "metric": "传入禁区",
+          "order": 8,
+          "per90": "2.31",
+          "subOrder": 2,
+          "tier": "avg",
+          "value": 50.7
         }
       ],
       "rowReorderMode": "order",
@@ -409,6 +409,7 @@
         "legendSize": 18
       },
       "chartStyle": {
+        "backgroundColor": "#ffffff",
         "ringStrokeWidth": 1.6,
         "innerRingStrokeWidth": 2,
         "ringLineStyle": "solid",
@@ -440,384 +441,384 @@
           "subtitle": "2025 中超 Percentile Rankings & Per 90 Values",
           "rows": [
             {
+              "color": "",
+              "group": "传球",
               "metric": "传中",
-              "value": 26.76,
-              "group": "传球",
               "order": 1,
-              "subOrder": 1,
               "per90": "1.71",
+              "subOrder": 1,
               "tier": "bottom",
-              "color": ""
+              "value": 26.76
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "传中成功率（%）",
-              "value": 92.96,
-              "group": "传球",
               "order": 1,
-              "subOrder": 2,
               "per90": "45.16",
+              "subOrder": 2,
               "tier": "elite",
-              "color": ""
+              "value": 92.96
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "传球",
-              "value": 25.35,
-              "group": "传球",
               "order": 1,
-              "subOrder": 3,
               "per90": "29.54",
+              "subOrder": 3,
               "tier": "bottom",
-              "color": ""
+              "value": 25.35
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "传球成功率（%）",
-              "value": 33.8,
-              "group": "传球",
               "order": 1,
-              "subOrder": 4,
               "per90": "75.79",
+              "subOrder": 4,
               "tier": "bottom",
-              "color": ""
+              "value": 33.8
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "向前传球",
-              "value": 36.62,
-              "group": "传球",
               "order": 1,
-              "subOrder": 5,
               "per90": "11.88",
+              "subOrder": 5,
               "tier": "avg",
-              "color": ""
+              "value": 36.62
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "预期助攻（xA）",
-              "value": 28.17,
-              "group": "传球",
               "order": 1,
-              "subOrder": 6,
               "per90": "0.03",
+              "subOrder": 6,
               "tier": "bottom",
-              "color": ""
+              "value": 28.17
             },
             {
+              "color": "",
+              "group": "传球",
               "metric": "传入前场三区",
-              "value": 36.62,
-              "group": "传球",
               "order": 1,
-              "subOrder": 7,
               "per90": "3.8",
-              "tier": "avg",
-              "color": ""
-            },
-            {
-              "metric": "传入前场三区成功率（%）",
-              "value": 26.76,
-              "group": "传球",
-              "order": 1,
-              "subOrder": 8,
-              "per90": "59.42",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "对抗次数",
-              "value": 64.79,
-              "group": "对抗",
-              "order": 2,
-              "subOrder": 1,
-              "per90": "16.67",
-              "tier": "avg",
-              "color": ""
-            },
-            {
-              "metric": "对抗成功率（%）",
-              "value": 36.62,
-              "group": "对抗",
-              "order": 2,
-              "subOrder": 2,
-              "per90": "49.17",
-              "tier": "avg",
-              "color": ""
-            },
-            {
-              "metric": "空中对抗",
-              "value": 76.06,
-              "group": "对抗",
-              "order": 2,
-              "subOrder": 3,
-              "per90": "2.97",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "空中对抗成功率（%）",
-              "value": 83.1,
-              "group": "对抗",
-              "order": 2,
-              "subOrder": 4,
-              "per90": "53.7",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "成功防守动作",
-              "value": 29.58,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 1,
-              "per90": "7.26",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "防守对抗",
-              "value": 80.28,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 2,
-              "per90": "8.42",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "滑铲",
-              "value": 14.08,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 3,
-              "per90": "0.06",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "PAdj 滑铲",
-              "value": 12.68,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 4,
-              "per90": "0.07",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "封堵射门",
-              "value": 77.46,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 5,
-              "per90": "0.28",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "拦截",
-              "value": 14.08,
-              "group": "防守",
-              "order": 3,
-              "subOrder": 6,
-              "per90": "2.75",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "PAdj 拦截",
-              "value": 9.86,
-              "group": "防守",
-              "order": 3,
               "subOrder": 7,
-              "per90": "3.7",
+              "tier": "avg",
+              "value": 36.62
+            },
+            {
+              "color": "",
+              "group": "传球",
+              "metric": "传入前场三区成功率（%）",
+              "order": 1,
+              "per90": "59.42",
+              "subOrder": 8,
               "tier": "bottom",
-              "color": ""
+              "value": 26.76
             },
             {
-              "metric": "出场场次",
-              "value": 83.1,
-              "group": "基本",
-              "order": 4,
+              "color": "",
+              "group": "对抗",
+              "metric": "对抗次数",
+              "order": 2,
+              "per90": "16.67",
               "subOrder": 1,
-              "per90": "26",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "犯规",
-              "value": 38.03,
-              "group": "纪律",
-              "order": 5,
-              "subOrder": 1,
-              "per90": "1.21",
               "tier": "avg",
-              "color": ""
+              "value": 64.79
             },
             {
-              "metric": "黄牌",
-              "value": 94.37,
-              "group": "纪律",
-              "order": 5,
+              "color": "",
+              "group": "对抗",
+              "metric": "对抗成功率（%）",
+              "order": 2,
+              "per90": "49.17",
               "subOrder": 2,
-              "per90": "6",
-              "tier": "elite",
-              "color": ""
+              "tier": "avg",
+              "value": 36.62
             },
             {
-              "metric": "黄牌",
-              "value": 83.1,
-              "group": "纪律",
-              "order": 5,
+              "color": "",
+              "group": "对抗",
+              "metric": "空中对抗",
+              "order": 2,
+              "per90": "2.97",
               "subOrder": 3,
-              "per90": "0.33",
               "tier": "above_avg",
-              "color": ""
+              "value": 76.06
             },
             {
-              "metric": "红牌",
-              "value": 81.69,
-              "group": "纪律",
-              "order": 5,
+              "color": "",
+              "group": "对抗",
+              "metric": "空中对抗成功率（%）",
+              "order": 2,
+              "per90": "53.7",
               "subOrder": 4,
-              "per90": "0",
               "tier": "above_avg",
-              "color": ""
+              "value": 83.1
             },
             {
-              "metric": "红牌",
-              "value": 81.69,
-              "group": "纪律",
-              "order": 5,
-              "subOrder": 5,
-              "per90": "0",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "成功进攻动作",
-              "value": 16.9,
-              "group": "进攻",
-              "order": 6,
+              "color": "",
+              "group": "防守",
+              "metric": "成功防守动作",
+              "order": 3,
+              "per90": "7.26",
               "subOrder": 1,
-              "per90": "1.05",
               "tier": "bottom",
-              "color": ""
+              "value": 29.58
             },
             {
-              "metric": "进球",
-              "value": 66.2,
-              "group": "进攻",
-              "order": 6,
+              "color": "",
+              "group": "防守",
+              "metric": "防守对抗",
+              "order": 3,
+              "per90": "8.42",
               "subOrder": 2,
-              "per90": "0",
               "tier": "above_avg",
-              "color": ""
+              "value": 80.28
             },
             {
-              "metric": "预期进球（xG）",
-              "value": 43.66,
-              "group": "进攻",
-              "order": 6,
-              "subOrder": 3,
-              "per90": "0.02",
-              "tier": "avg",
-              "color": ""
-            },
-            {
-              "metric": "射门",
-              "value": 54.93,
-              "group": "进攻",
-              "order": 6,
-              "subOrder": 4,
-              "per90": "6",
-              "tier": "avg",
-              "color": ""
-            },
-            {
-              "metric": "进球转化率（%）",
-              "value": 66.2,
-              "group": "进攻",
-              "order": 6,
-              "subOrder": 5,
-              "per90": "0",
-              "tier": "above_avg",
-              "color": ""
-            },
-            {
-              "metric": "传入小禁区传中",
-              "value": 16.9,
-              "group": "进攻",
-              "order": 6,
-              "subOrder": 6,
+              "color": "",
+              "group": "防守",
+              "metric": "滑铲",
+              "order": 3,
               "per90": "0.06",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "盘带",
-              "value": 12.68,
-              "group": "推进",
-              "order": 7,
-              "subOrder": 1,
-              "per90": "0.77",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "盘带成功率（%）",
-              "value": 2.82,
-              "group": "推进",
-              "order": 7,
-              "subOrder": 2,
-              "per90": "28.57",
-              "tier": "bottom",
-              "color": ""
-            },
-            {
-              "metric": "推进跑动",
-              "value": 12.68,
-              "group": "推进",
-              "order": 7,
               "subOrder": 3,
-              "per90": "0.55",
               "tier": "bottom",
-              "color": ""
+              "value": 14.08
             },
             {
-              "metric": "推进传球",
-              "value": 38.03,
-              "group": "推进",
-              "order": 7,
+              "color": "",
+              "group": "防守",
+              "metric": "PAdj 滑铲",
+              "order": 3,
+              "per90": "0.07",
               "subOrder": 4,
-              "per90": "6.44",
-              "tier": "avg",
-              "color": ""
+              "tier": "bottom",
+              "value": 12.68
             },
             {
-              "metric": "推进传球成功率（%）",
-              "value": 14.08,
-              "group": "推进",
-              "order": 7,
+              "color": "",
+              "group": "防守",
+              "metric": "封堵射门",
+              "order": 3,
+              "per90": "0.28",
               "subOrder": 5,
-              "per90": "62.39",
-              "tier": "bottom",
-              "color": ""
+              "tier": "above_avg",
+              "value": 77.46
             },
             {
-              "metric": "关键传球",
-              "value": 33.8,
-              "group": "机会",
-              "order": 8,
+              "color": "",
+              "group": "防守",
+              "metric": "拦截",
+              "order": 3,
+              "per90": "2.75",
+              "subOrder": 6,
+              "tier": "bottom",
+              "value": 14.08
+            },
+            {
+              "color": "",
+              "group": "防守",
+              "metric": "PAdj 拦截",
+              "order": 3,
+              "per90": "3.7",
+              "subOrder": 7,
+              "tier": "bottom",
+              "value": 9.86
+            },
+            {
+              "color": "",
+              "group": "基本",
+              "metric": "出场场次",
+              "order": 4,
+              "per90": "26",
               "subOrder": 1,
-              "per90": "0.17",
-              "tier": "bottom",
-              "color": ""
+              "tier": "above_avg",
+              "value": 83.1
             },
             {
-              "metric": "传入禁区",
-              "value": 50.7,
-              "group": "机会",
-              "order": 8,
-              "subOrder": 2,
-              "per90": "2.31",
+              "color": "",
+              "group": "纪律",
+              "metric": "犯规",
+              "order": 5,
+              "per90": "1.21",
+              "subOrder": 1,
               "tier": "avg",
-              "color": ""
+              "value": 38.03
+            },
+            {
+              "color": "",
+              "group": "纪律",
+              "metric": "黄牌",
+              "order": 5,
+              "per90": "6",
+              "subOrder": 2,
+              "tier": "elite",
+              "value": 94.37
+            },
+            {
+              "color": "",
+              "group": "纪律",
+              "metric": "黄牌",
+              "order": 5,
+              "per90": "0.33",
+              "subOrder": 3,
+              "tier": "above_avg",
+              "value": 83.1
+            },
+            {
+              "color": "",
+              "group": "纪律",
+              "metric": "红牌",
+              "order": 5,
+              "per90": "0",
+              "subOrder": 4,
+              "tier": "above_avg",
+              "value": 81.69
+            },
+            {
+              "color": "",
+              "group": "纪律",
+              "metric": "红牌",
+              "order": 5,
+              "per90": "0",
+              "subOrder": 5,
+              "tier": "above_avg",
+              "value": 81.69
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "成功进攻动作",
+              "order": 6,
+              "per90": "1.05",
+              "subOrder": 1,
+              "tier": "bottom",
+              "value": 16.9
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "进球",
+              "order": 6,
+              "per90": "0",
+              "subOrder": 2,
+              "tier": "above_avg",
+              "value": 66.2
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "预期进球（xG）",
+              "order": 6,
+              "per90": "0.02",
+              "subOrder": 3,
+              "tier": "avg",
+              "value": 43.66
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "射门",
+              "order": 6,
+              "per90": "6",
+              "subOrder": 4,
+              "tier": "avg",
+              "value": 54.93
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "进球转化率（%）",
+              "order": 6,
+              "per90": "0",
+              "subOrder": 5,
+              "tier": "above_avg",
+              "value": 66.2
+            },
+            {
+              "color": "",
+              "group": "进攻",
+              "metric": "传入小禁区传中",
+              "order": 6,
+              "per90": "0.06",
+              "subOrder": 6,
+              "tier": "bottom",
+              "value": 16.9
+            },
+            {
+              "color": "",
+              "group": "推进",
+              "metric": "盘带",
+              "order": 7,
+              "per90": "0.77",
+              "subOrder": 1,
+              "tier": "bottom",
+              "value": 12.68
+            },
+            {
+              "color": "",
+              "group": "推进",
+              "metric": "盘带成功率（%）",
+              "order": 7,
+              "per90": "28.57",
+              "subOrder": 2,
+              "tier": "bottom",
+              "value": 2.82
+            },
+            {
+              "color": "",
+              "group": "推进",
+              "metric": "推进跑动",
+              "order": 7,
+              "per90": "0.55",
+              "subOrder": 3,
+              "tier": "bottom",
+              "value": 12.68
+            },
+            {
+              "color": "",
+              "group": "推进",
+              "metric": "推进传球",
+              "order": 7,
+              "per90": "6.44",
+              "subOrder": 4,
+              "tier": "avg",
+              "value": 38.03
+            },
+            {
+              "color": "",
+              "group": "推进",
+              "metric": "推进传球成功率（%）",
+              "order": 7,
+              "per90": "62.39",
+              "subOrder": 5,
+              "tier": "bottom",
+              "value": 14.08
+            },
+            {
+              "color": "",
+              "group": "机会",
+              "metric": "关键传球",
+              "order": 8,
+              "per90": "0.17",
+              "subOrder": 1,
+              "tier": "bottom",
+              "value": 33.8
+            },
+            {
+              "color": "",
+              "group": "机会",
+              "metric": "传入禁区",
+              "order": 8,
+              "per90": "2.31",
+              "subOrder": 2,
+              "tier": "avg",
+              "value": 50.7
             }
           ],
           "rowReorderMode": "order",
@@ -842,6 +843,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#ffffff",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 2,
             "ringLineStyle": "solid",
@@ -864,7 +866,7 @@
             "y": 120
           }
         },
-        "updatedAt": "2026-03-03T14:27:08.082Z"
+        "updatedAt": "2026-03-04T14:10:10.273Z"
       },
       {
         "id": "preset_1772437791648_q65iq",
@@ -1026,6 +1028,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -1270,6 +1273,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -1454,6 +1458,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -1698,6 +1703,7 @@
             "legendSize": 14
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1,
             "innerRingStrokeWidth": 2,
             "ringLineStyle": "dashed",
@@ -1872,6 +1878,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -2066,6 +2073,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -2240,6 +2248,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -2434,6 +2443,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -2638,6 +2648,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -2842,6 +2853,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",
@@ -3046,6 +3058,7 @@
             "legendSize": 18
           },
           "chartStyle": {
+            "backgroundColor": "#f8f5ef",
             "ringStrokeWidth": 1.6,
             "innerRingStrokeWidth": 1,
             "ringLineStyle": "solid",

@@ -451,6 +451,10 @@ h1 {
   color: #5f554a;
 }
 
+.image-subtitle {
+  font-weight: 700;
+}
+
 .meta-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -460,7 +464,7 @@ h1 {
 
 .style-grid {
   display: grid;
-  grid-template-columns: 110px 1fr 110px 1fr;
+  grid-template-columns: 96px minmax(0, 1fr) 96px minmax(0, 1fr) 96px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -468,6 +472,13 @@ h1 {
 .style-grid label {
   font-size: 12px;
   color: #62584d;
+}
+
+.square-color-picker {
+  width: 44px;
+  min-width: 44px;
+  height: 32px;
+  padding: 0;
 }
 
 .save-grid {
@@ -486,6 +497,47 @@ h1 {
 .image-grid label {
   font-size: 12px;
   color: #62584d;
+}
+
+.image-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.image-option-card {
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  min-height: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.image-option-card label {
+  font-size: 12px;
+  color: #62584d;
+  white-space: nowrap;
+}
+
+.image-option-card button {
+  width: 100%;
+}
+
+.image-size-controls {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 82px;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-position-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 8px;
 }
 
 .section-toggle {
@@ -765,6 +817,14 @@ svg {
     grid-template-columns: 1fr;
   }
 
+  .image-size-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .image-position-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .scatter-axis-grid,
   .scatter-filter-grid,
   .scatter-style-grid {
@@ -774,4 +834,5 @@ svg {
     grid-template-columns: 1fr;
     gap: 6px;
   }
+
 }

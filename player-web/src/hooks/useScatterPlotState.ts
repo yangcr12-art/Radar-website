@@ -15,9 +15,11 @@ export const DEFAULT_SCATTER_CONFIG = {
   axisLabelFontSize: 13,
   axisLabelFontWeight: "500",
   axisLabelColor: "#4f453b",
+  chartBackgroundColor: "#f8f5ef",
   avgLineColor: "#d97706",
   avgLineWidth: 1.6,
-  showPointPlayerNames: false
+  showPointPlayerNames: false,
+  pointPlayerNameFontSize: 11
 };
 
 function asObject(value) {
