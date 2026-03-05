@@ -124,3 +124,12 @@ export function importNameExcel(file) {
     body: form
   });
 }
+
+export function importProjectExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/project-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}

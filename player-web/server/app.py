@@ -475,8 +475,6 @@ def import_player_data_excel():
             "numericColumnCount": len(numeric_columns),
         }
     )
-
-
 @app.route("/api/name-mapping/import-excel", methods=["POST"])
 def import_name_mapping_excel():
     file = request.files.get("file")
@@ -534,8 +532,48 @@ def import_name_mapping_excel():
             "teamColumn": team_col,
         }
     )
+@app.route("/api/project-mapping/import-excel", methods=["POST"])
+def import_project_mapping_excel():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"ok": False, "error": "missing file"}), 400
+    if not file.filename.lower().endswith(".xlsx"):
+        return jsonify({"ok": False, "error": "only .xlsx is supported"}), 400
 
+    try:
+        wb = load_workbook(file, data_only=True, read_only=True)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"invalid excel file: {exc}"}), 400
 
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True, max_row=1))
+    wb.close()
+    if not rows:
+        return jsonify({"ok": False, "error": "excel must contain at least one header row"}), 400
+
+    seen: set[str] = set()
+    columns: list[str] = []
+    for cell in list(rows[0]):
+        header = str(_to_cell_value(cell)).strip()
+        if not header:
+            continue
+        key = _normalize_header_name(header)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        columns.append(header)
+
+    if not columns:
+        return jsonify({"ok": False, "error": "no valid header columns found"}), 400
+
+    return jsonify(
+        {
+            "ok": True,
+            "sheet": ws.title,
+            "columns": columns,
+            "count": len(columns),
+        }
+    )
 @app.route("/api/player-data", methods=["GET"])
 def get_player_data():
     try:

@@ -113,6 +113,19 @@ export const PROJECT_MAPPING_COLUMNS = [
   { en: "Direct free kicks on target, %", zh: "直接任意球射正率（%）" },
   { en: "Corners per 90", zh: "每90分钟角球" },
   { en: "Penalties taken", zh: "主罚点球" },
-  { en: "Penalty conversion, %", zh: "点球转化率（%）" }
+  { en: "Penalty conversion, %", zh: "点球转化率（%）" },
+  { en: "Total Distance per 90", zh: "每90分钟总距离" },
+  { en: "Running Distance per 90 (15-20 km/h)", zh: "每90分钟跑动距离（15-20 km/h）" },
+  { en: "HSR Distance per 90 (20-25 km/h)", zh: "每90分钟高速跑距离（20-25 km/h）" },
+  { en: "Sprinting Distance per 90 (+25 km/h)", zh: "每90分钟冲刺距离（+25 km/h）" },
+  { en: "HI Distance per 90 (+20 km/h)", zh: "每90分钟高强度距离（+20 km/h）" },
+  { en: "Meter/Min", zh: "每分钟距离" },
+  { en: "Max Speed (km/h)", zh: "最高速度（km/h）" },
+  { en: "Count Medium Acceleration per 90 (1.5 m/s² to 3 m/s²)", zh: "每90分钟中等加速次数（1.5 m/s² 至 3 m/s²）" },
+  { en: "Count High Acceleration per 90 (+3 m/s²)", zh: "每90分钟高强度加速次数（+3 m/s²）" },
+  { en: "Count Medium Deceleration per 90 (-1.5 m/s² to -3 m/s²)", zh: "每90分钟中等减速次数（-1.5 m/s² 至 -3 m/s²）" },
+  { en: "Count High Deceleration per 90 (-3 m/s²)", zh: "每90分钟高强度减速次数（-3 m/s²）" },
+  { en: "Count HSR per 90 (20-25 km/h)", zh: "每90分钟高速跑次数（20-25 km/h）" },
+  { en: "Count Sprint per 90 (+25 km/h)", zh: "每90分钟冲刺次数（+25 km/h）" },
+  { en: "Count HI per 90 (+20 km/h)", zh: "每90分钟高强度次数（+20 km/h）" }
 ];
-
