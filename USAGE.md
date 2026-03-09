@@ -201,6 +201,7 @@ Web 技术事实：
 - 支持“从球员数据同步姓名”（增量合并）
 - 中文翻译默认“保留已有中文，仅补空值”，并支持离线音译自动补全
 - 支持“批量补全中文名”（仅填空，不覆盖）
+- 支持按“球队”列排序（仅调整行顺序，不修改单元格内容）
 - 支持一键删除现有姓名（清空姓名对应表）
 - 支持下载姓名对应表 CSV
 - 刷新后保留（本地持久化）
@@ -257,6 +258,30 @@ python3 scripts/audit_architecture.py
 ```
 
 输出：
+
+---
+
+## 8. PDF 中文覆盖西语（离线）
+
+用于在不改变底图结构（图片/表格线）的前提下，把 PDF 中文文本块覆盖为西语文本。
+
+```bash
+python3 scripts/pdf_overlay_es.py \
+  <input.pdf> \
+  <output.pdf> \
+  --mapping templates/pdf_overlay_es_mapping.json
+```
+
+参数：
+
+- `input.pdf`：输入 PDF（必填）
+- `output.pdf`：输出 PDF（必填）
+- `--mapping`：翻译映射 JSON，默认 `templates/pdf_overlay_es_mapping.json`
+
+映射文件结构：
+
+- `exact`：整段精确替换（`cn` -> `es`）
+- `phrase`：短词/表头子串替换
 
 - `out/architecture_audit_report.json`
 - `out/architecture_audit_report.md`

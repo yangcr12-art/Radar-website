@@ -341,6 +341,13 @@ body {
   background: #f8f3ea;
 }
 
+.table-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .mapping-table th:first-child,
 .mapping-table td:first-child {
   width: 64px;

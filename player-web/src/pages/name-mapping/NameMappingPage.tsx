@@ -81,6 +81,23 @@ function NameMappingPage() {
     downloadFile("name_mapping.csv", toCsv(displayRows), "text/csv;charset=utf-8");
   };
 
+  const handleSortByTeam = () => {
+    setError("");
+    setMessage("");
+    const sorted = [...displayRows].sort((a, b) => {
+      const teamA = String(a?.team || "").trim();
+      const teamB = String(b?.team || "").trim();
+      const emptyA = teamA ? 0 : 1;
+      const emptyB = teamB ? 0 : 1;
+      if (emptyA !== emptyB) return emptyA - emptyB;
+      const byTeam = teamA.localeCompare(teamB, "zh-CN");
+      if (byTeam !== 0) return byTeam;
+      return String(a?.en || "").trim().localeCompare(String(b?.en || "").trim(), "en-US");
+    });
+    persistRows(sorted);
+    setMessage("已按球队排序（仅调整顺序，不修改内容）。");
+  };
+
   const handleClearAllNames = () => {
     const hasData = displayRows.some((row) => String(row.en || "").trim() || String(row.zh || "").trim() || String(row.team || "").trim());
     if (!hasData) {
@@ -302,7 +319,14 @@ function NameMappingPage() {
                 <th>#</th>
                 <th>English</th>
                 <th>中文翻译</th>
-                <th>球队</th>
+                <th>
+                  <div className="table-header-actions">
+                    <span>球队</span>
+                    <button type="button" onClick={handleSortByTeam} disabled={syncing}>
+                      按球队排序
+                    </button>
+                  </div>
+                </th>
                 <th>操作</th>
               </tr>
             </thead>
