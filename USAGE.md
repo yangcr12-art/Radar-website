@@ -5,6 +5,15 @@
 
 ---
 
+## 快速索引
+
+- 启动方式：见“3. Web：启动方式”
+- 页面行为：见“4. Web 功能行为（按页面）”
+- 默认值与回退：见“5. 默认值与回退表”
+- 文档地图：`docs/DOCUMENTATION_MAP.md`
+
+---
+
 ## 1. CLI：单图生成
 
 ```bash
@@ -104,6 +113,7 @@ Web 技术事实：
 
 - 前端源码位于 `player-web/src`
 - 源码统一为 TypeScript（`.ts/.tsx`）
+- 样式入口为 `player-web/src/styles.css`，分层文件位于 `player-web/src/styles/*.css`
 - 不变更现有后端接口路径与 JSON 字段口径
 
 ---

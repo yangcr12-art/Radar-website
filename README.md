@@ -1,41 +1,44 @@
 # player
 
-一个面向足球数据分析的可复用出图系统：  
-**CSV/Excel 输入 -> 雷达图与散点图分析 -> 可复现导出与规则化协作**。
+一个面向足球数据分析的可复用出图系统：
+**CSV/Excel 输入 -> 雷达图与散点图分析 -> 可复现导出 -> 规则化协作**。
 
-> 目标不是“临时做一张图”，而是“稳定、可审计、可复现、可持续迭代”的图表系统。
+> 本仓库强调“稳定口径 + 可审计 + 可复现”，不是一次性临时出图脚本。
 
 ---
 
-## 0. 必读文档（改代码前）
+## 0. 必读文档
 
-1. `README.md`：项目定位、最短闭环、文档地图
-2. `USAGE.md`：命令与功能行为事实源
-3. `AGENTS.md`：红线与口径契约（最高优先级）
-4. `contributing_ai.md`：AI 任务书与交付格式
+按以下顺序阅读：
+
+1. `AGENTS.md`（最高优先级规则）
+2. `USAGE.md`（命令与行为事实）
+3. `README.md`（项目总览）
+4. [`docs/DOCUMENTATION_MAP.md`](docs/DOCUMENTATION_MAP.md)（文档地图）
 
 扩展文档：
+- `contributing_ai.md`
+- `player-web/README.md`
 - `docs/PLAYER_CHART_TEMPLATE.md`
 - `docs/ARCHITECTURE_RULES.md`
 - `docs/ROADMAP.md`
 - `docs/GITHUB_WORKFLOW_AND_TAGS.md`
-- `player-web/README.md`
 
 ---
 
 ## 1. 10 分钟最短闭环
 
-### 1.1 CLI（模板出图）
+### 1.1 CLI（模板雷达图）
 
 ```bash
 python3 scripts/generate_player_radar.py \
   --input templates/player_chart_template.csv \
   --output out/player_charts/demo.png \
-  --title "Player Name (Age, Position, Minutes)" \
-  --subtitle "League Season Percentile Rankings & Per 90 Values"
+  --title "Smoke Test" \
+  --subtitle "Template Validation"
 ```
 
-### 1.2 Web（可交互分析）
+### 1.2 Web（交互分析）
 
 ```bash
 # 后端
@@ -53,27 +56,30 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 ---
 
-## 2. 项目结构
+## 2. 当前能力（V3.3）
+
+- 雷达图生成器：模板编辑、样式控制、SVG/PNG 导出
+- 球员数据：Excel 导入、排名/百分比、勾选导入雷达图
+- 散点图生成器：坐标选择、筛选、平均线、样式联动
+- 对应表体系：项目/比赛项目/姓名/球队 映射维护
+- 比赛总结：球队数据独立域 + 比赛雷达图双队对比
+- 球队样式能力：颜色/形状/logo 映射并联动展示
+- 前端源码统一 TypeScript（`player-web/src` 仅 `.ts/.tsx`）
+
+详细行为见：`USAGE.md`
+
+---
+
+## 3. 结构总览
 
 ```text
 player/
 ├── scripts/
-│   ├── generate_player_radar.py
-│   └── audit_architecture.py
 ├── templates/
-│   └── player_chart_template.csv
 ├── docs/
-│   ├── PLAYER_CHART_TEMPLATE.md
-│   ├── ARCHITECTURE_RULES.md
-│   ├── ROADMAP.md
-│   └── GITHUB_WORKFLOW_AND_TAGS.md
 ├── player-web/
 │   ├── src/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── app/constants.ts
-│   ├── server/
-│   └── README.md
+│   └── server/
 ├── out/
 ├── README.md
 ├── USAGE.md
@@ -83,57 +89,19 @@ player/
 
 ---
 
-## 3. 当前能力（V3.3）
+## 4. 框架约束（摘要）
 
-- 雷达图：模板化输入、分组排序、自动 tier、SVG/PNG 导出
-- 球员数据页：导入 Excel、排名/百分比计算、一键导入雷达图
-- 散点图生成器：X/Y 轴选择、筛选、平均线、样式控制、球员详情联动
-- 雷达/散点样式增强：背景色可调、样式面板布局优化（含三列控件排布）
-- 项目对应表：字段中英映射与分组维护
-- 姓名对应表：球员中英姓名映射维护，支持 Excel 导入姓名+球队中文映射与中文名补全
-- 图表姓名联动：散点图显示优先中文名，雷达标题支持 `English 中文`（空格分隔）
-- 球队对应表：球队中英映射、颜色/形状/logo 维护、同步球员数据球队
-- 散点图球队样式联动：按球队映射应用颜色/形状，未匹配回退黑色
-- 比赛总结：新增“球队数据 + 比赛雷达图”独立数据域，比赛雷达图支持双队对比、比分和 logo
-- 比赛项目对应表：仅用于比赛总结数据域的中英映射与分组维护
-- Web 前端源码：`player-web/src` 已统一迁移为 TypeScript（`.ts/.tsx`）
-- 主页/About：已重设计为更简洁的信息分区布局
+- 统计口径优先于视觉效果
+- 筛选范围与统计基准必须分离
+- 默认值/回退策略变化必须同步文档
+- 后端改动需重启并验证 `/api/health`
+- 前端仅 TypeScript，禁止新增 `.js/.jsx`
 
-## 3.1 Web 技术栈（简化）
-
-- 保持 `React + Vite` 主体，不新增路由/状态管理框架
-- 源码统一为 TypeScript，减少脚本混用维护成本
-- 本地存储键名与后端 API 保持兼容，保障现有数据可直接读取
+详细规则见：`AGENTS.md` 与 `docs/ARCHITECTURE_RULES.md`
 
 ---
 
-## 4. 核心原则
-
-- 模板优先：先定义输入字段，再设计展示
-- 口径稳定：统计规则优先于 UI 效果
-- 可追溯：每个展示值可追溯到原字段
-- 可复现：命令、输入、输出路径可复跑
-- 可审计：默认值与语义变化必须落文档
-
----
-
-## 5. 经验教训（摘要）
-
-1. 筛选与统计基准必须分离
-- 可见点过滤不应改变全局统计口径（如平均线）。
-
-2. 布局优化不能改变业务行为
-- UI 居中/容器策略不能导致交互语义漂移。
-
-3. 回退策略必须文档化
-- 缺列、未匹配、空值都必须有明确且可预测的回退。
-
-4. 默认值是产品规则的一部分
-- 默认开关、默认样式、默认排序都必须在 `USAGE.md` 可查。
-
----
-
-## 6. 最低验证
+## 5. 最低验证命令
 
 ```bash
 python3 scripts/audit_architecture.py
@@ -154,4 +122,4 @@ npm run build
 
 ---
 
-_最后更新：2026-03-04_
+_最后更新：2026-03-18_
