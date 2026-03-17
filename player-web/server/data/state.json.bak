@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-03-17T07:58:13.709689+00:00",
+  "updatedAt": "2026-03-17T16:04:25.818117+00:00",
   "data": {
     "draft": {
       "title": "Rômulo 罗慕洛 (30, RW, RAMF, 2617 mins.), 成都蓉城",
@@ -506,7 +506,7 @@
             "y": 120
           }
         },
-        "updatedAt": "2026-03-17T07:58:12.159Z"
+        "updatedAt": "2026-03-17T13:55:50.243Z"
       },
       {
         "id": "preset_1773302722478_ve374",
@@ -4129,6 +4129,6 @@
         "updatedAt": "2026-03-01T11:07:50.464Z"
       }
     ],
-    "selectedPresetId": "preset_1773302227732_30ka7"
+    "selectedPresetId": "draft"
   }
 }

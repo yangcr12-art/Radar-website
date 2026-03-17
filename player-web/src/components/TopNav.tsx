@@ -70,7 +70,10 @@ function TopNav({ activePage, onChangePage }: TopNavProps) {
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 aria-controls={menuId}
-                onClick={() => setPinnedDropdownKey((prev) => (prev === item.key ? "" : item.key))}
+                onClick={() => {
+                  if (childItems[0]?.key) onChangePage(childItems[0].key);
+                  setPinnedDropdownKey((prev) => (prev === item.key ? "" : item.key));
+                }}
               >
                 {item.label}
               </button>

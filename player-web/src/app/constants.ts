@@ -92,9 +92,13 @@ export const STORAGE_KEYS = {
   matchMetricSelectionsByDataset: "player_web_match_metric_selection_by_dataset_v1",
   matchTeamSearchByDataset: "player_web_match_team_search_by_dataset_v1",
   matchSelectedTeamByDataset: "player_web_match_selected_team_by_dataset_v1",
+  matchHomeTeamByDataset: "player_web_match_home_team_by_dataset_v1",
+  matchAwayTeamByDataset: "player_web_match_away_team_by_dataset_v1",
   matchRadarDraft: "player_web_match_radar_draft_v1",
   matchRadarImportPayload: "player_web_match_radar_import_payload_v1",
-  matchRadarCompareConfig: "player_web_match_radar_compare_config_v1"
+  matchRadarCompareConfig: "player_web_match_radar_compare_config_v1",
+  matchRadarMetricMaxByDataset: "player_web_match_radar_metric_max_by_dataset_v1",
+  matchRadarMetricPositionShiftByDataset: "player_web_match_radar_metric_position_shift_by_dataset_v1"
 };
 
 export const REORDER_MODE_VIEW = "view";

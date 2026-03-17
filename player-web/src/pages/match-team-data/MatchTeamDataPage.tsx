@@ -1,35 +1,122 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { checkHealth, deleteMatchDataset, fetchMatchDatasets, fetchMatchTeamById, fetchMatchTeamList, importMatchExcel } from "../../api/storageClient";
 import { METRIC_GROUP_RULES, STORAGE_KEYS } from "../../app/constants";
-import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "../../utils/importGroupOrder";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getMatchProjectGroupByColumn, getMatchProjectZhByColumn } from "../../utils/matchProjectMappingStore";
+import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
 import { formatDateTime } from "../../utils/timeFormat";
 
-function computeTier(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "avg";
-  if (num >= 90) return "elite";
-  if (num >= 65) return "above_avg";
-  if (num >= 34) return "avg";
-  return "bottom";
-}
+const GROUP_SORT_ORDER: Record<string, number> = {
+  "进攻": 0,
+  "其他": 1,
+  "传球": 2,
+  "对抗": 3,
+  "防守": 4,
+  "定位球": 5
+};
 
 function formatColumnLabel(column) {
   const en = String(column || "").trim();
   const zh = getMatchProjectZhByColumn(en);
-  if (zh && zh !== en) return `${zh} (${en})`;
+  if (zh) return zh;
   return en;
 }
 
-function inferMetricGroupAndOrder(column, metricText = "") {
+function inferMetricGroup(column, metricText = "") {
   const text = `${String(column || "")} ${String(metricText || "")}`.toLowerCase().trim();
   for (const rule of METRIC_GROUP_RULES) {
     if (rule.keywords.some((kw) => text.includes(kw))) {
-      return { group: rule.group, order: rule.order };
+      return rule.group;
     }
   }
-  return { group: "其他", order: 4 };
+  return "其他";
+}
+
+function normalizeGroupName(group) {
+  const text = String(group || "").trim().toLowerCase();
+  if (!text) return "其他";
+  if (["other", "others", "其他"].includes(text)) return "其他";
+  if (["attack", "attacking", "进攻"].includes(text)) return "进攻";
+  if (["defense", "defence", "defending", "防守"].includes(text)) return "防守";
+  if (["duel", "duels", "对抗"].includes(text)) return "对抗";
+  if (["pass", "passing", "传球"].includes(text)) return "传球";
+  if (["set piece", "set pieces", "定位球", "定位球进攻"].includes(text)) return "定位球";
+  return String(group || "").trim() || "其他";
+}
+
+function getGroupSortOrder(group) {
+  const key = normalizeGroupName(group);
+  return Object.prototype.hasOwnProperty.call(GROUP_SORT_ORDER, key) ? GROUP_SORT_ORDER[key] : 99;
+}
+
+function parseNumericValue(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const text = String(value).trim();
+  if (!text) return null;
+  const cleaned = text.replace(/,/g, "").replace(/%/g, "").trim();
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+}
+
+const MATCH_DATE_COLUMN_KEYWORDS = [
+  "match date",
+  "date",
+  "比赛日期",
+  "日期",
+  "kick off",
+  "kick-off",
+  "time",
+  "时间"
+];
+
+function normalizeDateText(value) {
+  if (value === null || value === undefined) return "";
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  if (/^\d+(\.\d+)?$/.test(raw) && raw.length <= 5) return "";
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, "0");
+    const d = String(parsed.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return raw;
+}
+
+function extractMatchDateFromTeamDetail(teamDetail) {
+  const columns = Array.isArray(teamDetail?.columns) ? teamDetail.columns : [];
+  let firstColumnFallback = "";
+  for (const item of columns) {
+    const colName = String(item?.column || "").trim();
+    const name = colName.toLowerCase();
+    if (name === "team") continue;
+    if (!firstColumnFallback) {
+      const fallbackText = normalizeDateText(item?.value);
+      if (fallbackText) firstColumnFallback = fallbackText;
+    }
+    if (!name) continue;
+    if (!MATCH_DATE_COLUMN_KEYWORDS.some((kw) => name.includes(kw))) continue;
+    const normalized = normalizeDateText(item?.value);
+    if (normalized) return normalized;
+  }
+  return firstColumnFallback;
+}
+
+function buildTeamMetricMap(teamDetail) {
+  const map = new Map<string, { column: string; raw: string; numeric: number; index: number }>();
+  const columns = Array.isArray(teamDetail?.columns) ? teamDetail.columns : [];
+  columns.forEach((item: any, index: number) => {
+    const column = String(item?.column || "").trim();
+    if (!column || String(column).toLowerCase() === "team") return;
+    if (!item?.isNumeric) return;
+    const raw = String(item?.value ?? "").trim();
+    const numeric = parseNumericValue(raw);
+    if (numeric === null) return;
+    map.set(column, { column, raw, numeric, index });
+  });
+  return map;
 }
 
 function MatchTeamDataPage() {
@@ -39,8 +126,10 @@ function MatchTeamDataPage() {
   const [selectedDatasetId, setSelectedDatasetId] = useState("");
   const [teamOptions, setTeamOptions] = useState([] as any[]);
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
-  const [selectedTeamId, setSelectedTeamId] = useState("");
-  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null as any);
+  const [selectedHomeTeamId, setSelectedHomeTeamId] = useState("");
+  const [selectedAwayTeamId, setSelectedAwayTeamId] = useState("");
+  const [selectedHomeTeamDetail, setSelectedHomeTeamDetail] = useState(null as any);
+  const [selectedAwayTeamDetail, setSelectedAwayTeamDetail] = useState(null as any);
   const [matchDataLoading, setMatchDataLoading] = useState(false);
   const [matchDataImporting, setMatchDataImporting] = useState(false);
   const [matchDataMessage, setMatchDataMessage] = useState("");
@@ -48,7 +137,8 @@ function MatchTeamDataPage() {
   const [detailReloadTick, setDetailReloadTick] = useState(0);
   const [metricSelectionsByDataset, setMetricSelectionsByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchMetricSelectionsByDataset, {}));
   const [teamSearchByDataset, setTeamSearchByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchTeamSearchByDataset, {}));
-  const [selectedTeamByDataset, setSelectedTeamByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchSelectedTeamByDataset, {}));
+  const [homeTeamByDataset, setHomeTeamByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchHomeTeamByDataset, {}));
+  const [awayTeamByDataset, setAwayTeamByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchAwayTeamByDataset, {}));
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
   const filteredTeamOptions = useMemo(() => {
@@ -57,27 +147,84 @@ function MatchTeamDataPage() {
     return teamOptions.filter((item) => String(item.team || "").toLowerCase().includes(keyword));
   }, [teamOptions, teamSearchQuery]);
 
+  const homeTeamName = useMemo(() => {
+    if (selectedHomeTeamDetail?.team) return String(selectedHomeTeamDetail.team);
+    const found = teamOptions.find((item) => item.id === selectedHomeTeamId);
+    return String(found?.team || "");
+  }, [selectedHomeTeamDetail, teamOptions, selectedHomeTeamId]);
+
+  const awayTeamName = useMemo(() => {
+    if (selectedAwayTeamDetail?.team) return String(selectedAwayTeamDetail.team);
+    const found = teamOptions.find((item) => item.id === selectedAwayTeamId);
+    return String(found?.team || "");
+  }, [selectedAwayTeamDetail, teamOptions, selectedAwayTeamId]);
+
+  const teamNameMapping = useMemo(() => getTeamMappingRowsByName(), []);
+
+  const homeTeamDisplayName = useMemo(() => {
+    const key = normalizeTeamName(homeTeamName).toLowerCase();
+    const zh = String(teamNameMapping.get(key)?.zh || "").trim();
+    return zh || homeTeamName;
+  }, [homeTeamName, teamNameMapping]);
+
+  const awayTeamDisplayName = useMemo(() => {
+    const key = normalizeTeamName(awayTeamName).toLowerCase();
+    const zh = String(teamNameMapping.get(key)?.zh || "").trim();
+    return zh || awayTeamName;
+  }, [awayTeamName, teamNameMapping]);
+
+  const sharedMetricRows = useMemo(() => {
+    const homeMap = buildTeamMetricMap(selectedHomeTeamDetail);
+    const awayMap = buildTeamMetricMap(selectedAwayTeamDetail);
+    const sharedColumns = [...homeMap.keys()].filter((column) => awayMap.has(column));
+
+    return sharedColumns
+      .map((column) => {
+        const homeMetric = homeMap.get(column);
+        const awayMetric = awayMap.get(column);
+        const metric = String(getMatchProjectZhByColumn(column) || column).trim();
+        const mappedGroup = String(getMatchProjectGroupByColumn(column) || "").trim();
+        const group = normalizeGroupName(mappedGroup || inferMetricGroup(column, metric));
+        return {
+          column,
+          metric,
+          group,
+          sourceIndex: Number(homeMetric?.index ?? 9999),
+          homeRaw: String(homeMetric?.raw ?? ""),
+          awayRaw: String(awayMetric?.raw ?? "")
+        };
+      })
+      .sort((a, b) => {
+        const groupDelta = getGroupSortOrder(a.group) - getGroupSortOrder(b.group);
+        if (groupDelta !== 0) return groupDelta;
+        const sourceDelta = Number(a.sourceIndex) - Number(b.sourceIndex);
+        if (sourceDelta !== 0) return sourceDelta;
+        return String(a.metric).localeCompare(String(b.metric), "zh-CN");
+      });
+  }, [selectedHomeTeamDetail, selectedAwayTeamDetail]);
+
   const selectedMetricColumns = useMemo(() => {
     if (!selectedDatasetId) return [];
     const selected = Array.isArray(metricSelectionsByDataset[selectedDatasetId]) ? metricSelectionsByDataset[selectedDatasetId] : [];
-    return selected.filter((col) => dataMeta.numericColumns.includes(col));
-  }, [selectedDatasetId, metricSelectionsByDataset, dataMeta.numericColumns]);
-
-  const selectedTeamName = useMemo(() => {
-    if (selectedTeamDetail?.team) return String(selectedTeamDetail.team);
-    const found = teamOptions.find((item) => item.id === selectedTeamId);
-    return found?.team || "";
-  }, [selectedTeamDetail, teamOptions, selectedTeamId]);
+    const availableSet = new Set(sharedMetricRows.map((row) => row.column));
+    return selected.filter((col) => availableSet.has(col));
+  }, [selectedDatasetId, metricSelectionsByDataset, sharedMetricRows]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.matchMetricSelectionsByDataset, metricSelectionsByDataset);
   }, [metricSelectionsByDataset]);
+
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.matchTeamSearchByDataset, teamSearchByDataset);
   }, [teamSearchByDataset]);
+
   useEffect(() => {
-    writeLocalStore(STORAGE_KEYS.matchSelectedTeamByDataset, selectedTeamByDataset);
-  }, [selectedTeamByDataset]);
+    writeLocalStore(STORAGE_KEYS.matchHomeTeamByDataset, homeTeamByDataset);
+  }, [homeTeamByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.matchAwayTeamByDataset, awayTeamByDataset);
+  }, [awayTeamByDataset]);
 
   const verifyBackendHealth = async () => {
     try {
@@ -115,17 +262,20 @@ function MatchTeamDataPage() {
     }
   };
 
-  const loadTeamList = async (datasetId: string, preferredTeamId = "") => {
+  const loadTeamList = async (datasetId: string, preferredHomeTeamId = "", preferredAwayTeamId = "") => {
     setMatchDataLoading(true);
     setMatchDataError("");
     try {
       if (!datasetId) {
         setTeamOptions([]);
-        setSelectedTeamId("");
-        setSelectedTeamDetail(null);
+        setSelectedHomeTeamId("");
+        setSelectedAwayTeamId("");
+        setSelectedHomeTeamDetail(null);
+        setSelectedAwayTeamDetail(null);
         setDataMeta({ teamCount: 0, updatedAt: "", numericColumns: [] });
         return;
       }
+
       const res = await fetchMatchTeamList(datasetId);
       const options = Array.isArray(res.teams) ? res.teams : [];
       setTeamOptions(options);
@@ -134,21 +284,35 @@ function MatchTeamDataPage() {
         updatedAt: res.updatedAt || "",
         numericColumns: Array.isArray(res.numericColumns) ? res.numericColumns : []
       });
+
       if (options.length === 0) {
-        setSelectedTeamId("");
-        setSelectedTeamDetail(null);
+        setSelectedHomeTeamId("");
+        setSelectedAwayTeamId("");
+        setSelectedHomeTeamDetail(null);
+        setSelectedAwayTeamDetail(null);
         setDetailReloadTick((n) => n + 1);
         return;
       }
-      const hasPreferred = preferredTeamId && options.some((item) => item.id === preferredTeamId);
-      const nextId = hasPreferred ? preferredTeamId : options[0].id;
-      if (nextId !== selectedTeamId) setSelectedTeamId(nextId);
-      else setDetailReloadTick((n) => n + 1);
+
+      const hasHome = preferredHomeTeamId && options.some((item) => item.id === preferredHomeTeamId);
+      const hasAway = preferredAwayTeamId && options.some((item) => item.id === preferredAwayTeamId);
+      const nextHome = hasHome ? preferredHomeTeamId : String(options[0]?.id || "");
+      let nextAway = hasAway ? preferredAwayTeamId : String(options[1]?.id || options[0]?.id || "");
+      if (nextAway === nextHome) {
+        const other = options.find((item) => item.id !== nextHome);
+        nextAway = String(other?.id || nextAway);
+      }
+
+      setSelectedHomeTeamId(nextHome);
+      setSelectedAwayTeamId(nextAway);
+      setDetailReloadTick((n) => n + 1);
     } catch (err: any) {
       setMatchDataError(`球队数据读取失败：${err.message}`);
       setTeamOptions([]);
-      setSelectedTeamId("");
-      setSelectedTeamDetail(null);
+      setSelectedHomeTeamId("");
+      setSelectedAwayTeamId("");
+      setSelectedHomeTeamDetail(null);
+      setSelectedAwayTeamDetail(null);
     } finally {
       setMatchDataLoading(false);
     }
@@ -162,8 +326,9 @@ function MatchTeamDataPage() {
   useEffect(() => {
     if (!selectedDatasetId) return;
     setTeamSearchQuery(String(teamSearchByDataset[selectedDatasetId] || ""));
-    const preferredTeamId = String(selectedTeamByDataset[selectedDatasetId] || selectedTeamId || "");
-    loadTeamList(selectedDatasetId, preferredTeamId);
+    const preferredHomeTeamId = String(homeTeamByDataset[selectedDatasetId] || "");
+    const preferredAwayTeamId = String(awayTeamByDataset[selectedDatasetId] || "");
+    loadTeamList(selectedDatasetId, preferredHomeTeamId, preferredAwayTeamId);
   }, [selectedDatasetId]);
 
   useEffect(() => {
@@ -173,40 +338,31 @@ function MatchTeamDataPage() {
 
   useEffect(() => {
     if (!selectedDatasetId) return;
-    setSelectedTeamByDataset((prev) => (prev[selectedDatasetId] === selectedTeamId ? prev : { ...prev, [selectedDatasetId]: selectedTeamId }));
-  }, [selectedDatasetId, selectedTeamId]);
+    setHomeTeamByDataset((prev) => (prev[selectedDatasetId] === selectedHomeTeamId ? prev : { ...prev, [selectedDatasetId]: selectedHomeTeamId }));
+  }, [selectedDatasetId, selectedHomeTeamId]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
-    const numericColumns = Array.isArray(dataMeta.numericColumns) ? dataMeta.numericColumns : [];
-    setMetricSelectionsByDataset((prev) => {
-      const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
-      const next = current.filter((col) => numericColumns.includes(col));
-      if (next.length === current.length) return prev;
-      return { ...prev, [selectedDatasetId]: next };
-    });
-  }, [selectedDatasetId, dataMeta.numericColumns]);
+    setAwayTeamByDataset((prev) => (prev[selectedDatasetId] === selectedAwayTeamId ? prev : { ...prev, [selectedDatasetId]: selectedAwayTeamId }));
+  }, [selectedDatasetId, selectedAwayTeamId]);
 
   useEffect(() => {
-    const loadDetail = async () => {
-      if (!selectedTeamId || !selectedDatasetId) {
-        setSelectedTeamDetail(null);
+    const loadDetail = async (teamId: string, setDetail: (v: any) => void) => {
+      if (!teamId || !selectedDatasetId) {
+        setDetail(null);
         return;
       }
-      setMatchDataLoading(true);
-      setMatchDataError("");
       try {
-        const res = await fetchMatchTeamById(selectedTeamId, selectedDatasetId);
-        setSelectedTeamDetail(res.team || null);
-      } catch (err: any) {
-        setMatchDataError(`球队详情读取失败：${err.message}`);
-        setSelectedTeamDetail(null);
-      } finally {
-        setMatchDataLoading(false);
+        const res = await fetchMatchTeamById(teamId, selectedDatasetId);
+        setDetail(res.team || null);
+      } catch {
+        setDetail(null);
       }
     };
-    loadDetail();
-  }, [selectedTeamId, selectedDatasetId, detailReloadTick]);
+
+    loadDetail(selectedHomeTeamId, setSelectedHomeTeamDetail);
+    loadDetail(selectedAwayTeamId, setSelectedAwayTeamDetail);
+  }, [selectedHomeTeamId, selectedAwayTeamId, selectedDatasetId, detailReloadTick]);
 
   const onMatchExcelUploadClick = () => excelInputRef.current?.click();
 
@@ -224,7 +380,7 @@ function MatchTeamDataPage() {
       const res = await importMatchExcel(file);
       setMatchDataMessage(`导入成功：${res.teamCount} 支球队，${res.numericColumnCount} 个数值列`);
       const nextDatasetId = await loadDatasets(String(res.datasetId || ""));
-      await loadTeamList(nextDatasetId, "");
+      await loadTeamList(nextDatasetId, "", "");
     } catch (err: any) {
       setMatchDataError(`导入失败：${err.message}`);
     } finally {
@@ -242,15 +398,45 @@ function MatchTeamDataPage() {
       const res = await deleteMatchDataset(selectedDatasetId);
       const next = String(res.selectedDatasetId || "");
       await loadDatasets(next);
-      await loadTeamList(next, "");
+      await loadTeamList(next, "", "");
       setMatchDataMessage("已删除当前数据集。");
     } catch (err: any) {
       setMatchDataError(`删除数据集失败：${err.message}`);
     }
   };
 
+  const handleHomeTeamChange = (teamId: string) => {
+    if (!teamId) {
+      setSelectedHomeTeamId("");
+      return;
+    }
+    let nextAway = selectedAwayTeamId;
+    if (teamId === selectedAwayTeamId) {
+      const other = teamOptions.find((item) => item.id !== teamId);
+      nextAway = String(other?.id || "");
+    }
+    setSelectedHomeTeamId(teamId);
+    setSelectedAwayTeamId(nextAway);
+  };
+
+  const handleAwayTeamChange = (teamId: string) => {
+    if (!teamId) {
+      setSelectedAwayTeamId("");
+      return;
+    }
+    let nextHome = selectedHomeTeamId;
+    if (teamId === selectedHomeTeamId) {
+      const other = teamOptions.find((item) => item.id !== teamId);
+      nextHome = String(other?.id || "");
+    }
+    setSelectedHomeTeamId(nextHome);
+    setSelectedAwayTeamId(teamId);
+  };
+
   const handleToggleMetricColumn = (column: string) => {
-    if (!selectedDatasetId || !dataMeta.numericColumns.includes(column)) return;
+    if (!selectedDatasetId) return;
+    const availableSet = new Set(sharedMetricRows.map((row) => row.column));
+    if (!availableSet.has(column)) return;
     setMetricSelectionsByDataset((prev) => {
       const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
       const next = current.includes(column) ? current.filter((item) => item !== column) : [...current, column];
@@ -260,7 +446,8 @@ function MatchTeamDataPage() {
 
   const handleSelectAllMetricColumns = () => {
     if (!selectedDatasetId) return;
-    setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: dataMeta.numericColumns }));
+    const columns = sharedMetricRows.map((row) => row.column);
+    setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: columns }));
   };
 
   const handleClearMetricColumns = () => {
@@ -269,56 +456,43 @@ function MatchTeamDataPage() {
   };
 
   const handleImportSelectedMetricsToMatchRadar = () => {
-    if (!selectedTeamDetail || !Array.isArray(selectedTeamDetail.columns) || selectedTeamDetail.columns.length === 0) {
-      setMatchDataError("请先选择球队并等待详情加载完成。");
+    if (!selectedHomeTeamId || !selectedAwayTeamId) {
+      setMatchDataError("请先选择主队和客队。");
       return;
     }
     if (selectedMetricColumns.length === 0) {
       setMatchDataError("请先勾选至少一个指标列。");
       return;
     }
-    const detailMap = new Map(selectedTeamDetail.columns.map((item: any) => [String(item.column || ""), item]));
-    const importedRows = selectedMetricColumns
-      .map((column: string, index: number) => {
-        const detail = detailMap.get(column);
-        if (!detail) return null;
-        const percentile = Number(detail.percentile);
-        if (!Number.isFinite(percentile)) return null;
-        const value = Math.max(0, Math.min(100, Number(percentile.toFixed(2))));
-        const metric = String(getMatchProjectZhByColumn(column) || column).replace(/每90分钟/g, "").replace(/\s*per\s*90/gi, "").trim();
-        const mappedGroup = getMatchProjectGroupByColumn(column);
-        const fallback = inferMetricGroupAndOrder(column, metric);
-        const group = normalizeImportedGroupName(mappedGroup || fallback.group);
-        return {
-          metric,
-          value,
-          group,
-          order: 0,
-          subOrder: 1,
-          per90: String(detail.value ?? ""),
-          tier: computeTier(value),
-          color: "",
-          _index: index
-        };
-      })
-      .filter(Boolean) as any[];
 
-    if (importedRows.length === 0) {
-      setMatchDataError("当前勾选列没有可用百分比数据。");
+    const selectedSet = new Set(selectedMetricColumns);
+    const rows = sharedMetricRows
+      .filter((row: any) => selectedSet.has(row.column))
+      .map((row: any) => ({
+        column: row.column,
+        metric: row.metric,
+        group: row.group,
+        sourceIndex: Number(row.sourceIndex ?? 9999),
+        homeRaw: row.homeRaw,
+        awayRaw: row.awayRaw
+      }));
+
+    if (rows.length === 0) {
+      setMatchDataError("当前勾选项没有可导入的数据。");
       return;
     }
-    const groupOrderMap = buildImportedGroupOrderMap(importedRows);
-    const rows = importedRows
-      .map((row: any) => ({ ...row, order: groupOrderMap.get(row.group) || 99 }))
-      .sort((a: any, b: any) => Number(a.order) - Number(b.order) || Number(a._index) - Number(b._index))
-      .map((row: any, idx: number) => ({ ...row, subOrder: idx + 1 }));
 
     const payload = {
       importedAt: new Date().toISOString(),
       datasetId: selectedDatasetId,
-      team: selectedTeamDetail?.team || selectedTeamName || "",
+      homeTeamId: selectedHomeTeamId,
+      awayTeamId: selectedAwayTeamId,
+      homeTeamName: homeTeamDisplayName || homeTeamName || "主队",
+      awayTeamName: awayTeamDisplayName || awayTeamName || "客队",
+      matchDateText: extractMatchDateFromTeamDetail(selectedHomeTeamDetail) || extractMatchDateFromTeamDetail(selectedAwayTeamDetail) || "",
       rows
     };
+
     writeLocalStore(STORAGE_KEYS.matchRadarImportPayload, payload);
     window.dispatchEvent(new Event("match-radar-imported"));
     setMatchDataMessage(`已导入 ${rows.length} 项到比赛雷达图。`);
@@ -329,12 +503,13 @@ function MatchTeamDataPage() {
 
   return (
     <section className="info-page">
-      <div className="info-card player-data-layout">
+      <div className="info-card player-data-layout match-team-data-layout">
         <div className="player-data-left">
           <h1>球队数据</h1>
           <p>导入 Excel（.xlsx）后写入比赛总结独立数据域，仅用于比赛雷达图。</p>
           <p>{`当前数据集球队数：${dataMeta.teamCount || 0}`}</p>
           <p>{`最近更新时间：${formatDateTime(dataMeta.updatedAt) || "-"}`}</p>
+
           <div className="title-row">
             <label>导入数据集</label>
             <select value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)} disabled={datasetOptions.length === 0}>
@@ -346,6 +521,7 @@ function MatchTeamDataPage() {
               ))}
             </select>
           </div>
+
           <div className="btn-row">
             <button onClick={onMatchExcelUploadClick} disabled={matchDataImporting || !backendOnline}>
               {matchDataImporting ? "导入中..." : backendOnline ? "导入 Excel（需 Team 列）" : "后端未连接"}
@@ -355,80 +531,105 @@ function MatchTeamDataPage() {
             </button>
             <input ref={excelInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden-file" onChange={onMatchExcelChange} />
           </div>
+
           <div className="title-row">
             <label>搜索球队</label>
             <input placeholder="输入球队名关键字" value={teamSearchQuery} onChange={(e) => setTeamSearchQuery(e.target.value)} disabled={teamOptions.length === 0} />
           </div>
-          <div className="title-row">
-            <label>选择球队</label>
-            <select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)} disabled={filteredTeamOptions.length === 0}>
-              {teamOptions.length === 0 ? <option value="">暂无球队数据</option> : null}
-              {teamOptions.length > 0 && filteredTeamOptions.length === 0 ? <option value="">无匹配球队</option> : null}
-              {filteredTeamOptions.map((item: any) => (
-                <option key={item.id} value={String(item.id)}>
-                  {item.team}
-                </option>
-              ))}
-            </select>
+
+          <div className="match-radar-grid-2">
+            <div className="title-row">
+              <label>主队</label>
+              <select value={selectedHomeTeamId} onChange={(e) => handleHomeTeamChange(e.target.value)} disabled={filteredTeamOptions.length === 0}>
+                {teamOptions.length === 0 ? <option value="">暂无球队数据</option> : null}
+                {teamOptions.length > 0 && filteredTeamOptions.length === 0 ? <option value="">无匹配球队</option> : null}
+                {filteredTeamOptions.map((item: any) => (
+                  <option key={item.id} value={String(item.id)}>
+                    {item.team}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="title-row">
+              <label>客队</label>
+              <select value={selectedAwayTeamId} onChange={(e) => handleAwayTeamChange(e.target.value)} disabled={filteredTeamOptions.length === 0}>
+                {teamOptions.length === 0 ? <option value="">暂无球队数据</option> : null}
+                {teamOptions.length > 0 && filteredTeamOptions.length === 0 ? <option value="">无匹配球队</option> : null}
+                {filteredTeamOptions.map((item: any) => (
+                  <option key={item.id} value={String(item.id)}>
+                    {item.team}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
           {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
           {matchDataMessage ? <p className="msg ok">{matchDataMessage}</p> : null}
           {matchDataError ? <p className="msg err">{matchDataError}</p> : null}
         </div>
+
         <div className="player-data-right">
-          <p className="selected-player-title">{`当前球队：${selectedTeamName || "-"}`}</p>
+          <p className="selected-player-title">{`当前对阵：${homeTeamDisplayName || homeTeamName || "-"} vs ${awayTeamDisplayName || awayTeamName || "-"}`}</p>
           <div className="player-export-section player-export-inline">
-            <p className="meta-title">勾选指标并导入到比赛雷达图</p>
-            <p>{`已勾选：${selectedMetricColumns.length}/${dataMeta.numericColumns.length || 0}`}</p>
+            <p className="meta-title">勾选指标并导入到比赛雷达图（原始值对比）</p>
+            <p>{`已勾选：${selectedMetricColumns.length}/${sharedMetricRows.length || 0}`}</p>
             <div className="btn-row">
-              <button onClick={handleSelectAllMetricColumns} disabled={!selectedDatasetId || dataMeta.numericColumns.length === 0}>
+              <button onClick={handleSelectAllMetricColumns} disabled={!selectedDatasetId || sharedMetricRows.length === 0}>
                 全选指标
               </button>
-              <button onClick={handleClearMetricColumns} disabled={!selectedDatasetId || dataMeta.numericColumns.length === 0}>
+              <button onClick={handleClearMetricColumns} disabled={!selectedDatasetId || sharedMetricRows.length === 0}>
                 清空勾选
               </button>
-              <button onClick={handleImportSelectedMetricsToMatchRadar} disabled={matchDataLoading || !selectedTeamId || selectedMetricColumns.length === 0}>
+              <button
+                onClick={handleImportSelectedMetricsToMatchRadar}
+                disabled={matchDataLoading || !selectedHomeTeamId || !selectedAwayTeamId || selectedMetricColumns.length === 0}
+              >
                 一键导入到比赛雷达图
               </button>
             </div>
           </div>
+
           <div className="player-data-table-wrap">
-            <table>
+            <table className="match-team-data-table">
               <thead>
                 <tr>
                   <th>勾选</th>
                   <th>列标题</th>
                   <th>group</th>
-                  <th>数值</th>
-                  <th>排名</th>
-                  <th>百分比 (%)</th>
+                  <th>{homeTeamDisplayName || homeTeamName || "主队"}</th>
+                  <th>{awayTeamDisplayName || awayTeamName || "客队"}</th>
                 </tr>
               </thead>
               <tbody>
                 {matchDataLoading ? (
                   <tr>
-                    <td colSpan={6}>加载中...</td>
+                    <td colSpan={5}>加载中...</td>
                   </tr>
                 ) : null}
-                {!matchDataLoading && selectedTeamDetail?.columns?.length
-                  ? selectedTeamDetail.columns
-                      .filter((row: any) => String(row.column || "").toLowerCase() !== "team")
-                      .map((row: any) => (
-                        <tr key={row.column}>
-                          <td>
-                            <input type="checkbox" checked={selectedMetricColumns.includes(row.column)} onChange={() => handleToggleMetricColumn(row.column)} disabled={!selectedDatasetId} />
-                          </td>
-                          <td>{formatColumnLabel(row.column)}</td>
-                          <td>{getMatchProjectGroupByColumn(row.column) || "-"}</td>
-                          <td>{String(row.value ?? "")}</td>
-                          <td>{row.rank ?? "-"}</td>
-                          <td>{row.percentile === null || row.percentile === undefined ? "-" : Number(row.percentile).toFixed(2)}</td>
-                        </tr>
-                      ))
+
+                {!matchDataLoading && sharedMetricRows.length > 0
+                  ? sharedMetricRows.map((row: any) => (
+                      <tr key={row.column}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedMetricColumns.includes(row.column)}
+                            onChange={() => handleToggleMetricColumn(row.column)}
+                            disabled={!selectedDatasetId}
+                          />
+                        </td>
+                        <td>{formatColumnLabel(row.column)}</td>
+                        <td>{row.group || "-"}</td>
+                        <td>{row.homeRaw || "-"}</td>
+                        <td>{row.awayRaw || "-"}</td>
+                      </tr>
+                    ))
                   : null}
-                {!matchDataLoading && (!selectedTeamDetail || !selectedTeamDetail.columns || selectedTeamDetail.columns.length === 0) ? (
+
+                {!matchDataLoading && sharedMetricRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6}>暂无球队数据，请先导入 Excel（需包含 Team 列）。</td>
+                    <td colSpan={5}>暂无共同数值指标，请先选择主客队并确认数据有效。</td>
                   </tr>
                 ) : null}
               </tbody>

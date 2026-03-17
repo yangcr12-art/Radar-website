@@ -312,7 +312,7 @@ function TeamMappingPage() {
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
         <div className="mapping-table-wrap">
-          <table className="mapping-table">
+          <table className="mapping-table team-mapping-table">
             <thead>
               <tr>
                 <th>#</th>

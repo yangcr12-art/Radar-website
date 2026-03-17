@@ -53,6 +53,21 @@ def _split_special_cases(en_anchor: str, zh_anchor: str, span: int) -> list[tupl
             ("Recoveries - High", "高位夺回球权数"),
         ]
 
+    if span == 4 and ("losses/low/medium/high" in en_norm or "丢失球权/低位/中位/高位" in zh_norm):
+        return [
+            ("Losses", "丢失球权总数"),
+            ("Losses - Low", "低位丢失球权数"),
+            ("Losses - Medium", "中位丢失球权数"),
+            ("Losses - High", "高位丢失球权数"),
+        ]
+
+    if span == 3 and ("penaltyareaentries" in en_norm or "攻入禁区" in zh_norm):
+        return [
+            ("Penalty area entries", "攻入禁区"),
+            ("Penalty area entries - Runs", "带球攻入禁区"),
+            ("Penalty area entries - Crosses", "传中入禁区"),
+        ]
+
     return []
 
 
@@ -99,6 +114,35 @@ def _build_span_names(en_anchor: str, zh_anchor: str, span: int) -> list[tuple[s
     return [(f"{en} #{idx + 1}", f"{zh}{idx + 1}") for idx in range(span)]
 
 
+def _normalize_loss_levels(en: str, zh: str, prev_anchor_en: str) -> tuple[str, str]:
+    en_text = _cell_text(en)
+    zh_text = _cell_text(zh)
+    prev = _cell_text(prev_anchor_en).lower()
+    if prev != "losses":
+        return en_text, zh_text
+    level_map = {
+        "low": ("Losses - Low", "低位丢失球权数"),
+        "medium": ("Losses - Medium", "中位丢失球权数"),
+        "high": ("Losses - High", "高位丢失球权数"),
+    }
+    mapped = level_map.get(en_text.lower())
+    if mapped:
+        return mapped
+    return en_text, zh_text
+
+
+def _normalize_penalty_entries(en: str, zh: str) -> tuple[str, str]:
+    en_text = _cell_text(en)
+    en_norm = en_text.lower().replace(" ", "")
+    if "penaltyareaentries(runs,crosses)%" in en_norm:
+        return "Penalty area entries - Crosses", "传中入禁区"
+    if "penaltyareaentries(runs,crosses)" in en_norm:
+        return "Penalty area entries - Runs", "带球攻入禁区"
+    if "penaltyareaentries(runs" in en_norm:
+        return "Penalty area entries", "攻入禁区"
+    return en_text, _cell_text(zh)
+
+
 @match_project_mapping_bp.route("/api/match-project-mapping/import-excel", methods=["POST"])
 def import_match_project_mapping_excel():
     file = request.files.get("file")
@@ -129,6 +173,7 @@ def import_match_project_mapping_excel():
     items: list[dict[str, str]] = []
     seen: set[str] = set()
     warnings: list[str] = []
+    prev_anchor_en = ""
     for i, anchor_idx in enumerate(anchors):
         next_anchor = anchors[i + 1] if i + 1 < len(anchors) else maxc
         span = max(1, next_anchor - anchor_idx)
@@ -141,6 +186,8 @@ def import_match_project_mapping_excel():
         for en_name, zh_name in pairs:
             en = _cell_text(en_name)
             zh = _cell_text(zh_name) or en
+            en, zh = _normalize_loss_levels(en, zh, prev_anchor_en)
+            en, zh = _normalize_penalty_entries(en, zh)
             if not en:
                 continue
             key = en.lower()
@@ -148,6 +195,7 @@ def import_match_project_mapping_excel():
                 continue
             seen.add(key)
             items.append({"en": en, "zh": zh, "group": _infer_group(en, zh)})
+        prev_anchor_en = _cell_text(en_anchor)
 
     return jsonify(
         {

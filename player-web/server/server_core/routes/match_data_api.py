@@ -64,6 +64,84 @@ def _to_cell_value(value: Any) -> Any:
     return str(value).strip()
 
 
+def _split_tokens(text: str) -> list[str]:
+    base = str(text or "").replace("／", "/").strip()
+    if not base:
+        return []
+    return [item.strip() for item in base.split("/") if item.strip()]
+
+
+def _split_special_cases(en_anchor: str, zh_anchor: str, span: int) -> list[str]:
+    en_norm = str(en_anchor or "").lower().replace(" ", "")
+    zh_norm = str(zh_anchor or "").replace(" ", "")
+    if span == 3 and ("shots/ontarget" in en_norm or "射门/射正" in zh_norm):
+        return ["Shots", "Shots on target", "Shots on target, %"]
+    if span == 4 and ("recoveries/low/medium/high" in en_norm or "夺回球权/低位/中位/高位" in zh_norm):
+        return ["Recoveries", "Recoveries - Low", "Recoveries - Medium", "Recoveries - High"]
+    if span == 4 and ("losses/low/medium/high" in en_norm or "丢失球权/低位/中位/高位" in zh_norm):
+        return ["Losses", "Losses - Low", "Losses - Medium", "Losses - High"]
+    if span == 3 and ("penaltyareaentries" in en_norm or "攻入禁区" in zh_norm):
+        return ["Penalty area entries", "Penalty area entries - Runs", "Penalty area entries - Crosses"]
+    return []
+
+
+def _build_span_header_names(en_anchor: str, zh_anchor: str, span: int) -> list[str]:
+    if span <= 1:
+        en = str(en_anchor or "").strip()
+        return [en]
+
+    special = _split_special_cases(en_anchor, zh_anchor, span)
+    if special:
+        return special
+
+    en_tokens = _split_tokens(str(en_anchor or ""))
+    if len(en_tokens) == span and span > 0:
+        return en_tokens
+
+    if span == 3 and len(en_tokens) == 2:
+        base_en, qual_en = en_tokens
+        return [base_en, f"{base_en}, {qual_en}", f"{base_en}, {qual_en} %"]
+
+    if span == len(en_tokens) + 1 and len(en_tokens) >= 1:
+        return en_tokens[:-1] + [en_tokens[-1], f"{en_tokens[-1]}, %"]
+
+    en = str(en_anchor or "").strip() or "Metric"
+    return [f"{en} #{idx + 1}" for idx in range(span)]
+
+
+def _build_split_headers(row1: list[Any], row2: list[Any], maxc: int) -> list[str]:
+    en_row = [str(_to_cell_value(row1[c]) if c < len(row1) else "").strip() for c in range(maxc)]
+    zh_row = [str(_to_cell_value(row2[c]) if c < len(row2) else "").strip() for c in range(maxc)]
+
+    anchors = [idx for idx, value in enumerate(en_row) if value]
+    if not anchors:
+        return []
+
+    headers = ["" for _ in range(maxc)]
+    for i, anchor_idx in enumerate(anchors):
+        next_anchor = anchors[i + 1] if i + 1 < len(anchors) else maxc
+        span = max(1, next_anchor - anchor_idx)
+        names = _build_span_header_names(en_row[anchor_idx], zh_row[anchor_idx], span)
+        if len(names) != span:
+            anchor_text = en_row[anchor_idx] or "Metric"
+            names = (names + [f"{anchor_text} #{n + 1}" for n in range(span)])[:span]
+        for offset in range(span):
+            headers[anchor_idx + offset] = str(names[offset] or "").strip()
+
+    # Deduplicate headers while keeping stable display names.
+    seen: dict[str, int] = {}
+    for idx, header in enumerate(headers):
+        key = header.lower().strip()
+        if not key:
+            headers[idx] = f"Column {idx + 1}"
+            key = headers[idx].lower()
+        count = seen.get(key, 0) + 1
+        seen[key] = count
+        if count > 1:
+            headers[idx] = f"{header} ({count})"
+    return headers
+
+
 def _make_id(name: str, used_ids: dict[str, int]) -> str:
     base = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
     if not base:
@@ -178,8 +256,31 @@ def import_match_data_excel():
     if len(rows) < 2:
         return jsonify({"ok": False, "error": "excel must contain header and data rows"}), 400
 
-    headers_raw = [_to_cell_value(x) for x in rows[0]]
-    headers = [str(x).strip() for x in headers_raw]
+    maxc = max((len(r) for r in rows), default=0)
+    if maxc <= 0:
+        return jsonify({"ok": False, "error": "empty sheet"}), 400
+
+    row1 = list(rows[0]) if len(rows) > 0 else []
+    row2 = list(rows[1]) if len(rows) > 1 else []
+    two_header_like = False
+    if len(rows) >= 3:
+        for c in range(maxc):
+            r1 = str(_to_cell_value(row1[c]) if c < len(row1) else "").strip()
+            r2 = str(_to_cell_value(row2[c]) if c < len(row2) else "").strip()
+            if (not r1 and r2) or ("/" in r1):
+                two_header_like = True
+                break
+
+    if two_header_like:
+        headers = _build_split_headers(row1, row2, maxc)
+        data_rows = rows[2:]
+    else:
+        headers = [str(_to_cell_value(row1[c]) if c < len(row1) else "").strip() for c in range(maxc)]
+        data_rows = rows[1:]
+
+    if len(data_rows) == 0:
+        return jsonify({"ok": False, "error": "excel has no data rows"}), 400
+
     headers_lower = [h.lower() for h in headers]
     if "team" not in headers_lower:
         return jsonify({"ok": False, "error": "missing required column: Team"}), 400
@@ -189,7 +290,7 @@ def import_match_data_excel():
     used_ids: dict[str, int] = {}
     candidate_numeric_cols = [h for h in headers if h and h.lower() != "team"]
 
-    for row_idx, excel_row in enumerate(rows[1:], start=1):
+    for row_idx, excel_row in enumerate(data_rows, start=1):
         cells = list(excel_row) + [None] * max(0, len(headers) - len(excel_row))
         raw = {}
         for i, col in enumerate(headers):
