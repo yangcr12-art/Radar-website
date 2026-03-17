@@ -1,14 +1,25 @@
 const TEAM_MAPPING_STORAGE_KEY = "player_web_team_mapping_rows_v1";
 
+export type TeamMappingRow = {
+  en: string;
+  zh: string;
+  color: string;
+  shape: string;
+  logoDataUrl: string;
+  logoFileName: string;
+};
+
 function normalizeRow(item) {
   if (!item || typeof item !== "object") {
-    return { en: "", zh: "", color: "", shape: "" };
+    return { en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" };
   }
   return {
     en: String(item.en || "").trim(),
     zh: String(item.zh || "").trim(),
     color: String(item.color || "").trim(),
-    shape: String(item.shape || "").trim()
+    shape: String(item.shape || "").trim(),
+    logoDataUrl: String(item.logoDataUrl || "").trim(),
+    logoFileName: String(item.logoFileName || "").trim()
   };
 }
 
@@ -36,11 +47,23 @@ export function getTeamMappingRows() {
 
 export function getTeamMappingRowsByEnglish() {
   const rows = getTeamMappingRows();
-  const mapping = new Map();
+  const mapping = new Map<string, TeamMappingRow>();
   rows.forEach((row) => {
     const key = normalizeTeamName(row.en).toLowerCase();
     if (!key) return;
     mapping.set(key, row);
+  });
+  return mapping;
+}
+
+export function getTeamMappingRowsByName() {
+  const rows = getTeamMappingRows();
+  const mapping = new Map<string, TeamMappingRow>();
+  rows.forEach((row) => {
+    const enKey = normalizeTeamName(row.en).toLowerCase();
+    if (enKey) mapping.set(enKey, row);
+    const zhKey = normalizeTeamName(row.zh).toLowerCase();
+    if (zhKey) mapping.set(zhKey, row);
   });
   return mapping;
 }
@@ -65,7 +88,7 @@ export function mergeTeamMappingRows(existingRows, importedTeamNames) {
     const en = normalizeTeamName(name);
     const key = en.toLowerCase();
     if (!en || existingKeys.has(key)) return;
-    nextRows.push({ en, zh: "", color: "", shape: "" });
+    nextRows.push({ en, zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" });
     existingKeys.add(key);
   });
 

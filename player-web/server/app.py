@@ -11,13 +11,13 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 from openpyxl import load_workbook
+from server_core.routes.match_data_api import match_data_bp
+from server_core.routes.match_project_mapping_api import match_project_mapping_bp
 from server_core.services.ranking_service import (
     compute_player_metrics as _svc_compute_player_metrics,
     is_lower_better_column as _svc_is_lower_better_column,
     normalize_player_dataset_doc as _svc_normalize_player_dataset_doc,
 )
-
-
 APP_DIR = Path(__file__).resolve().parent
 DATA_DIR = APP_DIR / "data"
 STATE_PATH = DATA_DIR / "state.json"
@@ -30,8 +30,9 @@ PLAYER_DATA_INDEX_BAK_PATH = DATA_DIR / "player_datasets_index.json.bak"
 VERSION = 1
 WRITE_LOCK = Lock()
 
-
 app = Flask(__name__)
+app.register_blueprint(match_data_bp)
+app.register_blueprint(match_project_mapping_bp)
 
 
 def _iso_now() -> str:
@@ -475,6 +476,8 @@ def import_player_data_excel():
             "numericColumnCount": len(numeric_columns),
         }
     )
+
+
 @app.route("/api/name-mapping/import-excel", methods=["POST"])
 def import_name_mapping_excel():
     file = request.files.get("file")

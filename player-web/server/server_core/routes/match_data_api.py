@@ -1,0 +1,378 @@
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from threading import Lock
+from typing import Any
+from uuid import uuid4
+
+from flask import Blueprint, jsonify, request
+from openpyxl import load_workbook
+from server_core.services.ranking_service import (
+    compute_player_metrics,
+    is_lower_better_column,
+)
+
+
+VERSION = 1
+WRITE_LOCK = Lock()
+APP_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = APP_DIR / "data"
+MATCH_DATASETS_DIR = DATA_DIR / "match_datasets"
+MATCH_DATA_INDEX_PATH = DATA_DIR / "match_datasets_index.json"
+MATCH_DATA_INDEX_BAK_PATH = DATA_DIR / "match_datasets_index.json.bak"
+
+match_data_bp = Blueprint("match_data_api", __name__)
+
+
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _ensure_data_dir() -> None:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    MATCH_DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _to_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        text = text.replace(",", "")
+        try:
+            return float(text)
+        except ValueError:
+            return None
+    return None
+
+
+def _to_cell_value(value: Any) -> Any:
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        return value
+    return str(value).strip()
+
+
+def _make_id(name: str, used_ids: dict[str, int]) -> str:
+    base = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
+    if not base:
+        base = "team"
+    if base not in used_ids:
+        used_ids[base] = 1
+        return base
+    used_ids[base] += 1
+    return f"{base}_{used_ids[base]}"
+
+
+def _default_index() -> dict[str, Any]:
+    return {
+        "version": VERSION,
+        "updatedAt": None,
+        "selectedDatasetId": "",
+        "datasets": [],
+    }
+
+
+def _dataset_file_path(dataset_id: str) -> Path:
+    return MATCH_DATASETS_DIR / f"{dataset_id}.json"
+
+
+def _atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, Any]) -> None:
+    _ensure_data_dir()
+    data = json.dumps(doc, ensure_ascii=False, indent=2)
+    with WRITE_LOCK:
+        if path.exists():
+            bak_path.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+        with NamedTemporaryFile("w", encoding="utf-8", delete=False, dir=path.parent, prefix=prefix, suffix=".tmp") as tf:
+            tf.write(data)
+            tmp_path = Path(tf.name)
+        os.replace(tmp_path, path)
+
+
+def _load_index() -> dict[str, Any]:
+    if MATCH_DATA_INDEX_PATH.exists():
+        with MATCH_DATA_INDEX_PATH.open("r", encoding="utf-8") as f:
+            idx = json.load(f)
+            if isinstance(idx, dict):
+                return {
+                    "version": int(idx.get("version", VERSION)),
+                    "updatedAt": idx.get("updatedAt"),
+                    "selectedDatasetId": str(idx.get("selectedDatasetId") or ""),
+                    "datasets": idx.get("datasets") if isinstance(idx.get("datasets"), list) else [],
+                }
+    return _default_index()
+
+
+def _load_dataset_doc(dataset_id: str) -> dict[str, Any] | None:
+    path = _dataset_file_path(dataset_id)
+    if not path.exists():
+        return None
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_dataset_doc(dataset_id: str, doc: dict[str, Any]) -> None:
+    path = _dataset_file_path(dataset_id)
+    bak_path = MATCH_DATASETS_DIR / f"{dataset_id}.bak.json"
+    _atomic_write_json(path, bak_path, f"match_dataset_{dataset_id}_", doc)
+
+
+def _write_index(doc: dict[str, Any]) -> None:
+    _atomic_write_json(MATCH_DATA_INDEX_PATH, MATCH_DATA_INDEX_BAK_PATH, "match_datasets_index_", doc)
+
+
+def _resolve_dataset(index: dict[str, Any], requested_dataset_id: str) -> tuple[str, dict[str, Any] | None]:
+    dataset_id = requested_dataset_id or str(index.get("selectedDatasetId") or "")
+    if not dataset_id:
+        return "", None
+    return dataset_id, _load_dataset_doc(dataset_id)
+
+
+def _build_columns(entity: dict[str, Any], schema: dict[str, Any]) -> list[dict[str, Any]]:
+    numeric_cols = set(schema.get("numericColumns", []))
+    all_cols = schema.get("allColumns", [])
+    raw = entity.get("raw", {})
+    metrics = entity.get("metrics", {})
+    rows = []
+    for col in all_cols:
+        metric = metrics.get(col, {})
+        rows.append(
+            {
+                "column": col,
+                "value": raw.get(col, ""),
+                "rank": metric.get("rank"),
+                "percentile": metric.get("percentile"),
+                "isNumeric": col in numeric_cols,
+            }
+        )
+    return rows
+
+
+@match_data_bp.route("/api/match-data/import-excel", methods=["POST"])
+def import_match_data_excel():
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"ok": False, "error": "missing file"}), 400
+    if not file.filename.lower().endswith(".xlsx"):
+        return jsonify({"ok": False, "error": "only .xlsx is supported"}), 400
+
+    try:
+        wb = load_workbook(file, data_only=True, read_only=True)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"invalid excel file: {exc}"}), 400
+
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+    if len(rows) < 2:
+        return jsonify({"ok": False, "error": "excel must contain header and data rows"}), 400
+
+    headers_raw = [_to_cell_value(x) for x in rows[0]]
+    headers = [str(x).strip() for x in headers_raw]
+    headers_lower = [h.lower() for h in headers]
+    if "team" not in headers_lower:
+        return jsonify({"ok": False, "error": "missing required column: Team"}), 400
+    team_idx = headers_lower.index("team")
+
+    parsed_teams: list[dict[str, Any]] = []
+    used_ids: dict[str, int] = {}
+    candidate_numeric_cols = [h for h in headers if h and h.lower() != "team"]
+
+    for row_idx, excel_row in enumerate(rows[1:], start=1):
+        cells = list(excel_row) + [None] * max(0, len(headers) - len(excel_row))
+        raw = {}
+        for i, col in enumerate(headers):
+            raw[col] = _to_cell_value(cells[i] if i < len(cells) else None)
+
+        team_name = str(raw.get(headers[team_idx], "")).strip()
+        if not team_name:
+            continue
+
+        team = {
+            "id": _make_id(team_name, used_ids),
+            "team": team_name,
+            "raw": raw,
+            "metrics": {},
+            "_numeric": {},
+            "_rowIndex": row_idx,
+        }
+        parsed_teams.append(team)
+
+    if not parsed_teams:
+        return jsonify({"ok": False, "error": "no valid team rows found"}), 400
+
+    numeric_columns, lower_better_columns = compute_player_metrics(
+        parsed_teams,
+        candidate_numeric_cols,
+        to_float_fn=_to_float,
+        is_lower_better_fn=is_lower_better_column,
+    )
+    for team in parsed_teams:
+        team.pop("_numeric", None)
+        team.pop("_rowIndex", None)
+
+    doc = {
+        "version": VERSION,
+        "updatedAt": _iso_now(),
+        "source": {
+            "filename": file.filename,
+            "sheet": ws.title,
+            "rowCount": len(parsed_teams),
+        },
+        "schema": {
+            "teamColumn": "team",
+            "numericColumns": numeric_columns,
+            "lowerBetterColumns": lower_better_columns,
+            "allColumns": headers,
+        },
+        "teams": parsed_teams,
+    }
+    dataset_id = f"mds_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:6]}"
+    doc["datasetId"] = dataset_id
+
+    try:
+        _write_dataset_doc(dataset_id, doc)
+        index = _load_index()
+        datasets = [d for d in index.get("datasets", []) if isinstance(d, dict)]
+        datasets.insert(
+            0,
+            {
+                "id": dataset_id,
+                "name": f"{file.filename} ({doc['updatedAt'][:19]})",
+                "updatedAt": doc["updatedAt"],
+                "teamCount": len(parsed_teams),
+                "numericColumnCount": len(numeric_columns),
+                "sourceFile": file.filename,
+            },
+        )
+        index["datasets"] = datasets
+        index["selectedDatasetId"] = dataset_id
+        index["updatedAt"] = doc["updatedAt"]
+        _write_index(index)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"write failed: {exc}"}), 500
+
+    return jsonify(
+        {
+            "ok": True,
+            "datasetId": dataset_id,
+            "updatedAt": doc["updatedAt"],
+            "teamCount": len(parsed_teams),
+            "numericColumnCount": len(numeric_columns),
+        }
+    )
+
+
+@match_data_bp.route("/api/match-data/datasets", methods=["GET"])
+def get_match_datasets():
+    try:
+        index = _load_index()
+        return jsonify(
+            {
+                "ok": True,
+                "datasets": index.get("datasets", []),
+                "selectedDatasetId": index.get("selectedDatasetId", ""),
+                "updatedAt": index.get("updatedAt"),
+            }
+        )
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"read failed: {exc}"}), 500
+
+
+@match_data_bp.route("/api/match-data/datasets/<dataset_id>", methods=["DELETE"])
+def delete_match_dataset(dataset_id: str):
+    try:
+        index = _load_index()
+        datasets = [d for d in index.get("datasets", []) if isinstance(d, dict)]
+        matched = next((d for d in datasets if d.get("id") == dataset_id), None)
+        if matched is None:
+            return jsonify({"ok": False, "error": "dataset not found"}), 404
+
+        path = _dataset_file_path(dataset_id)
+        if path.exists():
+            path.unlink()
+
+        remaining = [d for d in datasets if d.get("id") != dataset_id]
+        index["datasets"] = remaining
+        if index.get("selectedDatasetId") == dataset_id:
+            index["selectedDatasetId"] = remaining[0].get("id") if remaining else ""
+        index["updatedAt"] = _iso_now()
+        _write_index(index)
+        return jsonify({"ok": True, "deletedDatasetId": dataset_id, "selectedDatasetId": index.get("selectedDatasetId", ""), "datasets": remaining})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"delete failed: {exc}"}), 500
+
+
+@match_data_bp.route("/api/match-data/teams", methods=["GET"])
+def get_match_team_list():
+    try:
+        index = _load_index()
+        dataset_id, doc = _resolve_dataset(index, str(request.args.get("datasetId") or ""))
+        if doc is None:
+            return jsonify(
+                {
+                    "ok": True,
+                    "teams": [],
+                    "teamCount": 0,
+                    "updatedAt": None,
+                    "numericColumns": [],
+                    "datasetId": dataset_id,
+                    "selectedDatasetId": index.get("selectedDatasetId", ""),
+                }
+            )
+        teams = doc.get("teams", [])
+        schema = doc.get("schema", {}) if isinstance(doc.get("schema"), dict) else {}
+        items = [{"id": t.get("id"), "team": t.get("team")} for t in teams if t.get("id") and t.get("team")]
+        return jsonify(
+            {
+                "ok": True,
+                "teams": items,
+                "teamCount": len(items),
+                "datasetId": dataset_id,
+                "selectedDatasetId": index.get("selectedDatasetId", ""),
+                "updatedAt": doc.get("updatedAt"),
+                "numericColumns": schema.get("numericColumns", []),
+            }
+        )
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"read failed: {exc}"}), 500
+
+
+@match_data_bp.route("/api/match-data/team/<team_id>", methods=["GET"])
+def get_match_team_detail(team_id: str):
+    try:
+        index = _load_index()
+        dataset_id, doc = _resolve_dataset(index, str(request.args.get("datasetId") or ""))
+        if doc is None:
+            return jsonify({"ok": False, "error": "match dataset not found"}), 404
+        teams = doc.get("teams", [])
+        selected = next((t for t in teams if t.get("id") == team_id), None)
+        if selected is None:
+            return jsonify({"ok": False, "error": "team not found"}), 404
+        schema = doc.get("schema", {}) if isinstance(doc.get("schema"), dict) else {}
+        return jsonify(
+            {
+                "ok": True,
+                "team": {
+                    "id": selected.get("id"),
+                    "team": selected.get("team"),
+                    "columns": _build_columns(selected, schema),
+                },
+                "datasetId": dataset_id,
+                "selectedDatasetId": index.get("selectedDatasetId", ""),
+                "updatedAt": doc.get("updatedAt"),
+            }
+        )
+    except Exception as exc:
+        return jsonify({"ok": False, "error": f"read failed: {exc}"}), 500

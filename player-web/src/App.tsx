@@ -4,9 +4,13 @@ import AboutPage from "./pages/about/AboutPage";
 import HomePage from "./pages/home/HomePage";
 import PlayerDataPage from "./pages/player-data/PlayerDataPage";
 import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
+import MatchProjectMappingPage from "./pages/match-project-mapping/MatchProjectMappingPage";
 import NameMappingPage from "./pages/name-mapping/NameMappingPage";
 import ScatterPlotPage from "./pages/scatter-plot/ScatterPlotPage";
 import TeamMappingPage from "./pages/team-mapping/TeamMappingPage";
+import MatchTeamDataPage from "./pages/match-team-data/MatchTeamDataPage";
+import MatchRadarPage from "./pages/match-radar/MatchRadarPage";
+import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
 import { getNameMappingRowsByEnglish, normalizePlayerName } from "./utils/nameMappingStore";
@@ -33,7 +37,6 @@ import {
   MAX_RADIAL_LENGTH,
   METRIC_GROUP_RULES,
   METRIC_LABEL_RADIUS,
-  NAV_ITEMS,
   REQUIRED_COLUMNS,
   REORDER_MODE_ORDER,
   STORAGE_KEYS,
@@ -256,13 +259,19 @@ function readStorage(key, fallbackValue) {
   }
 }
 
-function writeStorage(key, value) {
+function writeStorageWithResult(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
+    return { ok: true, error: "" };
+  } catch (err) {
+    const name = err && typeof err === "object" && typeof err.name === "string" ? err.name : "UnknownError";
+    const message = err && typeof err === "object" && typeof err.message === "string" ? err.message : "";
+    return { ok: false, error: message ? `${name}: ${message}` : name };
   }
+}
+
+function writeStorage(key, value) {
+  return writeStorageWithResult(key, value).ok;
 }
 
 function normalizePresets(input) {
@@ -1037,11 +1046,11 @@ function App() {
   useEffect(() => {
     if (!isHydrated) return;
     const snapshot = getSnapshot();
-    const okDraft = writeStorage(STORAGE_KEYS.draft, snapshot);
-    const okSelected = writeStorage(STORAGE_KEYS.selectedPresetId, selectedPresetId);
-    const okPresets = writeStorage(STORAGE_KEYS.presets, presets);
-    if (!okDraft || !okSelected || !okPresets) {
-      setError("本地缓存写入失败。");
+    const writes = [{ label: "draft", key: STORAGE_KEYS.draft, value: snapshot }, { label: "selectedPresetId", key: STORAGE_KEYS.selectedPresetId, value: selectedPresetId }, { label: "presets", key: STORAGE_KEYS.presets, value: presets }];
+    const failed = writes.map((item) => ({ ...item, result: writeStorageWithResult(item.key, item.value) })).filter((item) => !item.result.ok);
+    if (failed.length > 0) {
+      const detail = failed.map((item) => `${item.label}(${item.result.error})`).join("; ");
+      setError(`本地缓存写入失败：${detail}`);
     }
   }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, presets, isHydrated]);
 
@@ -1915,28 +1924,18 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="top-nav">
-        <div className="brand">生成器V3.3</div>
-        <nav className="nav-list" aria-label="Primary Navigation">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              className={`nav-item${activePage === item.key ? " active" : ""}`}
-              onClick={() => setActivePage(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </header>
+      <TopNav activePage={activePage} onChangePage={setActivePage} />
 
       <main className="content-shell">
         {activePage === "home" ? <HomePage onEnterRadar={() => setActivePage("radar")} /> : null}
         {activePage === "radar" ? radarPage : null}
         {activePage === "about" ? <AboutPage /> : null}
         {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
+        {activePage === "match_project_mapping" ? <MatchProjectMappingPage /> : null}
         {activePage === "name_mapping" ? <NameMappingPage /> : null}
         {activePage === "team_mapping" ? <TeamMappingPage /> : null}
+        {activePage === "match_team_data" ? <MatchTeamDataPage /> : null}
+        {activePage === "match_radar" ? <MatchRadarPage /> : null}
         {activePage === "player_data" ? (
           <PlayerDataPage
             playerDataMeta={playerDataMeta}

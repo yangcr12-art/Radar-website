@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { fetchPlayerDataset, fetchPlayerDatasets } from "../../api/storageClient";
 import { getTeamMappingRows, mergeTeamMappingRows, normalizeTeamName, saveTeamMappingRows } from "../../utils/teamMappingStore";
 
@@ -29,9 +29,9 @@ function escapeCsvCell(value) {
 }
 
 function toCsv(rows) {
-  const header = "English,中文翻译,color,shape";
+  const header = "English,中文翻译,color,shape,logoFileName";
   const body = rows
-    .map((item) => [item.en, item.zh, item.color, item.shape].map((value) => escapeCsvCell(value)).join(","))
+    .map((item) => [item.en, item.zh, item.color, item.shape, item.logoFileName].map((value) => escapeCsvCell(value)).join(","))
     .join("\n");
   return `${header}\n${body}\n`;
 }
@@ -95,20 +95,41 @@ function extractTeamNamesFromDatasetDoc(doc) {
   return [...names];
 }
 
+function getFileBaseName(fileName) {
+  return String(fileName || "").replace(/\.[^.]+$/, "").trim();
+}
+
+function normalizeMatchKey(text) {
+  return String(text || "").trim().toLowerCase();
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("读取图片失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function TeamMappingPage() {
   const [rows, setRows] = useState(() => {
     const loaded = getTeamMappingRows();
-    return loaded.length > 0 ? loaded : [{ en: "", zh: "", color: "", shape: "" }];
+    return loaded.length > 0 ? loaded : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }];
   });
-
-  const displayRows = useMemo(() => (rows.length > 0 ? rows : [{ en: "", zh: "", color: "", shape: "" }]), [rows]);
+  const batchLogoInputRef = useRef<HTMLInputElement | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const displayRows = useMemo(
+    () => (rows.length > 0 ? rows : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }]),
+    [rows]
+  );
+
   const persistRows = (nextRows) => {
     const normalized = Array.isArray(nextRows) ? nextRows : [];
-    const withFallback = normalized.length > 0 ? normalized : [{ en: "", zh: "", color: "", shape: "" }];
+    const withFallback = normalized.length > 0 ? normalized : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }];
     setRows(withFallback);
     saveTeamMappingRows(withFallback);
   };
@@ -122,7 +143,7 @@ function TeamMappingPage() {
   const handleAddRow = () => {
     setError("");
     setMessage("");
-    persistRows([...displayRows, { en: "", zh: "", color: "", shape: "" }]);
+    persistRows([...displayRows, { en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }]);
   };
 
   const handleDeleteRow = (index) => {
@@ -184,17 +205,109 @@ function TeamMappingPage() {
     }
   };
 
+  const handleRowLogoUpload = async (index, file) => {
+    if (!file) return;
+    setError("");
+    setMessage("");
+    try {
+      const logoDataUrl = String(await readFileAsDataUrl(file));
+      persistRows(
+        displayRows.map((row, idx) =>
+          idx === index
+            ? {
+                ...row,
+                logoDataUrl,
+                logoFileName: file.name
+              }
+            : row
+        )
+      );
+      setMessage(`已上传 logo：${file.name}`);
+    } catch (err) {
+      setError(`上传 logo 失败：${err.message}`);
+    }
+  };
+
+  const handleBatchLogoImport = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (files.length === 0) return;
+
+    setError("");
+    setMessage("");
+
+    const indexByName = new Map();
+    displayRows.forEach((row, idx) => {
+      const enKey = normalizeMatchKey(row.en);
+      const zhKey = normalizeMatchKey(row.zh);
+      if (enKey) indexByName.set(enKey, idx);
+      if (zhKey) indexByName.set(zhKey, idx);
+    });
+
+    const nextRows = [...displayRows];
+    let matchedCount = 0;
+    let skippedCount = 0;
+
+    for (const file of files) {
+      const key = normalizeMatchKey(getFileBaseName(file.name));
+      const rowIndex = indexByName.get(key);
+      if (rowIndex === undefined) {
+        skippedCount += 1;
+        continue;
+      }
+      try {
+        const logoDataUrl = String(await readFileAsDataUrl(file));
+        nextRows[rowIndex] = {
+          ...nextRows[rowIndex],
+          logoDataUrl,
+          logoFileName: file.name
+        };
+        matchedCount += 1;
+      } catch {
+        skippedCount += 1;
+      }
+    }
+
+    persistRows(nextRows);
+    setMessage(`批量导入完成：匹配 ${matchedCount} 个，未匹配/失败 ${skippedCount} 个。`);
+  };
+
+  const handleClearRowLogo = (index) => {
+    setError("");
+    setMessage("");
+    persistRows(
+      displayRows.map((row, idx) =>
+        idx === index
+          ? {
+              ...row,
+              logoDataUrl: "",
+              logoFileName: ""
+            }
+          : row
+      )
+    );
+  };
+
   return (
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>球队对应表</h1>
-        <p>维护球队英文名与中文名对应关系，支持从球员数据同步球队并本地保存。</p>
+        <p>维护球队英文名与中文名、颜色、形状、logo；比赛雷达图可直接调用这些配置。</p>
         <div className="mapping-actions">
           <button onClick={handleSyncTeamsFromPlayerData} disabled={syncing}>
             {syncing ? "同步中..." : "从球员数据同步球队"}
           </button>
           <button onClick={handleAddRow}>新增一行</button>
+          <button onClick={() => batchLogoInputRef.current?.click()}>批量导入 Logo</button>
           <button onClick={handleDownloadCsv}>下载球队对应表 CSV</button>
+          <input
+            ref={batchLogoInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            multiple
+            style={{ display: "none" }}
+            onChange={handleBatchLogoImport}
+          />
         </div>
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
@@ -209,6 +322,7 @@ function TeamMappingPage() {
                 <th>颜色示意</th>
                 <th>形状</th>
                 <th>形状示意</th>
+                <th>Logo</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -261,6 +375,27 @@ function TeamMappingPage() {
                     <svg className="team-shape-preview" viewBox="0 0 28 28" aria-label="shape preview">
                       <ShapePreview shape={item.shape || "circle"} color={item.color} />
                     </svg>
+                  </td>
+                  <td>
+                    <div className="team-logo-cell">
+                      {item.logoDataUrl ? <img src={item.logoDataUrl} alt="logo" className="team-logo-thumb" /> : <span className="team-logo-empty">未设置</span>}
+                      <label className="team-logo-upload">
+                        上传
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          style={{ display: "none" }}
+                          onChange={(e) => handleRowLogoUpload(index, e.target.files?.[0])}
+                        />
+                      </label>
+                      <button
+                        className="danger"
+                        onClick={() => handleClearRowLogo(index)}
+                        disabled={!item.logoDataUrl}
+                      >
+                        清除
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <button className="danger" onClick={() => handleDeleteRow(index)} disabled={displayRows.length <= 1}>

@@ -1,0 +1,75 @@
+{
+  "exact": [
+    {
+      "cn": "· 整个阵容的年龄结构比较合理，国\n内主力球员主要在26岁左右，只有\n王秋明一个老将，外援的普遍年龄\n不满30岁。",
+      "es": "• La estructura de edad del plantel es bastante razonable: los titulares chinos rondan los 26 años; solo Wang Qiuming es veterano. La edad media de los extranjeros es inferior a 30."
+    },
+    {
+      "cn": "· 边锋阿代米的离队，带来了整体阵\n型的调整和改变，目前仍处于适应\n阶段，进攻运转不算流畅。",
+      "es": "• La salida del extremo AdeMi ha provocado ajustes y cambios en el sistema. El equipo todavía está en fase de adaptación y la circulación ofensiva no es del todo fluida."
+    },
+    {
+      "cn": "· 中前场外援以左脚球员为主，9号\n基莱斯与8号哈达斯之间的配合威胁\n很大，哈达斯上赛季的5个助攻有4\n个给到基莱斯。",
+      "es": "• Los extranjeros del frente y el mediocampo son mayoritariamente zurdos. La conexión entre el 9 Kiles y el 8 Hadas es muy peligrosa: de las 5 asistencias de Hadas la temporada pasada, 4 fueron para Kiles."
+    },
+    {
+      "cn": "· 5名首发后卫当中的3个人都是近\n一两年由前锋改造的，在防守方面\n不时犯错。",
+      "es": "• De los 5 defensores titulares, 3 han sido reconvertidos desde posiciones ofensivas en los últimos 1-2 años; cometen errores defensivos con cierta frecuencia."
+    },
+    {
+      "cn": "· 上赛季有多达9个失球来自定位球\n防守，是中超第二多，失球以角球\n为主。而通过定位球打进的只有2个\n(不含点球)。",
+      "es": "• La temporada pasada encajaron 9 goles a balón parado (2º peor de la liga), principalmente en córners. En cambio, solo marcaron 2 goles a balón parado (sin contar penaltis)."
+    },
+    {
+      "cn": "· 快节奏的由守转攻，30号王秋明\n与8号哈达斯的快速出球，两名前锋\n和两名边翼卫的快速前插。",
+      "es": "• Transición defensa-ataque a alta velocidad: salida rápida de balón de Wang Qiuming (30) y Hadas (8), con desmarques agresivos de los dos puntas y los dos carrileros."
+    },
+    {
+      "cn": "· 强硬的中场外援萨尔瓦多因为手术\n后恢复缓慢而没有报名，新后腰5号\n格劳还没有得到信任。",
+      "es": "• El mediocampista extranjero Salvador (muy físico) no fue inscrito por una recuperación lenta tras cirugía; el nuevo pivote 5 Grau todavía no ha ganado plena confianza."
+    }
+  ],
+  "phrase": {
+    "天津津门虎": "Tianjin Jinmen Tiger",
+    "分析报告": "Informe de análisis",
+    "强点": "Puntos fuertes",
+    "弱点": "Puntos débiles",
+    "数据与图表": "Datos y gráficos",
+    "冬窗阵容调整情况": "Ajustes de plantilla - mercado de invierno",
+    "转入": "Altas",
+    "转出": "Bajas",
+    "姓名": "Nombre",
+    "号码": "Dorsal",
+    "国籍": "Nacionalidad",
+    "位置": "Posición",
+    "年龄": "Edad",
+    "原俱乐部": "Club anterior",
+    "上赛季": "Temporada pasada",
+    "转会模式": "Tipo de operación",
+    "德转身价": "Valor TM",
+    "守门员": "Portero",
+    "中后卫": "Defensa central",
+    "边翼卫": "Carrilero",
+    "右边翼卫": "Carrilero derecho",
+    "左边翼卫": "Carrilero izquierdo",
+    "右后卫": "Lateral derecho",
+    "左后卫": "Lateral izquierdo",
+    "后腰": "Pivote",
+    "边锋": "Extremo",
+    "中锋": "Delantero centro",
+    "二前锋": "Segundo delantero",
+    "角球": "córner",
+    "定位球": "balón parado",
+    "点球": "penalti",
+    "直接任意球": "tiro libre directo",
+    "任意球": "tiro libre",
+    "谢蒂内": "Chetine",
+    "科尔多瓦": "Córdoba",
+    "格劳": "Grau",
+    "萨尔瓦多": "Salvador",
+    "阿代米": "AdeMi",
+    "基莱斯": "Kiles",
+    "哈达斯": "Hadas",
+    "巴顿": "Barton"
+  }
+}

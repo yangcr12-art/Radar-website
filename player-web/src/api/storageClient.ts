@@ -116,6 +116,42 @@ export function fetchPlayerById(playerId, datasetId = "") {
   return request(`/api/player-data/player/${encodeURIComponent(playerId)}${query}`, { method: "GET" });
 }
 
+export function importMatchExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/match-data/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function fetchMatchDatasets() {
+  return request("/api/match-data/datasets", { method: "GET" });
+}
+
+export function deleteMatchDataset(datasetId) {
+  return request(`/api/match-data/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
+}
+
+export function fetchMatchTeamList(datasetId = "") {
+  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+  return request(`/api/match-data/teams${query}`, { method: "GET" });
+}
+
+export function fetchMatchTeamById(teamId, datasetId = "") {
+  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+  return request(`/api/match-data/team/${encodeURIComponent(teamId)}${query}`, { method: "GET" });
+}
+
+export function importMatchProjectExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/match-project-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
 export function importNameExcel(file) {
   const form = new FormData();
   form.append("file", file);

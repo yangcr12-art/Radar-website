@@ -88,22 +88,58 @@ export const STORAGE_KEYS = {
   metricSelectionsByDataset: "player_web_metric_selection_by_dataset_v1",
   playerSearchByDataset: "player_web_player_search_by_dataset_v1",
   selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1",
-  scatterConfigByDataset: "player_web_scatter_config_by_dataset_v1"
+  scatterConfigByDataset: "player_web_scatter_config_by_dataset_v1",
+  matchMetricSelectionsByDataset: "player_web_match_metric_selection_by_dataset_v1",
+  matchTeamSearchByDataset: "player_web_match_team_search_by_dataset_v1",
+  matchSelectedTeamByDataset: "player_web_match_selected_team_by_dataset_v1",
+  matchRadarDraft: "player_web_match_radar_draft_v1",
+  matchRadarImportPayload: "player_web_match_radar_import_payload_v1",
+  matchRadarCompareConfig: "player_web_match_radar_compare_config_v1"
 };
 
 export const REORDER_MODE_VIEW = "view";
 export const REORDER_MODE_ORDER = "order";
 
+export type NavChildItem = {
+  key: string;
+  label: string;
+};
+
+export type NavItem = NavChildItem & {
+  children?: NavChildItem[];
+};
+
 export const NAV_ITEMS = [
   { key: "home", label: "主页" },
-  { key: "player_data", label: "球员数据" },
-  { key: "radar", label: "雷达图生成器" },
+  {
+    key: "data_radar_menu",
+    label: "数据雷达图",
+    children: [
+      { key: "player_data", label: "球员数据" },
+      { key: "radar", label: "雷达图生成器" }
+    ]
+  },
   { key: "scatter_plot", label: "散点图生成器" },
-  { key: "project_mapping", label: "项目对应表" },
-  { key: "name_mapping", label: "姓名对应表" },
-  { key: "team_mapping", label: "球队对应表" },
+  {
+    key: "mapping_menu",
+    label: "对应表",
+    children: [
+      { key: "project_mapping", label: "项目对应表" },
+      { key: "match_project_mapping", label: "比赛项目对应表" },
+      { key: "name_mapping", label: "姓名对应表" },
+      { key: "team_mapping", label: "球队对应表" }
+    ]
+  },
+  {
+    key: "match_summary_menu",
+    label: "比赛总结",
+    children: [
+      { key: "match_team_data", label: "球队数据" },
+      { key: "match_radar", label: "比赛雷达图" }
+    ]
+  },
   { key: "about", label: "About" }
-];
+] satisfies NavItem[];
 
 export const METRIC_GROUP_RULES = [
   { group: "对抗", order: 2, keywords: ["duel", "aerial", "对抗", "空中对抗"] },
