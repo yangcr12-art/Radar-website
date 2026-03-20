@@ -69,12 +69,21 @@ function isPercentMetric(metric: unknown) {
   return text.includes("%") || text.includes("percent") || text.includes("ratio") || text.includes("率") || text.includes("占比") || text.includes("比率");
 }
 
+function isOneDecimalMetric(metric: unknown) {
+  const text = String(metric || "").trim().toLowerCase();
+  if (!text) return false;
+  return text.includes("平均速度") || text.includes("最快速度") || text.includes("average speed") || text.includes("max speed");
+}
+
 function formatFitnessDisplayValue(value: unknown, metric: unknown) {
   const num = parseNumericValue(value);
   if (num === null) return String(value ?? "");
   if (isPercentMetric(metric)) {
     const normalized = Math.abs(num) <= 1 ? num * 100 : num;
     return normalized.toFixed(1);
+  }
+  if (isOneDecimalMetric(metric)) {
+    return num.toFixed(1);
   }
   return String(Math.round(num));
 }
@@ -137,7 +146,12 @@ function downloadFile(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
+function containsChinese(text: string) {
+  return /[\u3400-\u9fff]/.test(String(text || ""));
+}
+
 function getDisplayTeamName(teamName: string, mapping: Map<string, any>) {
+  if (containsChinese(teamName)) return teamName;
   const key = normalizeTeamName(teamName).toLowerCase();
   const mapped = mapping.get(key);
   const zh = String(mapped?.zh || "").trim();
@@ -1239,7 +1253,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                     <path
                       className={`fitness-overlay-polygon${selectedOverlayPlayerId === poly.id ? " is-selected" : ""}`}
                       d={poly.path}
-                      fill={colorToAlpha(poly.color, selectedOverlayPlayerId === poly.id ? 0.4 : 0.1)}
+                      fill={colorToAlpha(poly.color, selectedOverlayPlayerId === poly.id ? 0.7 : 0.1)}
                       stroke={poly.color}
                       strokeWidth={selectedOverlayPlayerId === poly.id ? "3.5" : "2"}
                       onClick={() => toggleOverlayPlayerSelection(poly.id)}
