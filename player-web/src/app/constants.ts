@@ -102,8 +102,10 @@ export const STORAGE_KEYS = {
   fitnessSelectedDatasetId: "player_web_fitness_selected_dataset_id_v1",
   fitnessSharedDatasetId: "player_web_fitness_shared_dataset_id_v1",
   fitnessSelectedTeamMetricsByDataset: "player_web_fitness_selected_team_metrics_by_dataset_v1",
+  fitnessTeamMetricMaxByDataset: "player_web_fitness_team_metric_max_by_dataset_v1",
   fitnessSelectedPlayerMetricsByDataset: "player_web_fitness_selected_player_metrics_by_dataset_v1",
   fitnessSelectedPlayersByDataset: "player_web_fitness_selected_players_by_dataset_v1",
+  fitnessSelectedOverlayPlayerByDataset: "player_web_fitness_selected_overlay_player_by_dataset_v1",
   fitnessSingleMetricByDataset: "player_web_fitness_single_metric_by_dataset_v1",
   fitnessSingleMetricScopeByDataset: "player_web_fitness_single_metric_scope_by_dataset_v1",
   fitnessTeamRadarConfigByDataset: "player_web_fitness_team_radar_config_by_dataset_v1"

@@ -17,6 +17,27 @@ const PLAYER_RADAR_CENTER_X = PLAYER_RADAR_WIDTH / 2;
 const PLAYER_RADAR_CENTER_Y = 470;
 const PLAYER_RADAR_MAX_RADIUS = 290;
 
+const PLAYER_OVERLAY_PALETTE = [
+  "#1f77b4",
+  "#d62728",
+  "#2ca02c",
+  "#ff7f0e",
+  "#9467bd",
+  "#17becf",
+  "#8c564b",
+  "#e377c2",
+  "#bcbd22",
+  "#4e79a7",
+  "#f28e2b",
+  "#e15759",
+  "#76b7b2",
+  "#59a14f",
+  "#edc948",
+  "#b07aa1",
+  "#ff9da7",
+  "#9c755f"
+];
+
 const DEFAULT_TEAM_RADAR_CONFIG = {
   title: "体能对比雷达图",
   subtitle: "数据来源：体能数据分析 / 第1个Sheet",
@@ -149,13 +170,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const [error, setError] = useState("");
 
   const [selectedTeamMetricsByDataset, setSelectedTeamMetricsByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSelectedTeamMetricsByDataset, {}));
+  const [teamMetricMaxByDataset, setTeamMetricMaxByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessTeamMetricMaxByDataset, {}));
   const [selectedPlayerMetricsByDataset, setSelectedPlayerMetricsByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSelectedPlayerMetricsByDataset, {}));
   const [selectedPlayersByDataset, setSelectedPlayersByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSelectedPlayersByDataset, {}));
+  const [selectedOverlayPlayerByDataset, setSelectedOverlayPlayerByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSelectedOverlayPlayerByDataset, {}));
   const [singleMetricByDataset, setSingleMetricByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSingleMetricByDataset, {}));
   const [singleMetricScopeByDataset, setSingleMetricScopeByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSingleMetricScopeByDataset, {}));
   const [teamRadarConfigByDataset, setTeamRadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessTeamRadarConfigByDataset, {}));
-
-  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
 
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -206,12 +227,20 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   }, [selectedTeamMetricsByDataset]);
 
   useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessTeamMetricMaxByDataset, teamMetricMaxByDataset);
+  }, [teamMetricMaxByDataset]);
+
+  useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessSelectedPlayerMetricsByDataset, selectedPlayerMetricsByDataset);
   }, [selectedPlayerMetricsByDataset]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessSelectedPlayersByDataset, selectedPlayersByDataset);
   }, [selectedPlayersByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessSelectedOverlayPlayerByDataset, selectedOverlayPlayerByDataset);
+  }, [selectedOverlayPlayerByDataset]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessSingleMetricByDataset, singleMetricByDataset);
@@ -297,8 +326,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   useEffect(() => {
     const ds = String(selectedDatasetId || "");
     if (!ds || availableTeamMetrics.length === 0) return;
-    const current = Array.isArray(selectedTeamMetricsByDataset[ds]) ? selectedTeamMetricsByDataset[ds] : [];
-    if (current.length === 0) {
+    const currentRaw = selectedTeamMetricsByDataset[ds];
+    const hasStoredSelection = Array.isArray(currentRaw);
+    const current = hasStoredSelection ? currentRaw : [];
+    if (!hasStoredSelection) {
       setSelectedTeamMetricsByDataset((prev: any) => ({ ...prev, [ds]: availableTeamMetrics }));
       return;
     }
@@ -312,8 +343,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   useEffect(() => {
     const ds = String(selectedDatasetId || "");
     if (!ds || availablePlayerMetrics.length === 0) return;
-    const current = Array.isArray(selectedPlayerMetricsByDataset[ds]) ? selectedPlayerMetricsByDataset[ds] : [];
-    if (current.length === 0) {
+    const currentRaw = selectedPlayerMetricsByDataset[ds];
+    const hasStoredSelection = Array.isArray(currentRaw);
+    const current = hasStoredSelection ? currentRaw : [];
+    if (!hasStoredSelection) {
       setSelectedPlayerMetricsByDataset((prev: any) => ({ ...prev, [ds]: availablePlayerMetrics }));
       return;
     }
@@ -327,9 +360,11 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   useEffect(() => {
     const ds = String(selectedDatasetId || "");
     if (!ds || playerRows.length === 0) return;
-    const current = Array.isArray(selectedPlayersByDataset[ds]) ? selectedPlayersByDataset[ds] : [];
+    const currentRaw = selectedPlayersByDataset[ds];
+    const hasStoredSelection = Array.isArray(currentRaw);
+    const current = hasStoredSelection ? currentRaw : [];
     const playerIds = playerRows.map((row: any) => String(row.id));
-    if (current.length === 0) {
+    if (!hasStoredSelection) {
       setSelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: playerIds }));
       return;
     }
@@ -409,64 +444,74 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     }));
   };
 
+  const datasetTeamMetricMaxMap = useMemo(() => {
+    const ds = String(selectedDatasetId || "");
+    const current = ds ? teamMetricMaxByDataset[ds] : null;
+    return current && typeof current === "object" ? current : {};
+  }, [selectedDatasetId, teamMetricMaxByDataset]);
+
   const teamMetricRows = useMemo(() => {
     if (!homeTeam || !awayTeam) return [];
-    return selectedTeamMetrics
+    const selectedSet = new Set(selectedTeamMetrics);
+    return availableTeamMetrics
       .map((column: string) => {
         const homeValue = parseNumericValue(homeTeam?.raw?.[column]);
         const awayValue = parseNumericValue(awayTeam?.raw?.[column]);
         if (homeValue === null || awayValue === null) return null;
-        const maxValue = Math.max(Math.abs(homeValue), Math.abs(awayValue)) * 1.1 || 1;
+        const autoMax = Math.max(Math.abs(homeValue), Math.abs(awayValue)) * 1.1 || 1;
+        const manualMaxRaw = String(datasetTeamMetricMaxMap[column] ?? "").trim();
+        const manualMax = parseNumericValue(manualMaxRaw);
+        const resolvedMax = manualMax !== null && manualMax > 0 ? manualMax : autoMax;
         return {
           column,
           metric: column,
+          selected: selectedSet.has(column),
           homeRaw: String(homeTeam?.raw?.[column] ?? ""),
           awayRaw: String(awayTeam?.raw?.[column] ?? ""),
           homeDisplay: formatFitnessDisplayValue(homeTeam?.raw?.[column], column),
           awayDisplay: formatFitnessDisplayValue(awayTeam?.raw?.[column], column),
           homeValue,
           awayValue,
-          maxValue
+          autoMax,
+          autoMaxDisplay: formatFitnessDisplayValue(autoMax, column),
+          manualMaxRaw,
+          resolvedMax
         };
       })
       .filter(Boolean) as any[];
-  }, [selectedTeamMetrics, homeTeam, awayTeam]);
+  }, [availableTeamMetrics, selectedTeamMetrics, homeTeam, awayTeam, datasetTeamMetricMaxMap]);
+
+  const selectedTeamMetricRows = useMemo(() => teamMetricRows.filter((row: any) => row.selected), [teamMetricRows]);
 
   const teamAxisPoints = useMemo(() => {
-    const total = teamMetricRows.length || 1;
+    const total = selectedTeamMetricRows.length || 1;
     const step = (Math.PI * 2) / total;
     const start = -Math.PI / 2;
-    return teamMetricRows.map((_: any, idx: number) => pointAt(TEAM_RADAR_CENTER_X, TEAM_RADAR_CENTER_Y, TEAM_RADAR_MAX_RADIUS, start + idx * step));
-  }, [teamMetricRows]);
+    return selectedTeamMetricRows.map((_: any, idx: number) => pointAt(TEAM_RADAR_CENTER_X, TEAM_RADAR_CENTER_Y, TEAM_RADAR_MAX_RADIUS, start + idx * step));
+  }, [selectedTeamMetricRows]);
 
   const teamHomePoints = useMemo(() => {
-    const total = teamMetricRows.length || 1;
+    const total = selectedTeamMetricRows.length || 1;
     const step = (Math.PI * 2) / total;
     const start = -Math.PI / 2;
-    return teamMetricRows.map((row: any, idx: number) => {
-      const ratio = row.maxValue > 0 ? clampRatio(row.homeValue / row.maxValue) : 0;
+    return selectedTeamMetricRows.map((row: any, idx: number) => {
+      const ratio = row.resolvedMax > 0 ? clampRatio(row.homeValue / row.resolvedMax) : 0;
       return pointAt(TEAM_RADAR_CENTER_X, TEAM_RADAR_CENTER_Y, ratio * TEAM_RADAR_MAX_RADIUS, start + idx * step);
     });
-  }, [teamMetricRows]);
+  }, [selectedTeamMetricRows]);
 
   const teamAwayPoints = useMemo(() => {
-    const total = teamMetricRows.length || 1;
+    const total = selectedTeamMetricRows.length || 1;
     const step = (Math.PI * 2) / total;
     const start = -Math.PI / 2;
-    return teamMetricRows.map((row: any, idx: number) => {
-      const ratio = row.maxValue > 0 ? clampRatio(row.awayValue / row.maxValue) : 0;
+    return selectedTeamMetricRows.map((row: any, idx: number) => {
+      const ratio = row.resolvedMax > 0 ? clampRatio(row.awayValue / row.resolvedMax) : 0;
       return pointAt(TEAM_RADAR_CENTER_X, TEAM_RADAR_CENTER_Y, ratio * TEAM_RADAR_MAX_RADIUS, start + idx * step);
     });
-  }, [teamMetricRows]);
+  }, [selectedTeamMetricRows]);
 
   const teamHomePath = polygonPath(teamHomePoints);
   const teamAwayPath = polygonPath(teamAwayPoints);
-
-  const filteredPlayers = useMemo(() => {
-    const keyword = playerSearchQuery.trim().toLowerCase();
-    if (!keyword) return playerRows;
-    return playerRows.filter((row: any) => String(row.player || "").toLowerCase().includes(keyword));
-  }, [playerRows, playerSearchQuery]);
 
   const visiblePlayers = useMemo(() => {
     const selectedSet = new Set(selectedPlayerIds);
@@ -501,7 +546,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     const step = (Math.PI * 2) / total;
     const start = -Math.PI / 2;
 
-    return visiblePlayers.map((player: any) => {
+    return visiblePlayers.map((player: any, playerIdx: number) => {
       const points = playerRadarMetrics.map((metric: string, idx: number) => {
         const value = parseNumericValue(player?.raw?.[metric]) || 0;
         const maxValue = Number(playerMetricMaxMap.get(metric) || 1);
@@ -509,16 +554,46 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         return pointAt(PLAYER_RADAR_CENTER_X, PLAYER_RADAR_CENTER_Y, ratio * PLAYER_RADAR_MAX_RADIUS, start + idx * step);
       });
       const name = String(player.player || "");
-      const color = hashColorFromText(`${player.id || ""}-${name}`);
+      const color = PLAYER_OVERLAY_PALETTE[playerIdx % PLAYER_OVERLAY_PALETTE.length];
       return {
         id: String(player.id),
         name,
+        raw: player?.raw || {},
         color,
         points,
         path: polygonPath(points)
       };
     });
   }, [visiblePlayers, playerRadarMetrics, playerMetricMaxMap]);
+
+  const selectedOverlayPlayerId = useMemo(() => {
+    const ds = String(selectedDatasetId || "");
+    return String(selectedOverlayPlayerByDataset[ds] || "");
+  }, [selectedDatasetId, selectedOverlayPlayerByDataset]);
+
+  useEffect(() => {
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    const selectedId = String(selectedOverlayPlayerByDataset[ds] || "");
+    if (!selectedId) return;
+    const visibleIdSet = new Set(visiblePlayers.map((row: any) => String(row.id)));
+    if (!visibleIdSet.has(selectedId)) {
+      setSelectedOverlayPlayerByDataset((prev: any) => ({ ...prev, [ds]: "" }));
+    }
+  }, [selectedDatasetId, selectedOverlayPlayerByDataset, visiblePlayers]);
+
+  const selectedOverlayPlayer = useMemo(
+    () => playerRadarPolygons.find((poly: any) => String(poly.id) === selectedOverlayPlayerId) || null,
+    [playerRadarPolygons, selectedOverlayPlayerId]
+  );
+
+  const selectedOverlayPlayerInfoRows = useMemo(() => {
+    if (!selectedOverlayPlayer) return [];
+    return availablePlayerMetrics.map((metric: string) => ({
+      metric,
+      display: formatFitnessDisplayValue(selectedOverlayPlayer.raw?.[metric], metric)
+    }));
+  }, [selectedOverlayPlayer, availablePlayerMetrics]);
 
   const singleMetric = useMemo(() => {
     const ds = String(selectedDatasetId || "");
@@ -535,7 +610,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const singleMetricRows = useMemo(() => {
     if (!singleMetric) return [];
-    const sourceRows = singleMetricScope === "all" ? playerRows : visiblePlayers;
+    const sourceRows = playerRows;
     return sourceRows
       .map((row: any) => {
         const value = parseNumericValue(row?.raw?.[singleMetric]);
@@ -547,16 +622,18 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       })
       .filter((row: any) => row.value !== null)
       .sort((a: any, b: any) => Number(b.value) - Number(a.value));
-  }, [singleMetric, singleMetricScope, playerRows, visiblePlayers]);
+  }, [singleMetric, playerRows]);
 
   const singleMetricMax = useMemo(() => {
+    const sourceRows = singleMetricScope === "all" ? singleMetricRows : singleMetricRows.filter((row: any) => selectedPlayerIds.includes(String(row.id)));
+    const effectiveRows = sourceRows.length > 0 ? sourceRows : singleMetricRows;
     let max = 0;
-    singleMetricRows.forEach((row: any) => {
+    effectiveRows.forEach((row: any) => {
       const abs = Math.abs(Number(row.value || 0));
       max = Math.max(max, abs);
     });
     return max > 0 ? max : 1;
-  }, [singleMetricRows]);
+  }, [singleMetricRows, singleMetricScope, selectedPlayerIds]);
 
   const onUploadClick = () => excelInputRef.current?.click();
 
@@ -640,6 +717,21 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     });
   };
 
+  const handleTeamMetricMaxChange = (metric: string, value: string) => {
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    setTeamMetricMaxByDataset((prev: any) => {
+      const dsMap = prev[ds] && typeof prev[ds] === "object" ? { ...prev[ds] } : {};
+      const text = String(value || "").trim();
+      if (!text) {
+        delete dsMap[metric];
+      } else {
+        dsMap[metric] = value;
+      }
+      return { ...prev, [ds]: dsMap };
+    });
+  };
+
   const togglePlayerMetric = (metric: string) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
@@ -657,6 +749,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       const current = Array.isArray(prev[ds]) ? prev[ds] : [];
       const next = current.includes(playerId) ? current.filter((item: string) => item !== playerId) : [...current, playerId];
       return { ...prev, [ds]: next };
+    });
+  };
+
+  const toggleOverlayPlayerSelection = (playerId: string) => {
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    setSelectedOverlayPlayerByDataset((prev: any) => {
+      const current = String(prev[ds] || "");
+      return { ...prev, [ds]: current === playerId ? "" : playerId };
     });
   };
 
@@ -858,10 +959,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                   <label>背景色</label>
                   <input className="square-color-picker" type="color" value={chartBackgroundColor} onChange={(e) => updateTeamRadarConfig({ chartBackgroundColor: e.target.value })} />
                 </div>
-                <button onClick={exportTeamRadarSvg} disabled={teamMetricRows.length === 0}>
+                <button onClick={exportTeamRadarSvg} disabled={selectedTeamMetricRows.length === 0}>
                   导出 SVG
                 </button>
-                <button onClick={exportTeamRadarPng} disabled={teamMetricRows.length === 0}>
+                <button onClick={exportTeamRadarPng} disabled={selectedTeamMetricRows.length === 0}>
                   导出 PNG
                 </button>
               </div>
@@ -874,35 +975,42 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 </div>
               </div>
 
-              <div className="fitness-check-grid">
-                {availableTeamMetrics.map((metric: string) => (
-                  <label key={metric} className="fitness-check-item">
-                    <input type="checkbox" checked={selectedTeamMetrics.includes(metric)} onChange={() => toggleTeamMetric(metric)} />
-                    <span>{metric}</span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="player-data-table-wrap fitness-table-wrap">
-                <table>
+              <div className="player-data-table-wrap fitness-table-wrap fitness-team-table-wrap">
+                <table className="fitness-team-data-table">
                   <thead>
                     <tr>
+                      <th>选</th>
                       <th>指标</th>
                       <th>{homeTeamDisplayName || "主队"}</th>
                       <th>{awayTeamDisplayName || "客队"}</th>
+                      <th>雷达上限</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {teamMetricRows.length === 0 ? (
+                    {availableTeamMetrics.length === 0 ? (
                       <tr>
-                        <td colSpan={3}>暂无可用球队指标，请先导入包含两队数值数据的 Excel。</td>
+                        <td colSpan={5}>暂无可用球队指标，请先导入包含两队数值数据的 Excel。</td>
                       </tr>
                     ) : null}
                     {teamMetricRows.map((row: any) => (
                       <tr key={row.column}>
+                        <td>
+                          <input type="checkbox" checked={row.selected} onChange={() => toggleTeamMetric(row.column)} />
+                        </td>
                         <td>{row.metric}</td>
                         <td>{row.homeDisplay}</td>
                         <td>{row.awayDisplay}</td>
+                        <td>
+                          <input
+                            className="fitness-max-input"
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={row.manualMaxRaw}
+                            placeholder={row.autoMaxDisplay}
+                            onChange={(e) => handleTeamMetricMaxChange(row.column, e.target.value)}
+                          />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -914,23 +1022,22 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
             {isPlayerView ? (
               <div className="fitness-card">
               <h2>球员体能叠加雷达（第2个Sheet）</h2>
-              <p>{`已勾选球员：${selectedPlayerIds.length}/${playerRows.length}`}</p>
-              <p>{`已勾选指标：${selectedPlayerMetrics.length}/${availablePlayerMetrics.length}`}</p>
 
               <div className="fitness-metric-actions">
-                <div className="btn-row">
-                  <button onClick={selectAllPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>全选指标</button>
-                  <button onClick={clearPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>清空指标</button>
+                <div className="fitness-summary-row">
+                  <p>{`已勾选指标：${selectedPlayerMetrics.length}/${availablePlayerMetrics.length}`}</p>
+                  <div className="btn-row">
+                    <button onClick={selectAllPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>全选指标</button>
+                    <button onClick={clearPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>清空指标</button>
+                  </div>
                 </div>
-                <div className="btn-row">
-                  <button onClick={selectAllPlayers} disabled={playerRows.length === 0}>全选球员</button>
-                  <button onClick={clearPlayers} disabled={playerRows.length === 0}>清空球员</button>
+                <div className="fitness-summary-row">
+                  <p>{`已勾选球员：${selectedPlayerIds.length}/${playerRows.length}`}</p>
+                  <div className="btn-row">
+                    <button onClick={selectAllPlayers} disabled={playerRows.length === 0}>全选球员</button>
+                    <button onClick={clearPlayers} disabled={playerRows.length === 0}>清空球员</button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="title-row">
-                <label>搜索球员</label>
-                <input value={playerSearchQuery} onChange={(e) => setPlayerSearchQuery(e.target.value)} placeholder="输入球员名关键字" />
               </div>
 
               <div className="fitness-check-grid">
@@ -942,17 +1049,6 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 ))}
               </div>
 
-              <div className="fitness-player-list">
-                {filteredPlayers.map((player: any) => {
-                  const playerId = String(player.id);
-                  return (
-                    <label key={playerId} className="fitness-check-item">
-                      <input type="checkbox" checked={selectedPlayerIds.includes(playerId)} onChange={() => togglePlayerVisible(playerId)} />
-                      <span>{player.player}</span>
-                    </label>
-                  );
-                })}
-              </div>
               </div>
             ) : null}
 
@@ -1000,8 +1096,12 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                   const ratio = singleMetricMax > 0 ? Math.abs(value) / singleMetricMax : 0;
                   const color = hashColorFromText(row.id || row.name);
                   const display = formatFitnessDisplayValue(row.value, singleMetric);
+                  const checked = selectedPlayerIds.includes(String(row.id));
                   return (
                     <div className="fitness-bar-row" key={row.id}>
+                      <div className="fitness-bar-check">
+                        <input type="checkbox" checked={checked} onChange={() => togglePlayerVisible(String(row.id))} />
+                      </div>
                       <div className="fitness-bar-name">{row.name}</div>
                       <div className="fitness-bar-track">
                         <div className="fitness-bar-fill" style={{ width: `${Math.max(0, Math.min(100, ratio * 100))}%`, background: color }} />
@@ -1029,30 +1129,30 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 </text>
 
                 {homeTeamLogoSrc ? (
-                  <image x={TEAM_RADAR_CENTER_X - 260} y="96" width="80" height="80" href={homeTeamLogoSrc} preserveAspectRatio="xMidYMid meet" />
+                  <image x={TEAM_RADAR_CENTER_X - 328} y="56" width="88" height="88" href={homeTeamLogoSrc} preserveAspectRatio="xMidYMid meet" />
                 ) : (
                   <g>
-                    <circle cx={TEAM_RADAR_CENTER_X - 220} cy="136" r="38" fill="#f6efe3" stroke="#d2c6b6" strokeWidth="2" />
-                    <text x={TEAM_RADAR_CENTER_X - 220} y="143" textAnchor="middle" fontSize="28" fontWeight="700" fill={homeColor}>
+                    <circle cx={TEAM_RADAR_CENTER_X - 284} cy="100" r="36" fill="#f6efe3" stroke="#d2c6b6" strokeWidth="2" />
+                    <text x={TEAM_RADAR_CENTER_X - 284} y="108" textAnchor="middle" fontSize="26" fontWeight="700" fill={homeColor}>
                       {String(homeTeamDisplayName || "主队").slice(0, 1).toUpperCase()}
                     </text>
                   </g>
                 )}
                 {awayTeamLogoSrc ? (
-                  <image x={TEAM_RADAR_CENTER_X + 180} y="96" width="80" height="80" href={awayTeamLogoSrc} preserveAspectRatio="xMidYMid meet" />
+                  <image x={TEAM_RADAR_CENTER_X + 240} y="56" width="88" height="88" href={awayTeamLogoSrc} preserveAspectRatio="xMidYMid meet" />
                 ) : (
                   <g>
-                    <circle cx={TEAM_RADAR_CENTER_X + 220} cy="136" r="38" fill="#f6efe3" stroke="#d2c6b6" strokeWidth="2" />
-                    <text x={TEAM_RADAR_CENTER_X + 220} y="143" textAnchor="middle" fontSize="28" fontWeight="700" fill={awayColor}>
+                    <circle cx={TEAM_RADAR_CENTER_X + 284} cy="100" r="36" fill="#f6efe3" stroke="#d2c6b6" strokeWidth="2" />
+                    <text x={TEAM_RADAR_CENTER_X + 284} y="108" textAnchor="middle" fontSize="26" fontWeight="700" fill={awayColor}>
                       {String(awayTeamDisplayName || "客队").slice(0, 1).toUpperCase()}
                     </text>
                   </g>
                 )}
 
-                <text x={TEAM_RADAR_CENTER_X - 220} y="186" textAnchor="middle" fontSize="24" fontWeight="700" fill={homeColor}>
+                <text x={TEAM_RADAR_CENTER_X - 284} y="184" textAnchor="middle" fontSize="21" fontWeight="700" fill={homeColor}>
                   {homeTeamDisplayName || "主队"}
                 </text>
-                <text x={TEAM_RADAR_CENTER_X + 220} y="186" textAnchor="middle" fontSize="24" fontWeight="700" fill={awayColor}>
+                <text x={TEAM_RADAR_CENTER_X + 284} y="184" textAnchor="middle" fontSize="21" fontWeight="700" fill={awayColor}>
                   {awayTeamDisplayName || "客队"}
                 </text>
 
@@ -1082,12 +1182,12 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                   <circle key={`home-${idx}`} cx={pt.x} cy={pt.y} r={pointRadius} fill={homeColor} />
                 ))}
 
-                {teamMetricRows.map((row: any, idx: number) => {
+                {selectedTeamMetricRows.map((row: any, idx: number) => {
                   const labelPt = pointAt(
                     TEAM_RADAR_CENTER_X,
                     TEAM_RADAR_CENTER_Y,
                     TEAM_RADAR_MAX_RADIUS + 38,
-                    -Math.PI / 2 + ((Math.PI * 2) / teamMetricRows.length) * idx
+                    -Math.PI / 2 + ((Math.PI * 2) / selectedTeamMetricRows.length) * idx
                   );
                   return (
                     <g key={`team-label-${row.column}`}>
@@ -1136,9 +1236,16 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
                 {playerRadarPolygons.map((poly: any) => (
                   <g key={poly.id}>
-                    <path d={poly.path} fill={colorToAlpha(poly.color, 0.14)} stroke={poly.color} strokeWidth="2" />
+                    <path
+                      className={`fitness-overlay-polygon${selectedOverlayPlayerId === poly.id ? " is-selected" : ""}`}
+                      d={poly.path}
+                      fill={colorToAlpha(poly.color, selectedOverlayPlayerId === poly.id ? 0.4 : 0.1)}
+                      stroke={poly.color}
+                      strokeWidth={selectedOverlayPlayerId === poly.id ? "3.5" : "2"}
+                      onClick={() => toggleOverlayPlayerSelection(poly.id)}
+                    />
                     {poly.points.map((pt: any, idx: number) => (
-                      <circle key={`${poly.id}-${idx}`} cx={pt.x} cy={pt.y} r="3" fill={poly.color} />
+                      <circle key={`${poly.id}-${idx}`} cx={pt.x} cy={pt.y} r="4" fill={poly.color} />
                     ))}
                   </g>
                 ))}
@@ -1158,16 +1265,33 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 })}
 
                 <g>
-                  {playerRadarPolygons.slice(0, 14).map((poly: any, idx: number) => (
-                    <g key={`legend-${poly.id}`} transform={`translate(28 ${120 + idx * 24})`}>
+                  {playerRadarPolygons.map((poly: any, idx: number) => (
+                    <g key={`legend-${poly.id}`} transform={`translate(28 ${120 + idx * 24})`} className="fitness-overlay-legend-item" onClick={() => toggleOverlayPlayerSelection(poly.id)}>
                       <rect x="0" y="-12" width="12" height="12" fill={poly.color} />
-                      <text x="18" y="-2" fontSize="14" fill="#2f2a24">
+                      <text x="18" y="-2" fontSize="14" fill={selectedOverlayPlayerId === poly.id ? "#111" : "#2f2a24"} fontWeight={selectedOverlayPlayerId === poly.id ? "700" : "400"}>
                         {poly.name}
                       </text>
                     </g>
                   ))}
                 </g>
               </svg>
+              <div className="fitness-player-detail-card">
+                {selectedOverlayPlayer ? (
+                  <>
+                    <h3>{`已选球员：${selectedOverlayPlayer.name}`}</h3>
+                    <div className="fitness-player-detail-grid">
+                      {selectedOverlayPlayerInfoRows.map((row: any) => (
+                        <div key={row.metric} className="fitness-player-detail-row">
+                          <span className="fitness-player-detail-metric">{row.metric}</span>
+                          <span className="fitness-player-detail-value">{row.display}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="fitness-empty">点击图中任意球员封闭区域可查看该球员全部指标。</p>
+                )}
+              </div>
               {selectedPlayerMetrics.length < 3 ? <p className="fitness-empty">提示：雷达图建议至少勾选 3 个指标。</p> : null}
               </div>
             ) : null}

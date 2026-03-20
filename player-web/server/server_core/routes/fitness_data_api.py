@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -89,6 +90,97 @@ def _pick_player_column(headers: list[str]) -> tuple[int, str]:
         if normalized in exact_candidates:
             return idx, header
     return (-1, "")
+
+
+def _looks_like_numbered_player_name(text: str) -> bool:
+    value = str(text or "").strip()
+    if not value:
+        return False
+    return re.match(r"^\d+\s*-\s*.+$", value) is not None
+
+
+def _normalize_headers(headers: list[str]) -> list[str]:
+    normalized: list[str] = []
+    used: dict[str, int] = {}
+    for idx, header in enumerate(headers):
+        base = str(header or "").strip() or f"column_{idx + 1}"
+        key = base
+        if key in used:
+            used[key] += 1
+            key = f"{key}_{used[key]}"
+        else:
+            used[key] = 1
+        normalized.append(key)
+    return normalized
+
+
+def _pick_player_column_by_values(rows: list[list[Any]], headers: list[str]) -> tuple[int, str]:
+    if len(rows) < 2 or len(headers) == 0:
+        return (-1, "")
+
+    sample_rows = rows[1 : min(len(rows), 121)]
+    if len(sample_rows) == 0:
+        return (-1, "")
+
+    candidate_indices: list[int] = []
+    if len(headers) > 1:
+        candidate_indices.append(1)
+    candidate_indices.extend([idx for idx in range(min(len(headers), 6)) if idx not in candidate_indices])
+
+    best_idx = -1
+    best_score = float("-inf")
+
+    for idx in candidate_indices:
+        non_empty = 0
+        text_count = 0
+        numeric_count = 0
+        numbered_name_count = 0
+        for row in sample_rows:
+            cell = _to_cell_value(row[idx] if idx < len(row) else None)
+            text = str(cell).strip()
+            if not text:
+                continue
+            non_empty += 1
+            if _to_float(text) is not None:
+                numeric_count += 1
+            else:
+                text_count += 1
+            if _looks_like_numbered_player_name(text):
+                numbered_name_count += 1
+
+        if non_empty < 2:
+            continue
+
+        text_ratio = text_count / non_empty
+        numeric_ratio = numeric_count / non_empty
+        if text_ratio < 0.5:
+            continue
+
+        score = (text_count * 1.0) + (numbered_name_count * 2.5) - (numeric_count * 1.2)
+        if idx == 1:
+            score += 1.5
+        if numeric_ratio > 0.4:
+            score -= 3.0
+
+        if score > best_score:
+            best_score = score
+            best_idx = idx
+
+    if best_idx < 0:
+        return (-1, "")
+    return best_idx, headers[best_idx]
+
+
+def _score_player_doc(doc: dict[str, Any] | None) -> int:
+    if not doc or not isinstance(doc, dict):
+        return -1
+    players = doc.get("players") if isinstance(doc.get("players"), list) else []
+    metrics = doc.get("numericColumns") if isinstance(doc.get("numericColumns"), list) else []
+    player_count = len(players)
+    metric_count = len(metrics)
+    if player_count <= 0 or metric_count <= 0:
+        return -1
+    return player_count * metric_count
 
 
 def _make_id(name: str, used_ids: dict[str, int], fallback: str) -> str:
@@ -215,6 +307,44 @@ def _extract_team_names_from_rows(rows: list[list[Any]]) -> list[str]:
         if len(names) >= 2:
             break
     return names[:2]
+
+
+def _looks_like_valid_team_name(value: str) -> bool:
+    text = str(value or "").strip()
+    if not text:
+        return False
+    lower = text.lower()
+    if lower in {"#ref!", "home", "away", "主队", "客队", "数据", "team", "球队总览"}:
+        return False
+    if _to_float(text) is not None:
+        return False
+    return True
+
+
+def _extract_team_names_from_named_overviews(named_sheets: list[tuple[str, list[list[Any]]]] | None) -> list[str]:
+    if not named_sheets:
+        return []
+    names: list[str] = []
+    for key in ("home team overview", "away team overview"):
+        for sheet_name, rows in named_sheets:
+            if key not in _normalize_header_name(sheet_name):
+                continue
+            maxc = max((len(r) for r in rows), default=0)
+            for ridx in range(min(len(rows), 10)):
+                row = rows[ridx]
+                for cidx in range(min(maxc, 6)):
+                    text = str(_to_cell_value(row[cidx] if cidx < len(row) else "")).strip()
+                    if _looks_like_valid_team_name(text):
+                        names.append(text)
+                        break
+                if len(names) >= (2 if key == "away team overview" else 1):
+                    break
+            break
+    unique: list[str] = []
+    for name in names:
+        if name not in unique:
+            unique.append(name)
+    return unique[:2]
 
 
 def _build_team_doc_from_standard(rows: list[list[Any]]) -> tuple[dict[str, Any] | None, str]:
@@ -383,10 +513,17 @@ def _build_player_doc_from_standard(rows: list[list[Any]]) -> tuple[dict[str, An
     if maxc <= 0:
         return (None, "")
 
-    headers = [str(_to_cell_value(rows[0][c]) if c < len(rows[0]) else "").strip() for c in range(maxc)]
-    player_idx, player_col = _pick_player_column(headers)
+    raw_headers = [str(_to_cell_value(rows[0][c]) if c < len(rows[0]) else "").strip() for c in range(maxc)]
+    headers = _normalize_headers(raw_headers)
+
+    player_idx, _ = _pick_player_column(raw_headers)
     if player_idx < 0:
-        return (None, "")
+        player_idx, _ = _pick_player_column(headers)
+    if player_idx < 0:
+        player_idx, _ = _pick_player_column_by_values(rows, headers)
+    if player_idx < 0:
+        return (None, "第2个 sheet 未识别到球员列（可将姓名放在第2列，或使用 Player/Name/姓名 表头）")
+    player_col = headers[player_idx]
 
     used_ids: dict[str, int] = {}
     players: list[dict[str, Any]] = []
@@ -431,6 +568,130 @@ def _build_player_doc_from_standard(rows: list[list[Any]]) -> tuple[dict[str, An
             "allColumns": headers,
             "numericColumns": numeric_columns,
             "players": players,
+        },
+        "",
+    )
+
+
+def _build_player_doc_from_team_overview(rows: list[list[Any]]) -> tuple[dict[str, Any] | None, str]:
+    if len(rows) < 6:
+        return (None, "")
+
+    maxc = max((len(r) for r in rows), default=0)
+    if maxc <= 0:
+        return (None, "")
+
+    header_row_index = -1
+    headers: list[str] = []
+    for ridx in range(min(len(rows), 40)):
+        candidate = [str(_to_cell_value(rows[ridx][c]) if c < len(rows[ridx]) else "").strip() for c in range(maxc)]
+        joined = " ".join([v for v in candidate if v]).lower()
+        if "出场时间" in joined and "总距离" in joined and "平均速度" in joined:
+            header_row_index = ridx
+            headers = candidate
+            break
+
+    if header_row_index < 0:
+        return (None, "")
+
+    data_rows = rows[header_row_index + 1 :]
+    if len(data_rows) == 0:
+        return (None, "")
+
+    player_idx = -1
+    best_player_score = -1
+    for idx in range(min(maxc, 8)):
+        non_empty = 0
+        text_like = 0
+        numbered = 0
+        for row in data_rows[:120]:
+            cell = _to_cell_value(row[idx] if idx < len(row) else None)
+            text = str(cell).strip()
+            if not text:
+                continue
+            non_empty += 1
+            if _to_float(text) is None:
+                text_like += 1
+            if _looks_like_numbered_player_name(text):
+                numbered += 1
+        if non_empty < 3:
+            continue
+        score = text_like + numbered * 3
+        if score > best_player_score:
+            best_player_score = score
+            player_idx = idx
+
+    if player_idx < 0:
+        return (None, "")
+
+    metric_columns: list[tuple[int, str]] = []
+    for idx, header in enumerate(headers):
+        name = str(header or "").strip()
+        if not name or idx == player_idx:
+            continue
+        numeric_hits = 0
+        for row in data_rows[:160]:
+            value = _to_float(row[idx] if idx < len(row) else None)
+            if value is not None:
+                numeric_hits += 1
+        if numeric_hits >= 3:
+            metric_columns.append((idx, name))
+
+    if len(metric_columns) < 3:
+        return (None, "")
+
+    used_ids: dict[str, int] = {}
+    players: list[dict[str, Any]] = []
+    for row in data_rows:
+        player_name = str(_to_cell_value(row[player_idx] if player_idx < len(row) else "")).strip()
+        if not player_name:
+            continue
+        raw = {headers[player_idx] or "Player": player_name}
+        numeric_found = False
+        for col_idx, metric_name in metric_columns:
+            value = _to_cell_value(row[col_idx] if col_idx < len(row) else None)
+            raw[metric_name] = value
+            if _to_float(value) is not None:
+                numeric_found = True
+        if not numeric_found:
+            continue
+        players.append(
+            {
+                "id": _make_id(player_name, used_ids, "player"),
+                "player": player_name,
+                "raw": raw,
+            }
+        )
+
+    if len(players) == 0:
+        return (None, "")
+
+    numeric_columns = [name for _, name in metric_columns if any(_to_float(p.get("raw", {}).get(name)) is not None for p in players)]
+    if len(numeric_columns) == 0:
+        return (None, "")
+
+    player_col_name = str(headers[player_idx] or "").strip() or "Player"
+    all_columns = [player_col_name, *numeric_columns]
+    normalized_players: list[dict[str, Any]] = []
+    for player in players:
+        raw = player.get("raw", {})
+        normalized_raw = {player_col_name: raw.get(player_col_name, player.get("player", ""))}
+        for col in numeric_columns:
+            normalized_raw[col] = raw.get(col, "")
+        normalized_players.append(
+            {
+                "id": player.get("id"),
+                "player": player.get("player"),
+                "raw": normalized_raw,
+            }
+        )
+
+    return (
+        {
+            "playerColumn": player_col_name,
+            "allColumns": all_columns,
+            "numericColumns": numeric_columns,
+            "players": normalized_players,
         },
         "",
     )
@@ -543,8 +804,27 @@ def _build_player_doc_from_stat_blocks(rows: list[list[Any]]) -> tuple[dict[str,
     )
 
 
-def _build_team_doc(sheet_rows_1: list[list[Any]], sheet_rows_2: list[list[Any]]) -> tuple[dict[str, Any] | None, str]:
-    team_names = _extract_team_names_from_rows(sheet_rows_1)
+def _build_team_doc(
+    sheet_rows_1: list[list[Any]],
+    sheet_rows_2: list[list[Any]],
+    named_sheets: list[tuple[str, list[list[Any]]]] | None = None,
+) -> tuple[dict[str, Any] | None, str]:
+    # Prefer the sheet explicitly named "Overview" for team radar data.
+    if named_sheets:
+        named_overview_team_names = _extract_team_names_from_named_overviews(named_sheets)
+        for sheet_name, rows in named_sheets:
+            if _normalize_header_name(sheet_name) == "overview":
+                team_names = named_overview_team_names or _extract_team_names_from_rows(rows)
+                doc, _ = _build_team_doc_from_overview(rows, team_names)
+                if doc is not None:
+                    return (doc, "")
+                doc, _ = _build_team_doc_from_standard(rows)
+                if doc is not None:
+                    return (doc, "")
+
+    team_names = _extract_team_names_from_named_overviews(named_sheets)
+    if len(team_names) < 2:
+        team_names = _extract_team_names_from_rows(sheet_rows_1)
     if len(team_names) < 2:
         team_names = _extract_team_names_from_rows(sheet_rows_2)
 
@@ -555,27 +835,61 @@ def _build_team_doc(sheet_rows_1: list[list[Any]], sheet_rows_2: list[list[Any]]
         lambda: _build_team_doc_from_overview(sheet_rows_2, team_names),
     ]
 
-    for parser in parsers:
-        doc, _ = parser()
-        if doc is not None:
-            return (doc, "")
-
-    return (None, "第1/2个 sheet 未识别到两队有效体能数据")
-
-
-def _build_player_doc(sheet_rows_1: list[list[Any]], sheet_rows_2: list[list[Any]]) -> tuple[dict[str, Any] | None, str]:
-    parsers = [
-        lambda: _build_player_doc_from_standard(sheet_rows_2),
-        lambda: _build_player_doc_from_standard(sheet_rows_1),
-        lambda: _build_player_doc_from_stat_blocks(sheet_rows_1),
-        lambda: _build_player_doc_from_stat_blocks(sheet_rows_2),
-    ]
+    if named_sheets:
+        for _, rows in named_sheets:
+            parsers.append(lambda rows=rows: _build_team_doc_from_standard(rows))
+            parsers.append(lambda rows=rows: _build_team_doc_from_overview(rows, team_names))
 
     for parser in parsers:
         doc, _ = parser()
         if doc is not None:
             return (doc, "")
 
+    return (None, "未识别到两队有效体能数据（优先读取 Overview sheet）")
+
+
+def _build_player_doc(
+    sheet_rows_1: list[list[Any]],
+    sheet_rows_2: list[list[Any]],
+    named_sheets: list[tuple[str, list[list[Any]]]] | None = None,
+) -> tuple[dict[str, Any] | None, str]:
+    if named_sheets:
+        preferred_tokens = ("home team overview", "away team overview")
+        for token in preferred_tokens:
+            for sheet_name, rows in named_sheets:
+                if token in _normalize_header_name(sheet_name):
+                    doc, _ = _build_player_doc_from_team_overview(rows)
+                    if doc is not None:
+                        return (doc, "")
+
+    candidates: list[dict[str, Any]] = []
+    parse_errors: list[str] = []
+
+    parser_rows: list[list[list[Any]]] = [sheet_rows_2, sheet_rows_1]
+    if named_sheets:
+        known = {id(sheet_rows_1), id(sheet_rows_2)}
+        for _, rows in named_sheets:
+            if id(rows) not in known:
+                parser_rows.append(rows)
+
+    for rows in parser_rows:
+        for parser in (
+            _build_player_doc_from_team_overview,
+            _build_player_doc_from_standard,
+            _build_player_doc_from_stat_blocks,
+        ):
+            doc, err = parser(rows)
+            if doc is not None:
+                candidates.append(doc)
+            elif err:
+                parse_errors.append(err)
+
+    if candidates:
+        best = max(candidates, key=_score_player_doc)
+        return (best, "")
+
+    if len(parse_errors) > 0:
+        return (None, parse_errors[0])
     return (None, "第1/2个 sheet 未识别到有效球员体能数据")
 
 
@@ -601,13 +915,14 @@ def import_fitness_excel():
     sheet_2 = sheets[1]
     rows_1 = _sheet_rows(sheet_1)
     rows_2 = _sheet_rows(sheet_2)
+    named_sheet_rows = [(ws.title, _sheet_rows(ws)) for ws in sheets]
 
-    team_doc, team_err = _build_team_doc(rows_1, rows_2)
+    team_doc, team_err = _build_team_doc(rows_1, rows_2, named_sheet_rows)
     if team_doc is None:
         wb.close()
         return jsonify({"ok": False, "error": team_err}), 400
 
-    player_doc, player_err = _build_player_doc(rows_1, rows_2)
+    player_doc, player_err = _build_player_doc(rows_1, rows_2, named_sheet_rows)
     if player_doc is None:
         wb.close()
         return jsonify({"ok": False, "error": player_err}), 400

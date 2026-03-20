@@ -300,9 +300,34 @@
   background: #f8f5ef;
 }
 
+.fitness-overlay-polygon {
+  cursor: pointer;
+  transition: opacity 120ms ease, stroke-width 120ms ease;
+}
+
+.fitness-overlay-polygon:hover {
+  opacity: 0.92;
+}
+
+.fitness-overlay-polygon.is-selected {
+  filter: drop-shadow(0 0 3px rgba(47, 42, 36, 0.2));
+}
+
+.fitness-overlay-legend-item {
+  cursor: pointer;
+}
+
 .fitness-metric-actions {
   display: grid;
   gap: 8px;
+}
+
+.fitness-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .fitness-check-grid {
@@ -344,9 +369,15 @@
 
 .fitness-bar-row {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) 72px;
+  grid-template-columns: 34px 170px minmax(0, 1fr) 72px;
   gap: 10px;
   align-items: center;
+}
+
+.fitness-bar-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .fitness-bar-name {
@@ -381,8 +412,95 @@
   color: #7b7062;
 }
 
+.fitness-player-detail-card {
+  border: 1px solid #e5dacb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.fitness-player-detail-card h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #2f2a24;
+}
+
+.fitness-player-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  max-height: 190px;
+  overflow: auto;
+}
+
+.fitness-player-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px dashed #efe4d6;
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+
+.fitness-player-detail-metric {
+  color: #3a342d;
+}
+
+.fitness-player-detail-value {
+  color: #1f1c18;
+  font-weight: 700;
+}
+
 .fitness-table-wrap {
   max-height: 280px;
+}
+
+.fitness-team-table-wrap {
+  overflow-x: hidden;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th,
+.fitness-team-table-wrap .fitness-team-data-table td {
+  white-space: nowrap;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th:nth-child(1),
+.fitness-team-table-wrap .fitness-team-data-table td:nth-child(1) {
+  width: 44px;
+  text-align: center;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th:nth-child(2),
+.fitness-team-table-wrap .fitness-team-data-table td:nth-child(2) {
+  width: 38%;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th:nth-child(3),
+.fitness-team-table-wrap .fitness-team-data-table td:nth-child(3) {
+  width: 22%;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th:nth-child(4),
+.fitness-team-table-wrap .fitness-team-data-table td:nth-child(4) {
+  width: 22%;
+}
+
+.fitness-team-table-wrap .fitness-team-data-table th:nth-child(5),
+.fitness-team-table-wrap .fitness-team-data-table td:nth-child(5) {
+  width: 110px;
+}
+
+.fitness-max-input {
+  width: 92px;
+  min-width: 0;
 }
 
 @media (max-width: 1320px) {
@@ -396,6 +514,13 @@
     grid-template-columns: 1fr;
   }
   .fitness-bar-row {
-    grid-template-columns: 140px minmax(0, 1fr) 60px;
+    grid-template-columns: 30px 120px minmax(0, 1fr) 60px;
+  }
+  .fitness-player-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .fitness-team-table-wrap .fitness-team-data-table th:nth-child(2),
+  .fitness-team-table-wrap .fitness-team-data-table td:nth-child(2) {
+    width: auto;
   }
 }
