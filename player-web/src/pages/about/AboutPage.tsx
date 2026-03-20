@@ -6,8 +6,8 @@ function AboutPage() {
       <div className="info-card about-shell">
         <div className="about-head">
           <p className="about-kicker">About</p>
-          <h1>规则先行，输出可复现</h1>
-          <p>本项目聚焦模板化出图与 Web 交互分析，核心目标是稳定口径、可追溯与可持续协作。</p>
+          <h1>规则先行，面向长期协作</h1>
+          <p>项目聚焦模板化出图与 Web 交互分析，核心目标是稳定口径、可追溯与可持续迭代。</p>
         </div>
 
         <div className="about-grid">
@@ -24,9 +24,17 @@ function AboutPage() {
             <p>默认值、语义和行为变化都需要文档同步，确保团队在同一事实源上迭代。</p>
           </article>
           <article className="about-card">
-            <h2>版本与致谢</h2>
+            <h2>版本信息</h2>
             <p>当前构建：26.3.1</p>
             <p>感谢大飞提供技术支持。</p>
+          </article>
+          <article className="about-card about-roadmap-card">
+            <h2>版本路线</h2>
+            <ul className="about-roadmap-list">
+              <li>V3.3：模板化出图与 Web 交互能力整合</li>
+              <li>下一步：比赛数据链路与映射维护体验优化</li>
+              <li>持续项：默认值、回退策略与文档一致性治理</li>
+            </ul>
           </article>
         </div>
       </div>

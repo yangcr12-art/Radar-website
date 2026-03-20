@@ -151,17 +151,22 @@
 
 .match-radar-card .player-data-table-wrap th:nth-child(2),
 .match-radar-card .player-data-table-wrap td:nth-child(2) {
-  width: 24%;
+  width: 22%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .match-radar-card .player-data-table-wrap th:nth-child(3),
-.match-radar-card .player-data-table-wrap td:nth-child(3),
-.match-radar-card .player-data-table-wrap th:nth-child(4),
-.match-radar-card .player-data-table-wrap td:nth-child(4) {
+.match-radar-card .player-data-table-wrap td:nth-child(3) {
   width: 10%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-radar-card .player-data-table-wrap td:nth-child(4) {
+  width: 14%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -174,7 +179,17 @@
 
 .match-radar-card .player-data-table-wrap th:nth-child(6),
 .match-radar-card .player-data-table-wrap td:nth-child(6) {
-  width: 28%;
+  width: 30%;
+}
+
+.match-radar-card .player-data-table-wrap th:nth-child(4),
+.match-radar-card .player-data-table-wrap th:nth-child(5) {
+  width: 14%;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  line-height: 1.25;
 }
 
 .match-radar-card .player-data-table-wrap .match-max-input {
@@ -217,5 +232,170 @@
   }
   .match-export-row {
     align-items: stretch;
+  }
+}
+
+.fitness-page-shell {
+  width: min(1820px, calc(100vw - 8px));
+  display: grid;
+  gap: 12px;
+}
+
+.fitness-top-bar {
+  display: grid;
+  grid-template-columns: minmax(320px, 560px) 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.fitness-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fitness-meta-row p {
+  margin: 0;
+  font-size: 13px;
+  color: #5f5850;
+}
+
+.fitness-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.fitness-left-col,
+.fitness-right-col {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.fitness-card {
+  border: 1px solid #e2d7c9;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffdf8;
+  display: grid;
+  gap: 10px;
+}
+
+.fitness-card h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #2f2a24;
+}
+
+.fitness-card p {
+  margin: 0;
+}
+
+.fitness-chart-card svg {
+  width: min(980px, 100%);
+  border: 1px solid #d9cfbf;
+  border-radius: 14px;
+  background: #f8f5ef;
+}
+
+.fitness-metric-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.fitness-check-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid #e5dacb;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fff;
+}
+
+.fitness-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.fitness-player-list {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid #e5dacb;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+}
+
+.fitness-bars-wrap {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.fitness-bar-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 72px;
+  gap: 10px;
+  align-items: center;
+}
+
+.fitness-bar-name {
+  font-size: 13px;
+  color: #2f2a24;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fitness-bar-track {
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: #ece4d8;
+  overflow: hidden;
+}
+
+.fitness-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.fitness-bar-value {
+  text-align: right;
+  font-size: 13px;
+  color: #2f2a24;
+}
+
+.fitness-empty {
+  font-size: 12px;
+  color: #7b7062;
+}
+
+.fitness-table-wrap {
+  max-height: 280px;
+}
+
+@media (max-width: 1320px) {
+  .fitness-top-bar {
+    grid-template-columns: 1fr;
+  }
+  .fitness-layout {
+    grid-template-columns: 1fr;
+  }
+  .fitness-check-grid {
+    grid-template-columns: 1fr;
+  }
+  .fitness-bar-row {
+    grid-template-columns: 140px minmax(0, 1fr) 60px;
   }
 }

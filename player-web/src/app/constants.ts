@@ -98,7 +98,15 @@ export const STORAGE_KEYS = {
   matchRadarImportPayload: "player_web_match_radar_import_payload_v1",
   matchRadarCompareConfig: "player_web_match_radar_compare_config_v1",
   matchRadarMetricMaxByDataset: "player_web_match_radar_metric_max_by_dataset_v1",
-  matchRadarMetricPositionShiftByDataset: "player_web_match_radar_metric_position_shift_by_dataset_v1"
+  matchRadarMetricPositionShiftByDataset: "player_web_match_radar_metric_position_shift_by_dataset_v1",
+  fitnessSelectedDatasetId: "player_web_fitness_selected_dataset_id_v1",
+  fitnessSharedDatasetId: "player_web_fitness_shared_dataset_id_v1",
+  fitnessSelectedTeamMetricsByDataset: "player_web_fitness_selected_team_metrics_by_dataset_v1",
+  fitnessSelectedPlayerMetricsByDataset: "player_web_fitness_selected_player_metrics_by_dataset_v1",
+  fitnessSelectedPlayersByDataset: "player_web_fitness_selected_players_by_dataset_v1",
+  fitnessSingleMetricByDataset: "player_web_fitness_single_metric_by_dataset_v1",
+  fitnessSingleMetricScopeByDataset: "player_web_fitness_single_metric_scope_by_dataset_v1",
+  fitnessTeamRadarConfigByDataset: "player_web_fitness_team_radar_config_by_dataset_v1"
 };
 
 export const REORDER_MODE_VIEW = "view";
@@ -123,7 +131,24 @@ export const NAV_ITEMS = [
       { key: "radar", label: "雷达图生成器" }
     ]
   },
-  { key: "scatter_plot", label: "散点图生成器" },
+  { key: "scatter_plot", label: "数据散点图" },
+  {
+    key: "match_summary_menu",
+    label: "比赛数据总结",
+    children: [
+      { key: "match_team_data", label: "球队数据" },
+      { key: "match_radar", label: "比赛雷达图" }
+    ]
+  },
+  {
+    key: "fitness_analysis_menu",
+    label: "体能数据分析",
+    children: [
+      { key: "fitness_team_radar", label: "两队体能雷达图" },
+      { key: "fitness_player_overlay", label: "球员体能叠加雷达" },
+      { key: "fitness_per90", label: "分均体能数据" }
+    ]
+  },
   {
     key: "mapping_menu",
     label: "对应表",
@@ -132,14 +157,6 @@ export const NAV_ITEMS = [
       { key: "match_project_mapping", label: "比赛项目对应表" },
       { key: "name_mapping", label: "姓名对应表" },
       { key: "team_mapping", label: "球队对应表" }
-    ]
-  },
-  {
-    key: "match_summary_menu",
-    label: "比赛总结",
-    children: [
-      { key: "match_team_data", label: "球队数据" },
-      { key: "match_radar", label: "比赛雷达图" }
     ]
   },
   { key: "about", label: "About" }

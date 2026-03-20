@@ -143,6 +143,28 @@ export function fetchMatchTeamById(teamId, datasetId = "") {
   return request(`/api/match-data/team/${encodeURIComponent(teamId)}${query}`, { method: "GET" });
 }
 
+export function importFitnessExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/fitness-data/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function fetchFitnessDatasets() {
+  return request("/api/fitness-data/datasets", { method: "GET" });
+}
+
+export function fetchFitnessDataset(datasetId = "") {
+  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+  return request(`/api/fitness-data${query}`, { method: "GET" });
+}
+
+export function deleteFitnessDataset(datasetId) {
+  return request(`/api/fitness-data/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
+}
+
 export function importMatchProjectExcel(file) {
   const form = new FormData();
   form.append("file", file);

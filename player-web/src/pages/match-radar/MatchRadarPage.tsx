@@ -764,7 +764,9 @@ function MatchRadarPage() {
               </tbody>
             </table>
           </div>
-          <p className="match-position-help">位置说明：0 = 不移动；1 = 往后挪1位；2 = 往后挪2位；-1 = 往前挪1位；-2 = 往前挪2位。</p>
+          <p className="match-position-help">
+            位置说明：0 = 不移动；1 = 往后挪1位；2 = 往后挪2位；-1 = 往前挪1位；-2 = 往前挪2位。PPDA 指标在雷达图中采用反向映射（数值越小越靠外，数值越大越靠内），仅影响右图点位显示，不改变表格原始值。
+          </p>
         </div>
 
         <div className="match-radar-right">

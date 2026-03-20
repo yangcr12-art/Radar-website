@@ -10,6 +10,9 @@ import ScatterPlotPage from "./pages/scatter-plot/ScatterPlotPage";
 import TeamMappingPage from "./pages/team-mapping/TeamMappingPage";
 import MatchTeamDataPage from "./pages/match-team-data/MatchTeamDataPage";
 import MatchRadarPage from "./pages/match-radar/MatchRadarPage";
+import FitnessTeamRadarPage from "./pages/fitness-analysis/FitnessTeamRadarPage";
+import FitnessPlayerOverlayPage from "./pages/fitness-analysis/FitnessPlayerOverlayPage";
+import FitnessPer90Page from "./pages/fitness-analysis/FitnessPer90Page";
 import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
@@ -1413,7 +1416,7 @@ function App() {
   const radarPage = (
     <div className="page">
       <div className="left-panel">
-        <h1>球员雷达图网页生成器</h1>
+        <h1>雷达图生成器</h1>
 
         <div className="title-row">
           <label>主标题</label>
@@ -1918,16 +1921,19 @@ function App() {
           </svg>
         </div>
       </div>
-
     </div>
   );
-
   return (
     <div className="app-shell">
       <TopNav activePage={activePage} onChangePage={setActivePage} />
-
       <main className="content-shell">
-        {activePage === "home" ? <HomePage onEnterRadar={() => setActivePage("radar")} /> : null}
+        {activePage === "home" ? (
+          <HomePage
+            onEnterRadar={() => setActivePage("radar")}
+            onEnterScatter={() => setActivePage("scatter_plot")}
+            onEnterMatchRadar={() => setActivePage("match_radar")}
+          />
+        ) : null}
         {activePage === "radar" ? radarPage : null}
         {activePage === "about" ? <AboutPage /> : null}
         {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
@@ -1936,6 +1942,9 @@ function App() {
         {activePage === "team_mapping" ? <TeamMappingPage /> : null}
         {activePage === "match_team_data" ? <MatchTeamDataPage /> : null}
         {activePage === "match_radar" ? <MatchRadarPage /> : null}
+        {activePage === "fitness_team_radar" ? <FitnessTeamRadarPage /> : null}
+        {activePage === "fitness_player_overlay" ? <FitnessPlayerOverlayPage /> : null}
+        {activePage === "fitness_per90" ? <FitnessPer90Page /> : null}
         {activePage === "player_data" ? (
           <PlayerDataPage
             playerDataMeta={playerDataMeta}

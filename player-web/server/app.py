@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import json
 import os
 from datetime import datetime, timezone
@@ -11,6 +10,7 @@ from uuid import uuid4
 
 from flask import Flask, jsonify, request
 from openpyxl import load_workbook
+from server_core.routes.fitness_data_api import fitness_data_bp
 from server_core.routes.match_data_api import match_data_bp
 from server_core.routes.match_project_mapping_api import match_project_mapping_bp
 from server_core.services.ranking_service import (
@@ -33,7 +33,7 @@ WRITE_LOCK = Lock()
 app = Flask(__name__)
 app.register_blueprint(match_data_bp)
 app.register_blueprint(match_project_mapping_bp)
-
+app.register_blueprint(fitness_data_bp)
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
