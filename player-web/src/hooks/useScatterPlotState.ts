@@ -40,6 +40,7 @@ export default function useScatterPlotState({
   const [scatterDataError, setScatterDataError] = useState("");
   const [scatterDatasetDoc, setScatterDatasetDoc] = useState(null);
   const scatterReqSeqRef = useRef(0);
+  const isScatterDomainPage = activePage === "scatter_plot" || activePage === "player_personal_radar";
 
   const scatterConfig = useMemo(() => {
     if (!selectedDatasetId) return DEFAULT_SCATTER_CONFIG;
@@ -68,15 +69,15 @@ export default function useScatterPlotState({
 
   useEffect(() => {
     const hydrateScatterPage = async () => {
-      if (activePage !== "scatter_plot") return;
+      if (!isScatterDomainPage) return;
       await loadDatasets(selectedDatasetId);
     };
     hydrateScatterPage();
-  }, [activePage, selectedDatasetId]);
+  }, [isScatterDomainPage, selectedDatasetId]);
 
   useEffect(() => {
     const loadScatterDataset = async () => {
-      if (activePage !== "scatter_plot") return;
+      if (!isScatterDomainPage) return;
       if (!selectedDatasetId) {
         setScatterDatasetDoc(null);
         setScatterDataError("");
@@ -102,7 +103,7 @@ export default function useScatterPlotState({
       }
     };
     loadScatterDataset();
-  }, [activePage, selectedDatasetId]);
+  }, [isScatterDomainPage, selectedDatasetId]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;

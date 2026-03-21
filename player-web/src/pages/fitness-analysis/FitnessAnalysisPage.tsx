@@ -13,6 +13,8 @@ const TEAM_RADAR_MAX_RADIUS = 290;
 
 const PLAYER_RADAR_WIDTH = 1080;
 const PLAYER_RADAR_HEIGHT = 860;
+const PLAYER_RADAR_VIEWBOX_Y = 44;
+const PLAYER_RADAR_VIEWBOX_HEIGHT = 772;
 const PLAYER_RADAR_CENTER_X = PLAYER_RADAR_WIDTH / 2;
 const PLAYER_RADAR_CENTER_Y = 470;
 const PLAYER_RADAR_MAX_RADIUS = 290;
@@ -46,6 +48,12 @@ const DEFAULT_TEAM_RADAR_CONFIG = {
   chartBackgroundColor: "#f8f5ef",
   pointRadius: "4",
   titleFontSize: "34"
+};
+
+const DEFAULT_PLAYER_RADAR_CONFIG = {
+  title: "球员体能叠加雷达图",
+  subtitle: "数据来源：体能数据分析 / 第2个Sheet",
+  chartBackgroundColor: "#f8f5ef"
 };
 
 function normalizeHexColor(value: unknown) {
@@ -181,6 +189,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const [singleMetricByDataset, setSingleMetricByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSingleMetricByDataset, {}));
   const [singleMetricScopeByDataset, setSingleMetricScopeByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSingleMetricScopeByDataset, {}));
   const [teamRadarConfigByDataset, setTeamRadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessTeamRadarConfigByDataset, {}));
+  const [playerRadarConfigByDataset, setPlayerRadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPlayerRadarConfigByDataset, {}));
 
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -257,6 +266,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessTeamRadarConfigByDataset, teamRadarConfigByDataset);
   }, [teamRadarConfigByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPlayerRadarConfigByDataset, playerRadarConfigByDataset);
+  }, [playerRadarConfigByDataset]);
 
   const verifyBackendHealth = async () => {
     try {
@@ -412,6 +425,17 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     }));
   }, [selectedDatasetId, homeTeam, awayTeam, teamRadarConfigByDataset, teamMapping]);
 
+  useEffect(() => {
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    const current = playerRadarConfigByDataset[ds];
+    if (current && typeof current === "object") return;
+    setPlayerRadarConfigByDataset((prev: any) => ({
+      ...prev,
+      [ds]: { ...DEFAULT_PLAYER_RADAR_CONFIG }
+    }));
+  }, [selectedDatasetId, playerRadarConfigByDataset]);
+
   const selectedTeamMetrics = useMemo(() => {
     const ds = String(selectedDatasetId || "");
     const selected = Array.isArray(selectedTeamMetricsByDataset[ds]) ? selectedTeamMetricsByDataset[ds] : [];
@@ -439,12 +463,27 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     return { ...DEFAULT_TEAM_RADAR_CONFIG, ...base };
   }, [selectedDatasetId, teamRadarConfigByDataset]);
 
+  const playerRadarConfig = useMemo(() => {
+    const ds = String(selectedDatasetId || "");
+    const base = playerRadarConfigByDataset[ds] && typeof playerRadarConfigByDataset[ds] === "object" ? playerRadarConfigByDataset[ds] : {};
+    return { ...DEFAULT_PLAYER_RADAR_CONFIG, ...base };
+  }, [selectedDatasetId, playerRadarConfigByDataset]);
+
   const updateTeamRadarConfig = (patch: any) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
     setTeamRadarConfigByDataset((prev: any) => ({
       ...prev,
       [ds]: { ...(prev[ds] && typeof prev[ds] === "object" ? prev[ds] : DEFAULT_TEAM_RADAR_CONFIG), ...patch }
+    }));
+  };
+
+  const updatePlayerRadarConfig = (patch: any) => {
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    setPlayerRadarConfigByDataset((prev: any) => ({
+      ...prev,
+      [ds]: { ...(prev[ds] && typeof prev[ds] === "object" ? prev[ds] : DEFAULT_PLAYER_RADAR_CONFIG), ...patch }
     }));
   };
 
@@ -538,13 +577,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const playerRadarMetrics = selectedPlayerMetrics;
 
-  const visiblePlayerColorMap = useMemo(() => {
+  const playerColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    visiblePlayers.forEach((player: any, idx: number) => {
+    playerRows.forEach((player: any, idx: number) => {
       map.set(String(player.id), PLAYER_OVERLAY_PALETTE[idx % PLAYER_OVERLAY_PALETTE.length]);
     });
     return map;
-  }, [visiblePlayers]);
+  }, [playerRows]);
 
   const playerAxisPoints = useMemo(() => {
     const total = playerRadarMetrics.length || 1;
@@ -566,7 +605,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         return pointAt(PLAYER_RADAR_CENTER_X, PLAYER_RADAR_CENTER_Y, ratio * PLAYER_RADAR_MAX_RADIUS, start + idx * step);
       });
       const name = String(player.player || "");
-      const color = visiblePlayerColorMap.get(String(player.id)) || PLAYER_OVERLAY_PALETTE[playerIdx % PLAYER_OVERLAY_PALETTE.length];
+      const color = playerColorMap.get(String(player.id)) || PLAYER_OVERLAY_PALETTE[playerIdx % PLAYER_OVERLAY_PALETTE.length];
       return {
         id: String(player.id),
         name,
@@ -576,7 +615,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         path: polygonPath(points)
       };
     });
-  }, [visiblePlayers, playerRadarMetrics, playerMetricMaxMap, visiblePlayerColorMap]);
+  }, [visiblePlayers, playerRadarMetrics, playerMetricMaxMap, playerColorMap]);
 
   const selectedOverlayPlayerId = useMemo(() => {
     const ds = String(selectedDatasetId || "");
@@ -598,6 +637,14 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     () => playerRadarPolygons.find((poly: any) => String(poly.id) === selectedOverlayPlayerId) || null,
     [playerRadarPolygons, selectedOverlayPlayerId]
   );
+
+  const orderedPlayerRadarPolygons = useMemo(() => {
+    if (!selectedOverlayPlayerId) return playerRadarPolygons;
+    const selected = playerRadarPolygons.find((poly: any) => String(poly.id) === selectedOverlayPlayerId);
+    if (!selected) return playerRadarPolygons;
+    const others = playerRadarPolygons.filter((poly: any) => String(poly.id) !== selectedOverlayPlayerId);
+    return [...others, selected];
+  }, [playerRadarPolygons, selectedOverlayPlayerId]);
 
   const selectedOverlayPlayerInfoRows = useMemo(() => {
     if (!selectedOverlayPlayer) return [];
@@ -637,8 +684,8 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   }, [singleMetric, playerRows]);
 
   const singleMetricColorMap = useMemo(() => {
-    const map = new Map<string, string>(visiblePlayerColorMap);
-    let cursor = visiblePlayers.length;
+    const map = new Map<string, string>(playerColorMap);
+    let cursor = playerRows.length;
     singleMetricRows.forEach((row: any) => {
       const id = String(row.id);
       if (map.has(id)) return;
@@ -646,7 +693,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       cursor += 1;
     });
     return map;
-  }, [visiblePlayerColorMap, singleMetricRows, visiblePlayers.length]);
+  }, [playerColorMap, singleMetricRows, playerRows.length]);
 
   const singleMetricMax = useMemo(() => {
     const sourceRows = singleMetricScope === "all" ? singleMetricRows : singleMetricRows.filter((row: any) => selectedPlayerIds.includes(String(row.id)));
@@ -885,6 +932,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const homeColor = normalizeHexColor(teamRadarConfig.homeColor) || DEFAULT_TEAM_RADAR_CONFIG.homeColor;
   const awayColor = normalizeHexColor(teamRadarConfig.awayColor) || DEFAULT_TEAM_RADAR_CONFIG.awayColor;
   const chartBackgroundColor = normalizeHexColor(teamRadarConfig.chartBackgroundColor) || "#f8f5ef";
+  const playerChartBackgroundColor = normalizeHexColor(playerRadarConfig.chartBackgroundColor) || "#f8f5ef";
 
   return (
     <section className="info-page">
@@ -1049,6 +1097,22 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               <div className="fitness-card">
               <h2>球员体能叠加雷达（第2个Sheet）</h2>
 
+              <div className="match-radar-grid-2">
+                <div className="title-row">
+                  <label>主标题</label>
+                  <input value={playerRadarConfig.title} onChange={(e) => updatePlayerRadarConfig({ title: e.target.value })} />
+                </div>
+                <div className="title-row">
+                  <label>副标题</label>
+                  <input value={playerRadarConfig.subtitle} onChange={(e) => updatePlayerRadarConfig({ subtitle: e.target.value })} />
+                </div>
+              </div>
+
+              <div className="title-row">
+                <label>背景色</label>
+                <input className="square-color-picker" type="color" value={playerChartBackgroundColor} onChange={(e) => updatePlayerRadarConfig({ chartBackgroundColor: e.target.value })} />
+              </div>
+
               <div className="fitness-metric-actions">
                 <div className="fitness-summary-row">
                   <p>{`已勾选指标：${selectedPlayerMetrics.length}/${availablePlayerMetrics.length}`}</p>
@@ -1143,7 +1207,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
           <div className="fitness-right-col">
             {isTeamView ? (
-              <div className="fitness-card fitness-chart-card">
+              <div className="fitness-card fitness-chart-card overlay-radar-chart-card">
               <svg id="fitness-team-radar-svg" viewBox={`0 0 ${TEAM_RADAR_WIDTH} ${TEAM_RADAR_HEIGHT}`}>
                 <rect x="0" y="0" width={TEAM_RADAR_WIDTH} height={TEAM_RADAR_HEIGHT} fill={chartBackgroundColor} />
 
@@ -1233,15 +1297,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
             ) : null}
 
             {isPlayerView ? (
-              <div className="fitness-card fitness-chart-card">
-              <svg id="fitness-player-radar-svg" viewBox={`0 0 ${PLAYER_RADAR_WIDTH} ${PLAYER_RADAR_HEIGHT}`}>
-                <rect x="0" y="0" width={PLAYER_RADAR_WIDTH} height={PLAYER_RADAR_HEIGHT} fill="#f8f5ef" />
+              <div className="fitness-card fitness-chart-card overlay-radar-chart-card">
+              <svg id="fitness-player-radar-svg" viewBox={`0 ${PLAYER_RADAR_VIEWBOX_Y} ${PLAYER_RADAR_WIDTH} ${PLAYER_RADAR_VIEWBOX_HEIGHT}`}>
+                <rect x="0" y="0" width={PLAYER_RADAR_WIDTH} height={PLAYER_RADAR_HEIGHT} fill={playerChartBackgroundColor} />
 
                 <text x={PLAYER_RADAR_CENTER_X} y="48" textAnchor="middle" fontSize="34" fontWeight="700" fill="#2f2a24">
-                  球员体能叠加雷达图
+                  {playerRadarConfig.title}
                 </text>
                 <text x={PLAYER_RADAR_CENTER_X} y="80" textAnchor="middle" fontSize="16" fill="#5f5850">
-                  数据来源：体能数据分析 / 第2个Sheet
+                  {playerRadarConfig.subtitle}
                 </text>
 
                 {[20, 40, 60, 80, 100].map((tick) => (
@@ -1260,7 +1324,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                   <line key={idx} x1={PLAYER_RADAR_CENTER_X} y1={PLAYER_RADAR_CENTER_Y} x2={pt.x} y2={pt.y} stroke="#c8bfb2" />
                 ))}
 
-                {playerRadarPolygons.map((poly: any) => (
+                {orderedPlayerRadarPolygons.map((poly: any) => (
                   <g key={poly.id}>
                     <path
                       className={`fitness-overlay-polygon${selectedOverlayPlayerId === poly.id ? " is-selected" : ""}`}

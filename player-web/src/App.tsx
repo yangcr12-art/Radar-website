@@ -13,6 +13,7 @@ import MatchRadarPage from "./pages/match-radar/MatchRadarPage";
 import FitnessTeamRadarPage from "./pages/fitness-analysis/FitnessTeamRadarPage";
 import FitnessPlayerOverlayPage from "./pages/fitness-analysis/FitnessPlayerOverlayPage";
 import FitnessPer90Page from "./pages/fitness-analysis/FitnessPer90Page";
+import PlayerPersonalRadarPage from "./pages/player-personal-radar/PlayerPersonalRadarPage";
 import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
@@ -1978,20 +1979,8 @@ function App() {
             formatPlayerDataColumnLabel={formatPlayerDataColumnLabel}
           />
         ) : null}
-        {activePage === "scatter_plot" ? (
-          <ScatterPlotPage
-            datasetOptions={datasetOptions}
-            selectedDatasetId={selectedDatasetId}
-            setSelectedDatasetId={setSelectedDatasetId}
-            onDeleteCurrentDataset={handleDeleteCurrentDataset}
-            scatterLoading={scatterDataLoading}
-            scatterError={scatterDataError}
-            scatterDoc={scatterDatasetDoc}
-            scatterConfig={scatterConfig}
-            onScatterConfigChange={updateScatterConfig}
-            formatPlayerDataColumnLabel={formatPlayerDataColumnLabel}
-          />
-        ) : null}
+        {activePage === "scatter_plot" ? <ScatterPlotPage datasetOptions={datasetOptions} selectedDatasetId={selectedDatasetId} setSelectedDatasetId={setSelectedDatasetId} onDeleteCurrentDataset={handleDeleteCurrentDataset} scatterLoading={scatterDataLoading} scatterError={scatterDataError} scatterDoc={scatterDatasetDoc} scatterConfig={scatterConfig} onScatterConfigChange={updateScatterConfig} formatPlayerDataColumnLabel={formatPlayerDataColumnLabel} /> : null}
+        {activePage === "player_personal_radar" ? <PlayerPersonalRadarPage datasetOptions={datasetOptions} selectedDatasetId={selectedDatasetId} setSelectedDatasetId={setSelectedDatasetId} onDeleteCurrentDataset={handleDeleteCurrentDataset} scatterLoading={scatterDataLoading} scatterError={scatterDataError} scatterDoc={scatterDatasetDoc} /> : null}
       </main>
     </div>
   );

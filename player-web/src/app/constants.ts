@@ -108,7 +108,14 @@ export const STORAGE_KEYS = {
   fitnessSelectedOverlayPlayerByDataset: "player_web_fitness_selected_overlay_player_by_dataset_v1",
   fitnessSingleMetricByDataset: "player_web_fitness_single_metric_by_dataset_v1",
   fitnessSingleMetricScopeByDataset: "player_web_fitness_single_metric_scope_by_dataset_v1",
-  fitnessTeamRadarConfigByDataset: "player_web_fitness_team_radar_config_by_dataset_v1"
+  fitnessTeamRadarConfigByDataset: "player_web_fitness_team_radar_config_by_dataset_v1",
+  fitnessPlayerRadarConfigByDataset: "player_web_fitness_player_radar_config_by_dataset_v1",
+  playerPersonalRadarSelectedMetricsByDataset: "player_web_player_personal_radar_selected_metrics_by_dataset_v1",
+  playerPersonalRadarSelectedPlayersByDataset: "player_web_player_personal_radar_selected_players_by_dataset_v1",
+  playerPersonalRadarSelectedOverlayPlayerByDataset: "player_web_player_personal_radar_selected_overlay_player_by_dataset_v1",
+  playerPersonalRadarSingleMetricByDataset: "player_web_player_personal_radar_single_metric_by_dataset_v1",
+  playerPersonalRadarSingleMetricScopeByDataset: "player_web_player_personal_radar_single_metric_scope_by_dataset_v1",
+  playerPersonalRadarConfigByDataset: "player_web_player_personal_radar_config_by_dataset_v1"
 };
 
 export const REORDER_MODE_VIEW = "view";
@@ -133,7 +140,14 @@ export const NAV_ITEMS = [
       { key: "radar", label: "雷达图生成器" }
     ]
   },
-  { key: "scatter_plot", label: "数据散点图" },
+  {
+    key: "scatter_analysis_menu",
+    label: "数据散点图",
+    children: [
+      { key: "scatter_plot", label: "数据散点图" },
+      { key: "player_personal_radar", label: "个人雷达图" }
+    ]
+  },
   {
     key: "match_summary_menu",
     label: "比赛数据总结",
