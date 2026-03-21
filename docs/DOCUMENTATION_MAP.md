@@ -1,6 +1,6 @@
 # Documentation Map
 
-本文件提供 `player` 仓库的文档导航与使用顺序。
+`player` 仓库文档导航与维护索引。
 
 ## 1) 阅读优先级（高 -> 低）
 
@@ -9,50 +9,60 @@
 3. `README.md`
 4. `docs/*` 与 `player-web/README.md`
 
-## 2) 场景入口
+## 2) 按角色阅读路径
 
-### 新成员 10 分钟上手
+### 产品/运营
+1. `README.md`
+2. `USAGE.md`
+3. `docs/ROADMAP.md`
 
-1. `README.md`：项目定位、最短闭环
-2. `USAGE.md`：命令与页面行为事实
-3. `player-web/README.md`：前端页面能力与启动方式
+### 前端开发
+1. `AGENTS.md`
+2. `USAGE.md`
+3. `docs/ARCHITECTURE_RULES.md`
+4. `player-web/README.md`
 
-### 做功能改动前
+### 后端开发
+1. `AGENTS.md`
+2. `USAGE.md`
+3. `docs/ARCHITECTURE_RULES.md`
 
-1. `AGENTS.md`：红线与口径契约
-2. `USAGE.md`：现有默认值与回退策略
-3. `contributing_ai.md`：任务模板与交付格式
-
-### 做架构/重构前
-
-1. `docs/ARCHITECTURE_RULES.md`
-2. `docs/ROADMAP.md`
-3. `docs/GITHUB_WORKFLOW_AND_TAGS.md`
+### AI 协作/自动化任务
+1. `AGENTS.md`
+2. `USAGE.md`
+3. `contributing_ai.md`
+4. `docs/DOCUMENTATION_MAP.md`
 
 ## 3) 文档职责边界
 
-- `README.md`：项目入口与能力总览
-- `USAGE.md`：可执行命令 + 可验证行为
-- `AGENTS.md`：最高优先级规则与审计清单
-- `contributing_ai.md`：AI 协作协议
-- `player-web/README.md`：Web 端能力与开发说明
-- `docs/PLAYER_CHART_TEMPLATE.md`：CSV 字段模板规则
-- `docs/ARCHITECTURE_RULES.md`：架构约束与分层规则
-- `docs/ROADMAP.md`：阶段规划
-- `docs/GITHUB_WORKFLOW_AND_TAGS.md`：发布流程与标签策略
+- `README.md`：项目入口、快速闭环、结构总览
+- `USAGE.md`：行为事实源（命令、页面功能、默认值、回退）
+- `AGENTS.md`：红线、审计要求、交付清单
+- `contributing_ai.md`：AI 任务模板、验证与交付协议
+- `player-web/README.md`：Web 端启动、导航、前端结构
+- `docs/ARCHITECTURE_RULES.md`：架构分层与约束
+- `docs/PLAYER_CHART_TEMPLATE.md`：CSV 模板字段规范
+- `docs/ROADMAP.md`：路线图与阶段目标
+- `docs/GITHUB_WORKFLOW_AND_TAGS.md`：发布流程与标签约定
 
-## 4) 变更同步规则
+## 4) 变更同步决策表
 
-满足任一条件，必须至少同步 `USAGE.md`：
+| 变更类型 | 必改文档 |
+|---|---|
+| 默认值变化 | `USAGE.md` |
+| 字段语义变化 | `USAGE.md` + `AGENTS.md`（如触及红线） |
+| 页面入口/导航变化 | `USAGE.md` + `player-web/README.md` + `README.md`（摘要） |
+| 回退策略变化 | `USAGE.md` |
+| API 调用方式变化 | `USAGE.md`（必要时补 `player-web/README.md`） |
+| 架构分层/约束变化 | `docs/ARCHITECTURE_RULES.md`（必要时补 `AGENTS.md`） |
 
-- 默认值变化
-- 字段语义变化
-- 页面入口/导航变化
-- 回退策略变化
-- API 调用方式变化
+## 5) 快速定位
 
-若涉及全局红线或审计策略，额外同步 `AGENTS.md`。
+- “这个页面到底怎么用？” -> `USAGE.md`
+- “这次改动算不算违规？” -> `AGENTS.md`
+- “文件应该放哪层？” -> `docs/ARCHITECTURE_RULES.md`
+- “要跑哪些验证？” -> `AGENTS.md` + `contributing_ai.md`
 
 ---
 
-_最后更新：2026-03-18_
+_最后更新：2026-03-21_

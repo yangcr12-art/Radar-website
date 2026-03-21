@@ -1,19 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { checkHealth, deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
-import AboutPage from "./pages/about/AboutPage";
-import HomePage from "./pages/home/HomePage";
-import PlayerDataPage from "./pages/player-data/PlayerDataPage";
-import ProjectMappingPage from "./pages/project-mapping/ProjectMappingPage";
-import MatchProjectMappingPage from "./pages/match-project-mapping/MatchProjectMappingPage";
-import NameMappingPage from "./pages/name-mapping/NameMappingPage";
-import ScatterPlotPage from "./pages/scatter-plot/ScatterPlotPage";
-import TeamMappingPage from "./pages/team-mapping/TeamMappingPage";
-import MatchTeamDataPage from "./pages/match-team-data/MatchTeamDataPage";
-import MatchRadarPage from "./pages/match-radar/MatchRadarPage";
-import FitnessTeamRadarPage from "./pages/fitness-analysis/FitnessTeamRadarPage";
-import FitnessPlayerOverlayPage from "./pages/fitness-analysis/FitnessPlayerOverlayPage";
-import FitnessPer90Page from "./pages/fitness-analysis/FitnessPer90Page";
-import PlayerPersonalRadarPage from "./pages/player-personal-radar/PlayerPersonalRadarPage";
 import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
@@ -47,6 +33,8 @@ import {
   TIER_ALIASES,
   TIER_LABELS
 } from "./app/constants";
+import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
+import { renderActivePage } from "./app/renderActivePage";
 
 function polarPoint(radius, angle) {
   return {
@@ -428,7 +416,7 @@ function resolveImportedPosition(columns) {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState("radar");
+  const [activePage, setActivePage] = useState<AppPageKey>("radar");
   const [title, setTitle] = useState("Player Radar (Template Mode)");
   const [subtitle, setSubtitle] = useState("Input metric CSV and export image");
   const [rows, setRows] = useState(() => recomputeRowsTier(INITIAL_ROWS));
@@ -1926,61 +1914,71 @@ function App() {
   );
   return (
     <div className="app-shell">
-      <TopNav activePage={activePage} onChangePage={setActivePage} />
+      <TopNav
+        activePage={activePage}
+        onChangePage={(pageKey) => {
+          if (!isAppPageKey(pageKey)) return;
+          setActivePage(pageKey);
+        }}
+      />
       <main className="content-shell">
-        {activePage === "home" ? (
-          <HomePage
-            onEnterRadar={() => setActivePage("radar")}
-            onEnterScatter={() => setActivePage("scatter_plot")}
-            onEnterMatchRadar={() => setActivePage("match_radar")}
-          />
-        ) : null}
-        {activePage === "radar" ? radarPage : null}
-        {activePage === "about" ? <AboutPage /> : null}
-        {activePage === "project_mapping" ? <ProjectMappingPage /> : null}
-        {activePage === "match_project_mapping" ? <MatchProjectMappingPage /> : null}
-        {activePage === "name_mapping" ? <NameMappingPage /> : null}
-        {activePage === "team_mapping" ? <TeamMappingPage /> : null}
-        {activePage === "match_team_data" ? <MatchTeamDataPage /> : null}
-        {activePage === "match_radar" ? <MatchRadarPage /> : null}
-        {activePage === "fitness_team_radar" ? <FitnessTeamRadarPage /> : null}
-        {activePage === "fitness_player_overlay" ? <FitnessPlayerOverlayPage /> : null}
-        {activePage === "fitness_per90" ? <FitnessPer90Page /> : null}
-        {activePage === "player_data" ? (
-          <PlayerDataPage
-            playerDataMeta={playerDataMeta}
-            formatDateTime={formatDateTime}
-            selectedDatasetId={selectedDatasetId}
-            setSelectedDatasetId={setSelectedDatasetId}
-            datasetOptions={datasetOptions}
-            onPlayerExcelUploadClick={onPlayerExcelUploadClick}
-            playerDataImporting={playerDataImporting}
-            backendHealth={backendHealth}
-            handleDeleteCurrentDataset={handleDeleteCurrentDataset}
-            playerExcelInputRef={playerExcelInputRef}
-            onPlayerExcelChange={onPlayerExcelChange}
-            playerSearchQuery={playerSearchQuery}
-            setPlayerSearchQuery={setPlayerSearchQuery}
-            playerOptions={playerOptions}
-            selectedPlayerId={selectedPlayerId}
-            setSelectedPlayerId={setSelectedPlayerId}
-            filteredPlayerOptions={filteredPlayerOptions}
-            playerDataMessage={playerDataMessage}
-            playerDataError={playerDataError}
-            selectedPlayerName={selectedPlayerName}
-            selectedMetricColumns={selectedMetricColumns}
-            handleSelectAllMetricColumns={handleSelectAllMetricColumns}
-            handleClearMetricColumns={handleClearMetricColumns}
-            handleImportSelectedMetricsToRadar={handleImportSelectedMetricsToRadar}
-            playerDataLoading={playerDataLoading}
-            playerDataMetaNumericColumns={playerDataMeta.numericColumns || []}
-            selectedPlayerDetail={selectedPlayerDetail}
-            handleToggleMetricColumn={handleToggleMetricColumn}
-            formatPlayerDataColumnLabel={formatPlayerDataColumnLabel}
-          />
-        ) : null}
-        {activePage === "scatter_plot" ? <ScatterPlotPage datasetOptions={datasetOptions} selectedDatasetId={selectedDatasetId} setSelectedDatasetId={setSelectedDatasetId} onDeleteCurrentDataset={handleDeleteCurrentDataset} scatterLoading={scatterDataLoading} scatterError={scatterDataError} scatterDoc={scatterDatasetDoc} scatterConfig={scatterConfig} onScatterConfigChange={updateScatterConfig} formatPlayerDataColumnLabel={formatPlayerDataColumnLabel} /> : null}
-        {activePage === "player_personal_radar" ? <PlayerPersonalRadarPage datasetOptions={datasetOptions} selectedDatasetId={selectedDatasetId} setSelectedDatasetId={setSelectedDatasetId} onDeleteCurrentDataset={handleDeleteCurrentDataset} scatterLoading={scatterDataLoading} scatterError={scatterDataError} scatterDoc={scatterDatasetDoc} /> : null}
+        {renderActivePage({
+          activePage,
+          setActivePage,
+          radarPage,
+          playerDataPageProps: {
+            playerDataMeta,
+            formatDateTime,
+            selectedDatasetId,
+            setSelectedDatasetId,
+            datasetOptions,
+            onPlayerExcelUploadClick,
+            playerDataImporting,
+            backendHealth,
+            handleDeleteCurrentDataset,
+            playerExcelInputRef,
+            onPlayerExcelChange,
+            playerSearchQuery,
+            setPlayerSearchQuery,
+            playerOptions,
+            selectedPlayerId,
+            setSelectedPlayerId,
+            filteredPlayerOptions,
+            playerDataMessage,
+            playerDataError,
+            selectedPlayerName,
+            selectedMetricColumns,
+            handleSelectAllMetricColumns,
+            handleClearMetricColumns,
+            handleImportSelectedMetricsToRadar,
+            playerDataLoading,
+            playerDataMetaNumericColumns: playerDataMeta.numericColumns || [],
+            selectedPlayerDetail,
+            handleToggleMetricColumn,
+            formatPlayerDataColumnLabel
+          },
+          scatterPageProps: {
+            datasetOptions,
+            selectedDatasetId,
+            setSelectedDatasetId,
+            onDeleteCurrentDataset: handleDeleteCurrentDataset,
+            scatterLoading: scatterDataLoading,
+            scatterError: scatterDataError,
+            scatterDoc: scatterDatasetDoc,
+            scatterConfig,
+            onScatterConfigChange: updateScatterConfig,
+            formatPlayerDataColumnLabel
+          },
+          playerPersonalRadarProps: {
+            datasetOptions,
+            selectedDatasetId,
+            setSelectedDatasetId,
+            onDeleteCurrentDataset: handleDeleteCurrentDataset,
+            scatterLoading: scatterDataLoading,
+            scatterError: scatterDataError,
+            scatterDoc: scatterDatasetDoc
+          }
+        })}
       </main>
     </div>
   );

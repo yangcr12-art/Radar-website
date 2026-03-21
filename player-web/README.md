@@ -36,9 +36,10 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 - 主页
 - 数据雷达图（球员数据、雷达图生成器）
-- 散点图生成器
+- 数据散点图（数据散点图、个人雷达图）
+- 比赛数据总结（球队数据、比赛雷达图）
+- 体能数据分析（两队体能雷达图、球员体能叠加雷达、分均体能数据）
 - 对应表（项目对应表、比赛项目对应表、姓名对应表、球队对应表）
-- 比赛总结（球队数据、比赛雷达图）
 - About
 
 品牌：`生成器V3.3`
@@ -47,14 +48,14 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 ## 3) 前端结构（优化后）
 
-- `src/pages/*`：页面级组件
+- `src/app/*`：应用级常量、页面注册表、跨页配置
+- `src/pages/*`：页面组件（按功能域拆分）
+- `src/components/*`：导航和可复用界面组件
 - `src/api/*`：后端接口调用
-- `src/utils/*`：纯函数与映射工具
 - `src/hooks/*`：复用状态逻辑
+- `src/utils/*`：纯函数、映射、格式化工具
 - `src/styles.css`：样式入口（仅导入）
-- `src/styles/base.css`：全局基础样式
-- `src/styles/scatter-mapping.css`：散点图与对应表相关样式
-- `src/styles/editor.css`：雷达编辑器与通用控件样式
+- `src/styles/*.css`：基础与通用样式
 - `src/home-about.css`、`src/match-pages.css`：页面特化样式
 
 约束：`src` 仅允许 `.ts/.tsx` 源码。
@@ -69,6 +70,8 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 比赛总结数据域与球员数据域隔离
 
 完整行为定义见仓库根目录 `USAGE.md`。
+
+架构分层约束见：`docs/ARCHITECTURE_RULES.md`。
 
 ---
 

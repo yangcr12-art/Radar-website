@@ -56,6 +56,15 @@ const DEFAULT_PLAYER_RADAR_CONFIG = {
   chartBackgroundColor: "#f8f5ef"
 };
 
+const DEFAULT_PER90_RADAR_CONFIG = {
+  title: "分均体能叠加雷达图",
+  subtitle: "数据来源：体能数据分析 / 第2个Sheet（分均）",
+  chartBackgroundColor: "#f8f5ef"
+};
+
+const MINUTES_COLUMN_KEYWORDS = ["出场时间", "上场时间", "比赛时间", "分钟", "minutes played", "minutes", "mins", "time played", "playing time"];
+const PER90_EXCEPTION_KEYWORDS = ["高速跑次数", "冲刺次数", "high speed run count", "sprint count", "sprints"];
+
 function normalizeHexColor(value: unknown) {
   const text = String(value || "").trim();
   return /^#[0-9a-fA-F]{6}$/.test(text) ? text : "";
@@ -81,6 +90,29 @@ function isOneDecimalMetric(metric: unknown) {
   const text = String(metric || "").trim().toLowerCase();
   if (!text) return false;
   return text.includes("平均速度") || text.includes("最快速度") || text.includes("average speed") || text.includes("max speed");
+}
+
+function isPerMinuteExceptionMetric(metric: unknown) {
+  const text = String(metric || "").trim().toLowerCase();
+  if (!text) return false;
+  if (isOneDecimalMetric(metric)) return true;
+  return PER90_EXCEPTION_KEYWORDS.some((keyword) => text.includes(String(keyword).toLowerCase()));
+}
+
+function findMinutesColumn(allColumns: string[], numericColumns: string[]) {
+  const deduped = Array.from(new Set([...allColumns, ...numericColumns]));
+  const normalized = deduped.map((item) => ({ raw: String(item || ""), lower: String(item || "").trim().toLowerCase() }));
+  for (const keyword of MINUTES_COLUMN_KEYWORDS) {
+    const key = keyword.toLowerCase();
+    const exact = normalized.find((item) => item.lower === key);
+    if (exact) return exact.raw;
+  }
+  for (const keyword of MINUTES_COLUMN_KEYWORDS) {
+    const key = keyword.toLowerCase();
+    const fuzzy = normalized.find((item) => item.lower.includes(key));
+    if (fuzzy) return fuzzy.raw;
+  }
+  return "";
 }
 
 function formatFitnessDisplayValue(value: unknown, metric: unknown) {
@@ -162,12 +194,14 @@ function getTeamLogoSrc(teamName: string, mapping: Map<string, any>) {
 }
 
 type FitnessAnalysisPageProps = {
-  view?: "team" | "player";
+  view?: "team" | "player" | "per90";
 };
 
 function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const isTeamView = view === "team";
   const isPlayerView = view === "player";
+  const isPer90View = view === "per90";
+  const isOverlayView = isPlayerView || isPer90View;
   const [backendHealth, setBackendHealth] = useState("checking");
   const [datasetOptions, setDatasetOptions] = useState([] as any[]);
   const [selectedDatasetId, setSelectedDatasetId] = useState(() => {
@@ -190,6 +224,12 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const [singleMetricScopeByDataset, setSingleMetricScopeByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSingleMetricScopeByDataset, {}));
   const [teamRadarConfigByDataset, setTeamRadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessTeamRadarConfigByDataset, {}));
   const [playerRadarConfigByDataset, setPlayerRadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPlayerRadarConfigByDataset, {}));
+  const [per90SelectedMetricsByDataset, setPer90SelectedMetricsByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90SelectedMetricsByDataset, {}));
+  const [per90SelectedPlayersByDataset, setPer90SelectedPlayersByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90SelectedPlayersByDataset, {}));
+  const [per90SelectedOverlayPlayerByDataset, setPer90SelectedOverlayPlayerByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90SelectedOverlayPlayerByDataset, {}));
+  const [per90SingleMetricByDataset, setPer90SingleMetricByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90SingleMetricByDataset, {}));
+  const [per90SingleMetricScopeByDataset, setPer90SingleMetricScopeByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90SingleMetricScopeByDataset, {}));
+  const [per90RadarConfigByDataset, setPer90RadarConfigByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessPer90RadarConfigByDataset, {}));
 
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -217,8 +257,59 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     return base.filter((column: string) => parseNumericValue(homeTeam?.raw?.[column]) !== null && parseNumericValue(awayTeam?.raw?.[column]) !== null);
   }, [teamSheet, homeTeam, awayTeam]);
 
-  const playerRows = useMemo(() => (Array.isArray(playerSheet?.players) ? playerSheet.players : []), [playerSheet]);
-  const availablePlayerMetrics = useMemo(() => (Array.isArray(playerSheet?.numericColumns) ? playerSheet.numericColumns : []), [playerSheet]);
+  const rawPlayerRows = useMemo(() => (Array.isArray(playerSheet?.players) ? playerSheet.players : []), [playerSheet]);
+  const rawAvailablePlayerMetrics = useMemo(() => (Array.isArray(playerSheet?.numericColumns) ? playerSheet.numericColumns : []), [playerSheet]);
+  const playerAllColumns = useMemo(() => (Array.isArray(playerSheet?.allColumns) ? playerSheet.allColumns : []), [playerSheet]);
+  const per90MinutesColumn = useMemo(() => findMinutesColumn(playerAllColumns, rawAvailablePlayerMetrics), [playerAllColumns, rawAvailablePlayerMetrics]);
+
+  const per90PlayerData = useMemo(() => {
+    if (!isPer90View) {
+      return { rows: rawPlayerRows, metrics: rawAvailablePlayerMetrics };
+    }
+    if (!per90MinutesColumn) {
+      return { rows: [] as any[], metrics: [] as string[] };
+    }
+    const candidateMetrics = rawAvailablePlayerMetrics.filter((metric: string) => metric !== per90MinutesColumn);
+    const transformedRows = rawPlayerRows.map((row: any) => {
+      const raw = row?.raw || {};
+      const minutes = parseNumericValue(raw?.[per90MinutesColumn]);
+      const nextRaw: Record<string, unknown> = {};
+      candidateMetrics.forEach((metric: string) => {
+        const rawValue = parseNumericValue(raw?.[metric]);
+        if (rawValue === null) {
+          nextRaw[metric] = "";
+          return;
+        }
+        if (isPercentMetric(metric) || isPerMinuteExceptionMetric(metric)) {
+          nextRaw[metric] = rawValue;
+          return;
+        }
+        if (minutes === null || minutes <= 0) {
+          nextRaw[metric] = "";
+          return;
+        }
+        nextRaw[metric] = rawValue / minutes;
+      });
+      return {
+        ...row,
+        raw: nextRaw
+      };
+    });
+    const metrics = candidateMetrics.filter((metric: string) =>
+      transformedRows.some((row: any) => parseNumericValue(row?.raw?.[metric]) !== null)
+    );
+    const normalizedRows = transformedRows.map((row: any) => {
+      const normalizedRaw: Record<string, unknown> = {};
+      metrics.forEach((metric: string) => {
+        normalizedRaw[metric] = row?.raw?.[metric] ?? "";
+      });
+      return { ...row, raw: normalizedRaw };
+    });
+    return { rows: normalizedRows, metrics };
+  }, [isPer90View, rawPlayerRows, rawAvailablePlayerMetrics, per90MinutesColumn]);
+
+  const playerRows = per90PlayerData.rows;
+  const availablePlayerMetrics = per90PlayerData.metrics;
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessSelectedDatasetId, selectedDatasetId);
@@ -270,6 +361,30 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.fitnessPlayerRadarConfigByDataset, playerRadarConfigByDataset);
   }, [playerRadarConfigByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90SelectedMetricsByDataset, per90SelectedMetricsByDataset);
+  }, [per90SelectedMetricsByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90SelectedPlayersByDataset, per90SelectedPlayersByDataset);
+  }, [per90SelectedPlayersByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90SelectedOverlayPlayerByDataset, per90SelectedOverlayPlayerByDataset);
+  }, [per90SelectedOverlayPlayerByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90SingleMetricByDataset, per90SingleMetricByDataset);
+  }, [per90SingleMetricByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90SingleMetricScopeByDataset, per90SingleMetricScopeByDataset);
+  }, [per90SingleMetricScopeByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPer90RadarConfigByDataset, per90RadarConfigByDataset);
+  }, [per90RadarConfigByDataset]);
 
   const verifyBackendHealth = async () => {
     try {
@@ -358,6 +473,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   }, [selectedDatasetId, availableTeamMetrics, selectedTeamMetricsByDataset]);
 
   useEffect(() => {
+    if (!isPlayerView) return;
     const ds = String(selectedDatasetId || "");
     if (!ds || availablePlayerMetrics.length === 0) return;
     const currentRaw = selectedPlayerMetricsByDataset[ds];
@@ -372,9 +488,28 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     if (normalized.length !== current.length) {
       setSelectedPlayerMetricsByDataset((prev: any) => ({ ...prev, [ds]: normalized.length > 0 ? normalized : availablePlayerMetrics }));
     }
-  }, [selectedDatasetId, availablePlayerMetrics, selectedPlayerMetricsByDataset]);
+  }, [isPlayerView, selectedDatasetId, availablePlayerMetrics, selectedPlayerMetricsByDataset]);
 
   useEffect(() => {
+    if (!isPer90View) return;
+    const ds = String(selectedDatasetId || "");
+    if (!ds || availablePlayerMetrics.length === 0) return;
+    const currentRaw = per90SelectedMetricsByDataset[ds];
+    const hasStoredSelection = Array.isArray(currentRaw);
+    const current = hasStoredSelection ? currentRaw : [];
+    if (!hasStoredSelection) {
+      setPer90SelectedMetricsByDataset((prev: any) => ({ ...prev, [ds]: availablePlayerMetrics }));
+      return;
+    }
+    const availableSet = new Set(availablePlayerMetrics);
+    const normalized = current.filter((col: string) => availableSet.has(col));
+    if (normalized.length !== current.length) {
+      setPer90SelectedMetricsByDataset((prev: any) => ({ ...prev, [ds]: normalized.length > 0 ? normalized : availablePlayerMetrics }));
+    }
+  }, [isPer90View, selectedDatasetId, availablePlayerMetrics, per90SelectedMetricsByDataset]);
+
+  useEffect(() => {
+    if (!isPlayerView) return;
     const ds = String(selectedDatasetId || "");
     if (!ds || playerRows.length === 0) return;
     const currentRaw = selectedPlayersByDataset[ds];
@@ -390,9 +525,29 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     if (normalized.length !== current.length) {
       setSelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: normalized.length > 0 ? normalized : playerIds }));
     }
-  }, [selectedDatasetId, playerRows, selectedPlayersByDataset]);
+  }, [isPlayerView, selectedDatasetId, playerRows, selectedPlayersByDataset]);
 
   useEffect(() => {
+    if (!isPer90View) return;
+    const ds = String(selectedDatasetId || "");
+    if (!ds || playerRows.length === 0) return;
+    const currentRaw = per90SelectedPlayersByDataset[ds];
+    const hasStoredSelection = Array.isArray(currentRaw);
+    const current = hasStoredSelection ? currentRaw : [];
+    const playerIds = playerRows.map((row: any) => String(row.id));
+    if (!hasStoredSelection) {
+      setPer90SelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: playerIds }));
+      return;
+    }
+    const playerSet = new Set(playerIds);
+    const normalized = current.filter((id: string) => playerSet.has(id));
+    if (normalized.length !== current.length) {
+      setPer90SelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: normalized.length > 0 ? normalized : playerIds }));
+    }
+  }, [isPer90View, selectedDatasetId, playerRows, per90SelectedPlayersByDataset]);
+
+  useEffect(() => {
+    if (!isPlayerView) return;
     const ds = String(selectedDatasetId || "");
     if (!ds || availablePlayerMetrics.length === 0) return;
     const selectedMetric = String(singleMetricByDataset[ds] || "");
@@ -404,7 +559,21 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     if (scope !== "all" && scope !== "selected") {
       setSingleMetricScopeByDataset((prev: any) => ({ ...prev, [ds]: "selected" }));
     }
-  }, [selectedDatasetId, availablePlayerMetrics, singleMetricByDataset, singleMetricScopeByDataset]);
+  }, [isPlayerView, selectedDatasetId, availablePlayerMetrics, singleMetricByDataset, singleMetricScopeByDataset]);
+
+  useEffect(() => {
+    if (!isPer90View) return;
+    const ds = String(selectedDatasetId || "");
+    if (!ds || availablePlayerMetrics.length === 0) return;
+    const selectedMetric = String(per90SingleMetricByDataset[ds] || "");
+    if (!selectedMetric || !availablePlayerMetrics.includes(selectedMetric)) {
+      setPer90SingleMetricByDataset((prev: any) => ({ ...prev, [ds]: availablePlayerMetrics[0] }));
+    }
+    const scope = String(per90SingleMetricScopeByDataset[ds] || "");
+    if (scope !== "all" && scope !== "selected") {
+      setPer90SingleMetricScopeByDataset((prev: any) => ({ ...prev, [ds]: "selected" }));
+    }
+  }, [isPer90View, selectedDatasetId, availablePlayerMetrics, per90SingleMetricByDataset, per90SingleMetricScopeByDataset]);
 
   useEffect(() => {
     const ds = String(selectedDatasetId || "");
@@ -426,6 +595,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   }, [selectedDatasetId, homeTeam, awayTeam, teamRadarConfigByDataset, teamMapping]);
 
   useEffect(() => {
+    if (!isPlayerView) return;
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
     const current = playerRadarConfigByDataset[ds];
@@ -434,7 +604,19 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       ...prev,
       [ds]: { ...DEFAULT_PLAYER_RADAR_CONFIG }
     }));
-  }, [selectedDatasetId, playerRadarConfigByDataset]);
+  }, [isPlayerView, selectedDatasetId, playerRadarConfigByDataset]);
+
+  useEffect(() => {
+    if (!isPer90View) return;
+    const ds = String(selectedDatasetId || "");
+    if (!ds) return;
+    const current = per90RadarConfigByDataset[ds];
+    if (current && typeof current === "object") return;
+    setPer90RadarConfigByDataset((prev: any) => ({
+      ...prev,
+      [ds]: { ...DEFAULT_PER90_RADAR_CONFIG }
+    }));
+  }, [isPer90View, selectedDatasetId, per90RadarConfigByDataset]);
 
   const selectedTeamMetrics = useMemo(() => {
     const ds = String(selectedDatasetId || "");
@@ -445,17 +627,19 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const selectedPlayerMetrics = useMemo(() => {
     const ds = String(selectedDatasetId || "");
-    const selected = Array.isArray(selectedPlayerMetricsByDataset[ds]) ? selectedPlayerMetricsByDataset[ds] : [];
+    const selectedMap = isPer90View ? per90SelectedMetricsByDataset : selectedPlayerMetricsByDataset;
+    const selected = Array.isArray(selectedMap[ds]) ? selectedMap[ds] : [];
     const availableSet = new Set(availablePlayerMetrics);
     return selected.filter((col: string) => availableSet.has(col));
-  }, [selectedDatasetId, selectedPlayerMetricsByDataset, availablePlayerMetrics]);
+  }, [selectedDatasetId, isPer90View, selectedPlayerMetricsByDataset, per90SelectedMetricsByDataset, availablePlayerMetrics]);
 
   const selectedPlayerIds = useMemo(() => {
     const ds = String(selectedDatasetId || "");
-    const selected = Array.isArray(selectedPlayersByDataset[ds]) ? selectedPlayersByDataset[ds] : [];
+    const selectedMap = isPer90View ? per90SelectedPlayersByDataset : selectedPlayersByDataset;
+    const selected = Array.isArray(selectedMap[ds]) ? selectedMap[ds] : [];
     const allIds = new Set(playerRows.map((row: any) => String(row.id)));
     return selected.filter((id: string) => allIds.has(id));
-  }, [selectedDatasetId, selectedPlayersByDataset, playerRows]);
+  }, [selectedDatasetId, isPer90View, selectedPlayersByDataset, per90SelectedPlayersByDataset, playerRows]);
 
   const teamRadarConfig = useMemo(() => {
     const ds = String(selectedDatasetId || "");
@@ -465,9 +649,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const playerRadarConfig = useMemo(() => {
     const ds = String(selectedDatasetId || "");
+    if (isPer90View) {
+      const base = per90RadarConfigByDataset[ds] && typeof per90RadarConfigByDataset[ds] === "object" ? per90RadarConfigByDataset[ds] : {};
+      return { ...DEFAULT_PER90_RADAR_CONFIG, ...base };
+    }
     const base = playerRadarConfigByDataset[ds] && typeof playerRadarConfigByDataset[ds] === "object" ? playerRadarConfigByDataset[ds] : {};
     return { ...DEFAULT_PLAYER_RADAR_CONFIG, ...base };
-  }, [selectedDatasetId, playerRadarConfigByDataset]);
+  }, [selectedDatasetId, isPer90View, playerRadarConfigByDataset, per90RadarConfigByDataset]);
 
   const updateTeamRadarConfig = (patch: any) => {
     const ds = String(selectedDatasetId || "");
@@ -481,6 +669,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const updatePlayerRadarConfig = (patch: any) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
+    if (isPer90View) {
+      setPer90RadarConfigByDataset((prev: any) => ({
+        ...prev,
+        [ds]: { ...(prev[ds] && typeof prev[ds] === "object" ? prev[ds] : DEFAULT_PER90_RADAR_CONFIG), ...patch }
+      }));
+      return;
+    }
     setPlayerRadarConfigByDataset((prev: any) => ({
       ...prev,
       [ds]: { ...(prev[ds] && typeof prev[ds] === "object" ? prev[ds] : DEFAULT_PLAYER_RADAR_CONFIG), ...patch }
@@ -619,19 +814,25 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const selectedOverlayPlayerId = useMemo(() => {
     const ds = String(selectedDatasetId || "");
-    return String(selectedOverlayPlayerByDataset[ds] || "");
-  }, [selectedDatasetId, selectedOverlayPlayerByDataset]);
+    const selectedMap = isPer90View ? per90SelectedOverlayPlayerByDataset : selectedOverlayPlayerByDataset;
+    return String(selectedMap[ds] || "");
+  }, [selectedDatasetId, isPer90View, selectedOverlayPlayerByDataset, per90SelectedOverlayPlayerByDataset]);
 
   useEffect(() => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    const selectedId = String(selectedOverlayPlayerByDataset[ds] || "");
+    const selectedMap = isPer90View ? per90SelectedOverlayPlayerByDataset : selectedOverlayPlayerByDataset;
+    const selectedId = String(selectedMap[ds] || "");
     if (!selectedId) return;
     const visibleIdSet = new Set(visiblePlayers.map((row: any) => String(row.id)));
     if (!visibleIdSet.has(selectedId)) {
-      setSelectedOverlayPlayerByDataset((prev: any) => ({ ...prev, [ds]: "" }));
+      if (isPer90View) {
+        setPer90SelectedOverlayPlayerByDataset((prev: any) => ({ ...prev, [ds]: "" }));
+      } else {
+        setSelectedOverlayPlayerByDataset((prev: any) => ({ ...prev, [ds]: "" }));
+      }
     }
-  }, [selectedDatasetId, selectedOverlayPlayerByDataset, visiblePlayers]);
+  }, [selectedDatasetId, isPer90View, selectedOverlayPlayerByDataset, per90SelectedOverlayPlayerByDataset, visiblePlayers]);
 
   const selectedOverlayPlayer = useMemo(
     () => playerRadarPolygons.find((poly: any) => String(poly.id) === selectedOverlayPlayerId) || null,
@@ -656,16 +857,18 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const singleMetric = useMemo(() => {
     const ds = String(selectedDatasetId || "");
-    const value = String(singleMetricByDataset[ds] || "");
+    const selectedMap = isPer90View ? per90SingleMetricByDataset : singleMetricByDataset;
+    const value = String(selectedMap[ds] || "");
     if (availablePlayerMetrics.includes(value)) return value;
     return availablePlayerMetrics[0] || "";
-  }, [selectedDatasetId, singleMetricByDataset, availablePlayerMetrics]);
+  }, [selectedDatasetId, isPer90View, singleMetricByDataset, per90SingleMetricByDataset, availablePlayerMetrics]);
 
   const singleMetricScope = useMemo(() => {
     const ds = String(selectedDatasetId || "");
-    const value = String(singleMetricScopeByDataset[ds] || "selected");
+    const selectedMap = isPer90View ? per90SingleMetricScopeByDataset : singleMetricScopeByDataset;
+    const value = String(selectedMap[ds] || "selected");
     return value === "all" ? "all" : "selected";
-  }, [selectedDatasetId, singleMetricScopeByDataset]);
+  }, [selectedDatasetId, isPer90View, singleMetricScopeByDataset, per90SingleMetricScopeByDataset]);
 
   const singleMetricRows = useMemo(() => {
     if (!singleMetric) return [];
@@ -806,7 +1009,8 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const togglePlayerMetric = (metric: string) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayerMetricsByDataset((prev: any) => {
+    const setter = isPer90View ? setPer90SelectedMetricsByDataset : setSelectedPlayerMetricsByDataset;
+    setter((prev: any) => {
       const current = Array.isArray(prev[ds]) ? prev[ds] : [];
       const next = current.includes(metric) ? current.filter((item: string) => item !== metric) : [...current, metric];
       return { ...prev, [ds]: next };
@@ -816,7 +1020,8 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const togglePlayerVisible = (playerId: string) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayersByDataset((prev: any) => {
+    const setter = isPer90View ? setPer90SelectedPlayersByDataset : setSelectedPlayersByDataset;
+    setter((prev: any) => {
       const current = Array.isArray(prev[ds]) ? prev[ds] : [];
       const next = current.includes(playerId) ? current.filter((item: string) => item !== playerId) : [...current, playerId];
       return { ...prev, [ds]: next };
@@ -826,7 +1031,8 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const toggleOverlayPlayerSelection = (playerId: string) => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedOverlayPlayerByDataset((prev: any) => {
+    const setter = isPer90View ? setPer90SelectedOverlayPlayerByDataset : setSelectedOverlayPlayerByDataset;
+    setter((prev: any) => {
       const current = String(prev[ds] || "");
       return { ...prev, [ds]: current === playerId ? "" : playerId };
     });
@@ -841,13 +1047,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const selectAllPlayerMetrics = () => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayerMetricsByDataset((prev: any) => ({ ...prev, [ds]: availablePlayerMetrics }));
+    const setter = isPer90View ? setPer90SelectedMetricsByDataset : setSelectedPlayerMetricsByDataset;
+    setter((prev: any) => ({ ...prev, [ds]: availablePlayerMetrics }));
   };
 
   const selectAllPlayers = () => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: playerRows.map((row: any) => String(row.id)) }));
+    const setter = isPer90View ? setPer90SelectedPlayersByDataset : setSelectedPlayersByDataset;
+    setter((prev: any) => ({ ...prev, [ds]: playerRows.map((row: any) => String(row.id)) }));
   };
 
   const clearTeamMetrics = () => {
@@ -859,13 +1067,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const clearPlayerMetrics = () => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayerMetricsByDataset((prev: any) => ({ ...prev, [ds]: [] }));
+    const setter = isPer90View ? setPer90SelectedMetricsByDataset : setSelectedPlayerMetricsByDataset;
+    setter((prev: any) => ({ ...prev, [ds]: [] }));
   };
 
   const clearPlayers = () => {
     const ds = String(selectedDatasetId || "");
     if (!ds) return;
-    setSelectedPlayersByDataset((prev: any) => ({ ...prev, [ds]: [] }));
+    const setter = isPer90View ? setPer90SelectedPlayersByDataset : setSelectedPlayersByDataset;
+    setter((prev: any) => ({ ...prev, [ds]: [] }));
   };
 
   const exportTeamRadarSvg = () => {
@@ -933,12 +1143,16 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const awayColor = normalizeHexColor(teamRadarConfig.awayColor) || DEFAULT_TEAM_RADAR_CONFIG.awayColor;
   const chartBackgroundColor = normalizeHexColor(teamRadarConfig.chartBackgroundColor) || "#f8f5ef";
   const playerChartBackgroundColor = normalizeHexColor(playerRadarConfig.chartBackgroundColor) || "#f8f5ef";
+  const overlayModeLabel = isPer90View ? "分均体能数据" : "球员体能叠加雷达";
+  const overlaySectionTitle = isPer90View ? "分均体能叠加雷达（第2个Sheet）" : "球员体能叠加雷达（第2个Sheet）";
+  const overlaySingleMetricTitle = isPer90View ? "单项比较（分均口径）" : "单项比较（第2个Sheet）";
+  const per90Blocked = isPer90View && !per90MinutesColumn;
 
   return (
     <section className="info-page">
       <div className="info-card fitness-page-shell">
-        <h1>{isTeamView ? "两队体能雷达图" : "球员体能叠加雷达"}</h1>
-        <p>上传 Excel 后仅解析前两个 Sheet：第1个用于两队体能雷达，第2个用于球员体能叠加雷达与单项比较。</p>
+        <h1>{isTeamView ? "两队体能雷达图" : overlayModeLabel}</h1>
+        <p>上传 Excel 后仅解析前两个 Sheet：第1个用于两队体能雷达，第2个用于球员体能叠加雷达、分均体能数据与单项比较。</p>
 
         <div className="fitness-top-bar">
           <div className="title-row">
@@ -977,6 +1191,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         </div>
 
         {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+        {per90Blocked ? <p className="msg err">分均体能数据：未识别到“出场时间/分钟”列，无法计算分均值。</p> : null}
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
 
@@ -1093,9 +1308,9 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               </div>
             ) : null}
 
-            {isPlayerView ? (
+            {isOverlayView ? (
               <div className="fitness-card">
-              <h2>球员体能叠加雷达（第2个Sheet）</h2>
+              <h2>{overlaySectionTitle}</h2>
 
               <div className="match-radar-grid-2">
                 <div className="title-row">
@@ -1117,15 +1332,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 <div className="fitness-summary-row">
                   <p>{`已勾选指标：${selectedPlayerMetrics.length}/${availablePlayerMetrics.length}`}</p>
                   <div className="btn-row">
-                    <button onClick={selectAllPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>全选指标</button>
-                    <button onClick={clearPlayerMetrics} disabled={availablePlayerMetrics.length === 0}>清空指标</button>
+                    <button onClick={selectAllPlayerMetrics} disabled={availablePlayerMetrics.length === 0 || per90Blocked}>全选指标</button>
+                    <button onClick={clearPlayerMetrics} disabled={availablePlayerMetrics.length === 0 || per90Blocked}>清空指标</button>
                   </div>
                 </div>
                 <div className="fitness-summary-row">
                   <p>{`已勾选球员：${selectedPlayerIds.length}/${playerRows.length}`}</p>
                   <div className="btn-row">
-                    <button onClick={selectAllPlayers} disabled={playerRows.length === 0}>全选球员</button>
-                    <button onClick={clearPlayers} disabled={playerRows.length === 0}>清空球员</button>
+                    <button onClick={selectAllPlayers} disabled={playerRows.length === 0 || per90Blocked}>全选球员</button>
+                    <button onClick={clearPlayers} disabled={playerRows.length === 0 || per90Blocked}>清空球员</button>
                   </div>
                 </div>
               </div>
@@ -1133,7 +1348,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               <div className="fitness-check-grid">
                 {availablePlayerMetrics.map((metric: string) => (
                   <label key={metric} className="fitness-check-item">
-                    <input type="checkbox" checked={selectedPlayerMetrics.includes(metric)} onChange={() => togglePlayerMetric(metric)} />
+                    <input type="checkbox" checked={selectedPlayerMetrics.includes(metric)} onChange={() => togglePlayerMetric(metric)} disabled={per90Blocked} />
                     <span>{metric}</span>
                   </label>
                 ))}
@@ -1142,9 +1357,9 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               </div>
             ) : null}
 
-            {isPlayerView ? (
+            {isOverlayView ? (
               <div className="fitness-card">
-              <h2>单项比较（第2个Sheet）</h2>
+              <h2>{overlaySingleMetricTitle}</h2>
               <div className="match-radar-grid-2">
                 <div className="title-row">
                   <label>选择指标</label>
@@ -1153,8 +1368,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                     onChange={(e) => {
                       const ds = String(selectedDatasetId || "");
                       if (!ds) return;
-                      setSingleMetricByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      if (isPer90View) {
+                        setPer90SingleMetricByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      } else {
+                        setSingleMetricByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      }
                     }}
+                    disabled={per90Blocked}
                   >
                     {availablePlayerMetrics.map((metric: string) => (
                       <option key={metric} value={metric}>
@@ -1170,8 +1390,13 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                     onChange={(e) => {
                       const ds = String(selectedDatasetId || "");
                       if (!ds) return;
-                      setSingleMetricScopeByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      if (isPer90View) {
+                        setPer90SingleMetricScopeByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      } else {
+                        setSingleMetricScopeByDataset((prev: any) => ({ ...prev, [ds]: e.target.value }));
+                      }
                     }}
+                    disabled={per90Blocked}
                   >
                     <option value="selected">仅勾选球员</option>
                     <option value="all">全部球员</option>
@@ -1190,7 +1415,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                   return (
                     <div className="fitness-bar-row" key={row.id}>
                       <div className="fitness-bar-check">
-                        <input type="checkbox" checked={checked} onChange={() => togglePlayerVisible(String(row.id))} />
+                        <input type="checkbox" checked={checked} onChange={() => togglePlayerVisible(String(row.id))} disabled={per90Blocked} />
                       </div>
                       <div className="fitness-bar-name">{row.name}</div>
                       <div className="fitness-bar-track">
@@ -1296,7 +1521,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               </div>
             ) : null}
 
-            {isPlayerView ? (
+            {isOverlayView ? (
               <div className="fitness-card fitness-chart-card overlay-radar-chart-card">
               <svg id="fitness-player-radar-svg" viewBox={`0 ${PLAYER_RADAR_VIEWBOX_Y} ${PLAYER_RADAR_WIDTH} ${PLAYER_RADAR_VIEWBOX_HEIGHT}`}>
                 <rect x="0" y="0" width={PLAYER_RADAR_WIDTH} height={PLAYER_RADAR_HEIGHT} fill={playerChartBackgroundColor} />
@@ -1377,6 +1602,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                         </div>
                       ))}
                     </div>
+                    {isPer90View ? <p className="fitness-empty">备注：分均口径=原值/出场时间；高速跑次数/冲刺次数/速度类/百分比指标按原值展示。</p> : null}
                   </>
                 ) : (
                   <p className="fitness-empty">点击图中任意球员封闭区域可查看该球员全部指标。</p>
