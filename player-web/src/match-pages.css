@@ -295,6 +295,7 @@
 
 .fitness-chart-card svg {
   width: min(980px, 100%);
+  justify-self: center;
   border: 1px solid #d9cfbf;
   border-radius: 14px;
   background: #f8f5ef;
@@ -364,7 +365,11 @@
   display: grid;
   gap: 8px;
   max-height: 360px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 12px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 
 .fitness-bar-row {
@@ -417,6 +422,8 @@
   border-radius: 10px;
   background: #fff;
   padding: 10px;
+  width: min(980px, 100%);
+  justify-self: center;
   display: grid;
   gap: 8px;
 }
@@ -429,7 +436,7 @@
 
 .fitness-player-detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px 12px;
   max-height: 190px;
   overflow: auto;
@@ -517,10 +524,16 @@
     grid-template-columns: 30px 120px minmax(0, 1fr) 60px;
   }
   .fitness-player-detail-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .fitness-team-table-wrap .fitness-team-data-table th:nth-child(2),
   .fitness-team-table-wrap .fitness-team-data-table td:nth-child(2) {
     width: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .fitness-player-detail-grid {
+    grid-template-columns: 1fr;
   }
 }

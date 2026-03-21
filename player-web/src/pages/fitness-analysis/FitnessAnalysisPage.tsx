@@ -126,16 +126,6 @@ function colorToAlpha(hex: string, alpha = 0.22) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function hashColorFromText(text: string) {
-  let hash = 0;
-  const source = String(text || "unknown");
-  for (let i = 0; i < source.length; i += 1) {
-    hash = source.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 68%, 46%)`;
-}
-
 function downloadFile(filename: string, content: string, type: string) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
@@ -548,6 +538,14 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const playerRadarMetrics = selectedPlayerMetrics;
 
+  const visiblePlayerColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    visiblePlayers.forEach((player: any, idx: number) => {
+      map.set(String(player.id), PLAYER_OVERLAY_PALETTE[idx % PLAYER_OVERLAY_PALETTE.length]);
+    });
+    return map;
+  }, [visiblePlayers]);
+
   const playerAxisPoints = useMemo(() => {
     const total = playerRadarMetrics.length || 1;
     const step = (Math.PI * 2) / total;
@@ -568,7 +566,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         return pointAt(PLAYER_RADAR_CENTER_X, PLAYER_RADAR_CENTER_Y, ratio * PLAYER_RADAR_MAX_RADIUS, start + idx * step);
       });
       const name = String(player.player || "");
-      const color = PLAYER_OVERLAY_PALETTE[playerIdx % PLAYER_OVERLAY_PALETTE.length];
+      const color = visiblePlayerColorMap.get(String(player.id)) || PLAYER_OVERLAY_PALETTE[playerIdx % PLAYER_OVERLAY_PALETTE.length];
       return {
         id: String(player.id),
         name,
@@ -578,7 +576,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
         path: polygonPath(points)
       };
     });
-  }, [visiblePlayers, playerRadarMetrics, playerMetricMaxMap]);
+  }, [visiblePlayers, playerRadarMetrics, playerMetricMaxMap, visiblePlayerColorMap]);
 
   const selectedOverlayPlayerId = useMemo(() => {
     const ds = String(selectedDatasetId || "");
@@ -637,6 +635,18 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       .filter((row: any) => row.value !== null)
       .sort((a: any, b: any) => Number(b.value) - Number(a.value));
   }, [singleMetric, playerRows]);
+
+  const singleMetricColorMap = useMemo(() => {
+    const map = new Map<string, string>(visiblePlayerColorMap);
+    let cursor = visiblePlayers.length;
+    singleMetricRows.forEach((row: any) => {
+      const id = String(row.id);
+      if (map.has(id)) return;
+      map.set(id, PLAYER_OVERLAY_PALETTE[cursor % PLAYER_OVERLAY_PALETTE.length]);
+      cursor += 1;
+    });
+    return map;
+  }, [visiblePlayerColorMap, singleMetricRows, visiblePlayers.length]);
 
   const singleMetricMax = useMemo(() => {
     const sourceRows = singleMetricScope === "all" ? singleMetricRows : singleMetricRows.filter((row: any) => selectedPlayerIds.includes(String(row.id)));
@@ -982,10 +992,12 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
               </div>
 
               <div className="fitness-metric-actions">
-                <p>{`已勾选球队指标：${selectedTeamMetrics.length}/${availableTeamMetrics.length}`}</p>
-                <div className="btn-row">
-                  <button onClick={selectAllTeamMetrics} disabled={availableTeamMetrics.length === 0}>全选指标</button>
-                  <button onClick={clearTeamMetrics} disabled={availableTeamMetrics.length === 0}>清空勾选</button>
+                <div className="fitness-summary-row">
+                  <p>{`已勾选球队指标：${selectedTeamMetrics.length}/${availableTeamMetrics.length}`}</p>
+                  <div className="btn-row">
+                    <button onClick={selectAllTeamMetrics} disabled={availableTeamMetrics.length === 0}>全选指标</button>
+                    <button onClick={clearTeamMetrics} disabled={availableTeamMetrics.length === 0}>清空勾选</button>
+                  </div>
                 </div>
               </div>
 
@@ -1108,7 +1120,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
                 {singleMetricRows.map((row: any) => {
                   const value = Number(row.value || 0);
                   const ratio = singleMetricMax > 0 ? Math.abs(value) / singleMetricMax : 0;
-                  const color = hashColorFromText(row.id || row.name);
+                  const color = singleMetricColorMap.get(String(row.id)) || "#7b7062";
                   const display = formatFitnessDisplayValue(row.value, singleMetric);
                   const checked = selectedPlayerIds.includes(String(row.id));
                   return (
