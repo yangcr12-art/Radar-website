@@ -7,12 +7,12 @@ from tempfile import NamedTemporaryFile
 from threading import Lock
 from typing import Any
 from uuid import uuid4
-
 from flask import Flask, jsonify, request
 from openpyxl import load_workbook
 from server_core.routes.fitness_data_api import fitness_data_bp
 from server_core.routes.match_data_api import match_data_bp
 from server_core.routes.match_project_mapping_api import match_project_mapping_bp
+from server_core.routes.opta_data_api import opta_data_bp
 from server_core.services.ranking_service import (
     compute_player_metrics as _svc_compute_player_metrics,
     is_lower_better_column as _svc_is_lower_better_column,
@@ -34,10 +34,9 @@ app = Flask(__name__)
 app.register_blueprint(match_data_bp)
 app.register_blueprint(match_project_mapping_bp)
 app.register_blueprint(fitness_data_bp)
-
+app.register_blueprint(opta_data_bp)
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
 
 def _ensure_data_dir() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)

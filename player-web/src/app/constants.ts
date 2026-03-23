@@ -101,6 +101,7 @@ export const STORAGE_KEYS = {
   matchRadarMetricPositionShiftByDataset: "player_web_match_radar_metric_position_shift_by_dataset_v1",
   fitnessSelectedDatasetId: "player_web_fitness_selected_dataset_id_v1",
   fitnessSharedDatasetId: "player_web_fitness_shared_dataset_id_v1",
+  fitnessPlayerOverviewSide: "player_web_fitness_player_overview_side_v1",
   fitnessSelectedTeamMetricsByDataset: "player_web_fitness_selected_team_metrics_by_dataset_v1",
   fitnessTeamMetricMaxByDataset: "player_web_fitness_team_metric_max_by_dataset_v1",
   fitnessSelectedPlayerMetricsByDataset: "player_web_fitness_selected_player_metrics_by_dataset_v1",
@@ -116,6 +117,8 @@ export const STORAGE_KEYS = {
   fitnessPer90SingleMetricByDataset: "player_web_fitness_per90_single_metric_by_dataset_v1",
   fitnessPer90SingleMetricScopeByDataset: "player_web_fitness_per90_single_metric_scope_by_dataset_v1",
   fitnessPer90RadarConfigByDataset: "player_web_fitness_per90_radar_config_by_dataset_v1",
+  optaSelectedDatasetId: "player_web_opta_selected_dataset_id_v1",
+  optaImportSide: "player_web_opta_import_side_v1",
   playerPersonalRadarSelectedMetricsByDataset: "player_web_player_personal_radar_selected_metrics_by_dataset_v1",
   playerPersonalRadarSelectedPlayersByDataset: "player_web_player_personal_radar_selected_players_by_dataset_v1",
   playerPersonalRadarSelectedOverlayPlayerByDataset: "player_web_player_personal_radar_selected_overlay_player_by_dataset_v1",
@@ -171,6 +174,7 @@ export const NAV_ITEMS = [
       { key: "fitness_per90", label: "分均体能数据" }
     ]
   },
+  { key: "opta_analysis", label: "opta数据分析" },
   {
     key: "mapping_menu",
     label: "对应表",

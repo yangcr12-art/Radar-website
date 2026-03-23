@@ -12,6 +12,7 @@ import MatchRadarPage from "../pages/match-radar/MatchRadarPage";
 import FitnessTeamRadarPage from "../pages/fitness-analysis/FitnessTeamRadarPage";
 import FitnessPlayerOverlayPage from "../pages/fitness-analysis/FitnessPlayerOverlayPage";
 import FitnessPer90Page from "../pages/fitness-analysis/FitnessPer90Page";
+import OptaAnalysisPage from "../pages/opta-analysis/OptaAnalysisPage";
 import PlayerPersonalRadarPage from "../pages/player-personal-radar/PlayerPersonalRadarPage";
 import { type AppPageKey } from "./pageRegistry";
 
@@ -63,6 +64,8 @@ export function renderActivePage({
       return <FitnessPlayerOverlayPage />;
     case "fitness_per90":
       return <FitnessPer90Page />;
+    case "opta_analysis":
+      return <OptaAnalysisPage />;
     case "player_data":
       return <PlayerDataPage {...playerDataPageProps} />;
     case "scatter_plot":

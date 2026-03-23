@@ -11,6 +11,7 @@ export const APP_PAGE_KEYS = [
   "fitness_team_radar",
   "fitness_player_overlay",
   "fitness_per90",
+  "opta_analysis",
   "player_data",
   "scatter_plot",
   "player_personal_radar"

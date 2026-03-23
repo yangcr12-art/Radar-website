@@ -243,9 +243,27 @@
 
 .fitness-top-bar {
   display: grid;
-  grid-template-columns: minmax(320px, 560px) 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
-  align-items: end;
+  align-items: start;
+}
+
+.fitness-top-bar.is-team-view {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.9fr) minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(190px, auto);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.fitness-top-control {
+  height: 36px;
+  min-width: 0;
+  margin: 0;
+}
+
+.fitness-top-bar.is-team-view button.fitness-top-control {
+  white-space: nowrap;
+  padding: 0 16px;
 }
 
 .fitness-meta-row {
@@ -540,9 +558,91 @@
   min-width: 0;
 }
 
+.opta-page-shell {
+  width: min(1860px, calc(100vw - 8px));
+}
+
+.opta-top-bar {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.9fr) minmax(220px, 1fr) minmax(220px, 1.1fr) minmax(180px, auto);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.opta-top-control {
+  height: 36px;
+  min-width: 0;
+  margin: 0;
+}
+
+.opta-top-bar button.opta-top-control {
+  white-space: nowrap;
+  padding: 0 14px;
+}
+
+.opta-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.opta-data-table {
+  table-layout: fixed;
+}
+
+.opta-table-scroll {
+  max-height: 620px;
+  overflow-y: auto;
+}
+
+.opta-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fffdf8;
+}
+
+.opta-sort-btn {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font-size: 12px;
+  color: #3b352e;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.opta-sort-btn.active {
+  color: #1d6f42;
+}
+
+.opta-footnote {
+  border-top: 1px dashed #d9cfbf;
+  padding-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.opta-footnote h3 {
+  margin: 0;
+  font-size: 13px;
+  color: #5f5850;
+}
+
+.opta-footnote p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 12px;
+  color: #5f5850;
+}
+
 @media (max-width: 1320px) {
-  .fitness-top-bar {
-    grid-template-columns: 1fr;
+  .fitness-top-bar.is-team-view {
+    grid-template-columns: 1fr 1fr;
+  }
+  .opta-top-bar {
+    grid-template-columns: 1fr 1fr;
   }
   .fitness-layout {
     grid-template-columns: 1fr;
@@ -570,6 +670,18 @@
 }
 
 @media (max-width: 760px) {
+  .fitness-top-bar.is-team-view {
+    grid-template-columns: 1fr;
+  }
+  .opta-top-bar {
+    grid-template-columns: 1fr;
+  }
+  .fitness-top-control {
+    width: 100%;
+  }
+  .opta-top-control {
+    width: 100%;
+  }
   .fitness-player-detail-grid {
     grid-template-columns: 1fr;
   }

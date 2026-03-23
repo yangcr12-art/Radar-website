@@ -67,6 +67,11 @@ def _normalize_token(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def _normalize_player_overview_side(value: Any) -> str:
+    token = _normalize_token(value)
+    return "away" if token == "away" else "home"
+
+
 def _pick_team_column(headers: list[str]) -> tuple[int, str]:
     exact_candidates = {"team", "club", "squad", "球队", "俱乐部"}
     for idx, header in enumerate(headers):
@@ -852,15 +857,33 @@ def _build_player_doc(
     sheet_rows_1: list[list[Any]],
     sheet_rows_2: list[list[Any]],
     named_sheets: list[tuple[str, list[list[Any]]]] | None = None,
-) -> tuple[dict[str, Any] | None, str]:
+    preferred_side: str = "home",
+) -> tuple[dict[str, Any] | None, str, dict[str, Any]]:
+    preferred_side = _normalize_player_overview_side(preferred_side)
+    meta = {
+        "requestedSide": preferred_side,
+        "usedSide": "",
+        "usedSheetName": "",
+        "fallbackUsed": False,
+    }
+
     if named_sheets:
-        preferred_tokens = ("home team overview", "away team overview")
-        for token in preferred_tokens:
+        preferred_tokens = [
+            ("home", "home team overview"),
+            ("away", "away team overview"),
+        ]
+        if preferred_side == "away":
+            preferred_tokens = [("away", "away team overview"), ("home", "home team overview")]
+
+        for order_idx, (side, token) in enumerate(preferred_tokens):
             for sheet_name, rows in named_sheets:
                 if token in _normalize_header_name(sheet_name):
                     doc, _ = _build_player_doc_from_team_overview(rows)
                     if doc is not None:
-                        return (doc, "")
+                        meta["usedSide"] = side
+                        meta["usedSheetName"] = sheet_name
+                        meta["fallbackUsed"] = order_idx > 0
+                        return (doc, "", meta)
 
     candidates: list[dict[str, Any]] = []
     parse_errors: list[str] = []
@@ -886,11 +909,13 @@ def _build_player_doc(
 
     if candidates:
         best = max(candidates, key=_score_player_doc)
-        return (best, "")
+        if not meta["usedSide"]:
+            meta["usedSide"] = preferred_side
+        return (best, "", meta)
 
     if len(parse_errors) > 0:
-        return (None, parse_errors[0])
-    return (None, "第1/2个 sheet 未识别到有效球员体能数据")
+        return (None, parse_errors[0], meta)
+    return (None, "第1/2个 sheet 未识别到有效球员体能数据", meta)
 
 
 @fitness_data_bp.route("/api/fitness-data/import-excel", methods=["POST"])
@@ -915,14 +940,14 @@ def import_fitness_excel():
     sheet_2 = sheets[1]
     rows_1 = _sheet_rows(sheet_1)
     rows_2 = _sheet_rows(sheet_2)
+    requested_player_overview_side = _normalize_player_overview_side(request.form.get("playerOverviewSide"))
     named_sheet_rows = [(ws.title, _sheet_rows(ws)) for ws in sheets]
-
     team_doc, team_err = _build_team_doc(rows_1, rows_2, named_sheet_rows)
     if team_doc is None:
         wb.close()
         return jsonify({"ok": False, "error": team_err}), 400
 
-    player_doc, player_err = _build_player_doc(rows_1, rows_2, named_sheet_rows)
+    player_doc, player_err, player_doc_meta = _build_player_doc(rows_1, rows_2, named_sheet_rows, requested_player_overview_side)
     if player_doc is None:
         wb.close()
         return jsonify({"ok": False, "error": player_err}), 400
@@ -939,6 +964,10 @@ def import_fitness_excel():
             "filename": file.filename,
             "sheet1Name": sheet_1.title,
             "sheet2Name": sheet_2.title,
+            "playerOverviewSideRequested": player_doc_meta.get("requestedSide", requested_player_overview_side),
+            "playerOverviewSideUsed": player_doc_meta.get("usedSide", ""),
+            "playerOverviewSheetUsed": player_doc_meta.get("usedSheetName", ""),
+            "playerOverviewFallbackUsed": bool(player_doc_meta.get("fallbackUsed")),
         },
         "teamSheet": team_doc,
         "playerSheet": player_doc,
@@ -977,6 +1006,10 @@ def import_fitness_excel():
             "teamMetricCount": len(team_doc.get("numericColumns", [])),
             "playerCount": len(player_doc.get("players", [])),
             "playerMetricCount": len(player_doc.get("numericColumns", [])),
+            "playerOverviewSideRequested": player_doc_meta.get("requestedSide", requested_player_overview_side),
+            "playerOverviewSideUsed": player_doc_meta.get("usedSide", ""),
+            "playerOverviewSheetUsed": player_doc_meta.get("usedSheetName", ""),
+            "playerOverviewFallbackUsed": bool(player_doc_meta.get("fallbackUsed")),
         }
     )
 

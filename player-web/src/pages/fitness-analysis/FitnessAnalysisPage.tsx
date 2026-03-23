@@ -52,13 +52,13 @@ const DEFAULT_TEAM_RADAR_CONFIG = {
 
 const DEFAULT_PLAYER_RADAR_CONFIG = {
   title: "球员体能叠加雷达图",
-  subtitle: "数据来源：体能数据分析 / 第2个Sheet",
+  subtitle: "数据来源：体能数据分析 / Team Overview",
   chartBackgroundColor: "#f8f5ef"
 };
 
 const DEFAULT_PER90_RADAR_CONFIG = {
   title: "分均体能叠加雷达图",
-  subtitle: "数据来源：体能数据分析 / 第2个Sheet（分均）",
+  subtitle: "数据来源：体能数据分析 / Team Overview（分均）",
   chartBackgroundColor: "#f8f5ef"
 };
 
@@ -214,6 +214,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [playerOverviewSide, setPlayerOverviewSide] = useState(() => {
+    const stored = String(readLocalStore(STORAGE_KEYS.fitnessPlayerOverviewSide, "home") || "home").toLowerCase();
+    return stored === "away" ? "away" : "home";
+  });
 
   const [selectedTeamMetricsByDataset, setSelectedTeamMetricsByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessSelectedTeamMetricsByDataset, {}));
   const [teamMetricMaxByDataset, setTeamMetricMaxByDataset] = useState(() => readLocalStore(STORAGE_KEYS.fitnessTeamMetricMaxByDataset, {}));
@@ -315,6 +319,10 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     writeLocalStore(STORAGE_KEYS.fitnessSelectedDatasetId, selectedDatasetId);
     writeLocalStore(STORAGE_KEYS.fitnessSharedDatasetId, selectedDatasetId);
   }, [selectedDatasetId]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.fitnessPlayerOverviewSide, playerOverviewSide);
+  }, [playerOverviewSide]);
 
   useEffect(() => {
     const handler = () => {
@@ -937,8 +945,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       if (!backendReady) {
         throw new Error("后端未就绪：请先启动 player-web/server/app.py 并确认 /api/health 可访问");
       }
-      const res = await importFitnessExcel(file);
-      setMessage(`导入成功：球队 ${res.teamCount}，球队指标 ${res.teamMetricCount}，球员 ${res.playerCount}，球员指标 ${res.playerMetricCount}`);
+      const res = await importFitnessExcel(file, playerOverviewSide);
+      const requestedSide = String(res?.playerOverviewSideRequested || playerOverviewSide || "home").toLowerCase() === "away" ? "away" : "home";
+      const usedSide = String(res?.playerOverviewSideUsed || requestedSide || "home").toLowerCase() === "away" ? "away" : "home";
+      const sideLabel = usedSide === "away" ? "Away Team Overview" : "Home Team Overview";
+      const fallbackUsed = Boolean(res?.playerOverviewFallbackUsed);
+      const fallbackText = fallbackUsed ? `（已从${requestedSide === "away" ? "Away" : "Home"}自动回退）` : "";
+      setMessage(
+        `导入成功：球队 ${res.teamCount}，球队指标 ${res.teamMetricCount}，球员 ${res.playerCount}，球员指标 ${res.playerMetricCount}；球员来源 ${sideLabel}${fallbackText}`
+      );
       const nextDatasetId = await loadDatasets(String(res.datasetId || ""));
       const detailRes = await fetchFitnessDataset(nextDatasetId);
       setDatasetDoc(detailRes.data || null);
@@ -1144,41 +1159,72 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const chartBackgroundColor = normalizeHexColor(teamRadarConfig.chartBackgroundColor) || "#f8f5ef";
   const playerChartBackgroundColor = normalizeHexColor(playerRadarConfig.chartBackgroundColor) || "#f8f5ef";
   const overlayModeLabel = isPer90View ? "分均体能数据" : "球员体能叠加雷达";
-  const overlaySectionTitle = isPer90View ? "分均体能叠加雷达（第2个Sheet）" : "球员体能叠加雷达（第2个Sheet）";
-  const overlaySingleMetricTitle = isPer90View ? "单项比较（分均口径）" : "单项比较（第2个Sheet）";
+  const overlaySectionTitle = isPer90View ? "分均体能叠加雷达（Team Overview）" : "球员体能叠加雷达（Team Overview）";
+  const overlaySingleMetricTitle = isPer90View ? "单项比较（分均口径）" : "单项比较（Team Overview）";
   const per90Blocked = isPer90View && !per90MinutesColumn;
 
   return (
     <section className="info-page">
       <div className="info-card fitness-page-shell">
         <h1>{isTeamView ? "两队体能雷达图" : overlayModeLabel}</h1>
-        <p>上传 Excel 后仅解析前两个 Sheet：第1个用于两队体能雷达，第2个用于球员体能叠加雷达、分均体能数据与单项比较。</p>
+        <p>上传 Excel 后：两队体能雷达图固定解析“Overview”；球员体能叠加雷达图、分均体能数据、单项比较解析所选“Home Team Overview”或“Away Team Overview”。</p>
 
-        <div className="fitness-top-bar">
-          <div className="title-row">
-            <label>导入数据集</label>
-            <select value={selectedDatasetId} onChange={(e) => setSelectedDatasetId(e.target.value)} disabled={datasetOptions.length === 0}>
-              {datasetOptions.length === 0 ? <option value="">暂无已导入体能数据集</option> : null}
-              {datasetOptions.map((item: any) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
+        <div className={`fitness-top-bar${isTeamView ? " is-team-view" : ""}`}>
           {isTeamView ? (
-            <div className="btn-row">
-              <button onClick={onUploadClick} disabled={importing || !backendOnline}>
-                {importing ? "导入中..." : backendOnline ? "导入体能 Excel（前2个Sheet）" : "后端未连接"}
+            <>
+              <select
+                className="fitness-top-control"
+                title="导入数据集"
+                aria-label="导入数据集"
+                value={selectedDatasetId}
+                onChange={(e) => setSelectedDatasetId(e.target.value)}
+                disabled={datasetOptions.length === 0}
+              >
+                {datasetOptions.length === 0 ? <option value="">暂无已导入体能数据集</option> : null}
+                {datasetOptions.map((item: any) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="fitness-top-control"
+                title="球员来源侧"
+                aria-label="球员来源侧"
+                value={playerOverviewSide}
+                onChange={(e) => setPlayerOverviewSide(e.target.value === "away" ? "away" : "home")}
+                disabled={importing}
+              >
+                <option value="home">Home Team Overview（主队）</option>
+                <option value="away">Away Team Overview（客队）</option>
+              </select>
+              <button className="fitness-top-control" onClick={onUploadClick} disabled={importing || !backendOnline}>
+                {importing ? "导入中..." : backendOnline ? "导入体能 Excel（Overview + Team Overview）" : "后端未连接"}
               </button>
-              <button onClick={handleDeleteDataset} disabled={!selectedDatasetId || importing}>
+              <button className="fitness-top-control" onClick={handleDeleteDataset} disabled={!selectedDatasetId || importing}>
                 删除当前数据集
               </button>
               <input ref={excelInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden-file" onChange={onExcelChange} />
-            </div>
+            </>
           ) : (
-            <p className="fitness-empty">数据上传入口在“体能数据分析 -&gt; 两队体能雷达图”页面，上传后本页自动同步。</p>
+            <>
+              <select
+                className="fitness-top-control"
+                title="导入数据集"
+                aria-label="导入数据集"
+                value={selectedDatasetId}
+                onChange={(e) => setSelectedDatasetId(e.target.value)}
+                disabled={datasetOptions.length === 0}
+              >
+                {datasetOptions.length === 0 ? <option value="">暂无已导入体能数据集</option> : null}
+                {datasetOptions.map((item: any) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+              <p className="fitness-empty">数据上传入口在“体能数据分析 -&gt; 两队体能雷达图”页面，上传后本页自动同步。</p>
+            </>
           )}
         </div>
 

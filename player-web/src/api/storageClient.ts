@@ -143,9 +143,10 @@ export function fetchMatchTeamById(teamId, datasetId = "") {
   return request(`/api/match-data/team/${encodeURIComponent(teamId)}${query}`, { method: "GET" });
 }
 
-export function importFitnessExcel(file) {
+export function importFitnessExcel(file, playerOverviewSide = "home") {
   const form = new FormData();
   form.append("file", file);
+  form.append("playerOverviewSide", String(playerOverviewSide || "home"));
   return requestForm("/api/fitness-data/import-excel", {
     method: "POST",
     body: form
@@ -163,6 +164,29 @@ export function fetchFitnessDataset(datasetId = "") {
 
 export function deleteFitnessDataset(datasetId) {
   return request(`/api/fitness-data/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
+}
+
+export function importOptaPdf(file, side = "home") {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("side", String(side || "home"));
+  return requestForm("/api/opta-data/import-pdf", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function fetchOptaDatasets() {
+  return request("/api/opta-data/datasets", { method: "GET" });
+}
+
+export function fetchOptaDataset(datasetId = "") {
+  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+  return request(`/api/opta-data${query}`, { method: "GET" });
+}
+
+export function deleteOptaDataset(datasetId) {
+  return request(`/api/opta-data/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
 }
 
 export function importMatchProjectExcel(file) {
