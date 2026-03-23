@@ -64,6 +64,15 @@ def _to_cell_value(value: Any) -> Any:
     return str(value).strip()
 
 
+def _count_numeric_cells(row: list[Any], maxc: int) -> int:
+    count = 0
+    for c in range(maxc):
+        value = row[c] if c < len(row) else None
+        if _to_float(value) is not None:
+            count += 1
+    return count
+
+
 def _split_tokens(text: str) -> list[str]:
     base = str(text or "").replace("／", "/").strip()
     if not base:
@@ -264,12 +273,19 @@ def import_match_data_excel():
     row2 = list(rows[1]) if len(rows) > 1 else []
     two_header_like = False
     if len(rows) >= 3:
+        has_split_header_signal = False
         for c in range(maxc):
             r1 = str(_to_cell_value(row1[c]) if c < len(row1) else "").strip()
             r2 = str(_to_cell_value(row2[c]) if c < len(row2) else "").strip()
             if (not r1 and r2) or ("/" in r1):
-                two_header_like = True
+                has_split_header_signal = True
                 break
+
+        # Guard against misclassifying normal one-row headers that include "/"
+        # in metric names (e.g. "Shots / on target"). In those files, row2 is
+        # an actual data row and contains many numeric cells.
+        row2_numeric_count = _count_numeric_cells(row2, maxc)
+        two_header_like = has_split_header_signal and row2_numeric_count == 0
 
     if two_header_like:
         headers = _build_split_headers(row1, row2, maxc)
