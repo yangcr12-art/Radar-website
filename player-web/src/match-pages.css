@@ -737,6 +737,29 @@
   text-overflow: ellipsis;
 }
 
+.csl-team-name-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  padding: 1px 6px 1px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.csl-team-name-btn:hover {
+  border-color: #ccbba7;
+  background: #f7f0e4;
+}
+
+.csl-team-name-btn.is-locked {
+  border-color: #9f7d58;
+  background: #f3e7d8;
+  color: #5f3f24;
+  font-weight: 700;
+}
+
 .csl-team-label i {
   width: 10px;
   height: 10px;
@@ -852,6 +875,13 @@
 
 .csl-point-hitbox {
   cursor: pointer;
+}
+
+.csl-cluster-count {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #5f554a;
+  pointer-events: none;
 }
 
 @media (max-width: 1320px) {

@@ -223,18 +223,8 @@ def _assign_rank(rows: list[dict[str, Any]], points_key: str, rank_key: str) -> 
             str(item.get("team", "")),
         ),
     )
-    prev_tuple: tuple[int, int, int] | None = None
-    current_rank = 0
     for idx, row in enumerate(sorted_rows, start=1):
-        rank_tuple = (
-            int(row.get(points_key, 0)),
-            int(row.get("goalDiff", 0)),
-            int(row.get("goalsFor", 0)),
-        )
-        if rank_tuple != prev_tuple:
-            current_rank = idx
-            prev_tuple = rank_tuple
-        row[rank_key] = current_rank
+        row[rank_key] = idx
     return sorted_rows
 
 

@@ -124,6 +124,7 @@ export const STORAGE_KEYS = {
   cslStandingsSelectedTeamsByDataset: "player_web_csl_standings_selected_teams_by_dataset_v1",
   cslStandingsSelectedMetrics: "player_web_csl_standings_selected_metrics_v1",
   cslStandingsSelectedRoundByDataset: "player_web_csl_standings_selected_round_by_dataset_v1",
+  cslStandingsLockedTeamByDataset: "player_web_csl_standings_locked_team_by_dataset_v1",
   playerPersonalRadarSelectedMetricsByDataset: "player_web_player_personal_radar_selected_metrics_by_dataset_v1",
   playerPersonalRadarSelectedPlayersByDataset: "player_web_player_personal_radar_selected_players_by_dataset_v1",
   playerPersonalRadarSelectedOverlayPlayerByDataset: "player_web_player_personal_radar_selected_overlay_player_by_dataset_v1",

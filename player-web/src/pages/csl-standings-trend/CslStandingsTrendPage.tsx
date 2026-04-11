@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { checkHealth, deleteCslStandingsDataset, fetchCslStandingsDataset, fetchCslStandingsDatasets, importCslStandingsExcel } from "../../api/storageClient";
 import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
+import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
 import { formatDateTime } from "../../utils/timeFormat";
 
 const METRIC_OPTIONS = [
@@ -53,13 +54,28 @@ function isRankMetric(metric: string) {
   return metric === "rank" || metric === "rankNet";
 }
 
+function normalizeHexColor(value: unknown) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^#[0-9a-fA-F]{3}$/.test(text)) {
+    return `#${text.slice(1).toLowerCase()}`;
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(text)) {
+    return `#${text.slice(1).toLowerCase()}`;
+  }
+  return "";
+}
+
 function CslTrendChart({
   metric,
   metricLabel,
   rounds,
   selectedTeams,
   seriesByTeam,
-  colorByTeam
+  colorByTeam,
+  lockedTeam,
+  onToggleLockedTeam,
+  onClearLockedTeam
 }: {
   metric: string;
   metricLabel: string;
@@ -67,6 +83,9 @@ function CslTrendChart({
   selectedTeams: string[];
   seriesByTeam: Record<string, any[]>;
   colorByTeam: Record<string, string>;
+  lockedTeam: string;
+  onToggleLockedTeam: (team: string) => void;
+  onClearLockedTeam: () => void;
 }) {
   const width = 760;
   const height = 340;
@@ -78,7 +97,7 @@ function CslTrendChart({
   const plotH = height - padT - padB;
   const [hoveredRound, setHoveredRound] = useState<number | null>(null);
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
-  const [focusTeam, setFocusTeam] = useState<string | null>(null);
+  const [hoveredClusterKey, setHoveredClusterKey] = useState<string | null>(null);
 
   const hasRound = rounds.length > 0;
   const xMin = hasRound ? rounds[0] : 0;
@@ -133,7 +152,7 @@ function CslTrendChart({
     if (ticks[ticks.length - 1] !== yMax) ticks.push(yMax);
     return ticks;
   }, [rankMetric, step, yMax]);
-  const hasFocusTeam = Boolean(focusTeam && selectedTeams.includes(String(focusTeam)));
+  const activeLockedTeam = selectedTeams.includes(String(lockedTeam || "")) ? String(lockedTeam) : "";
 
   const pointByTeamAndRound = useMemo(() => {
     const map = new Map<string, any>();
@@ -148,28 +167,126 @@ function CslTrendChart({
     return map;
   }, [selectedTeams, seriesByTeam]);
 
+  const normalizedRankByTeamAndRound = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!rankMetric) return map;
+    const pointsKey = metric === "rankNet" ? "pointsNet" : "pointsRaw";
+    const rowsByRound = new Map<number, Array<{ team: string; round: number; points: number; goalDiff: number; goalsFor: number }>>();
+    selectedTeams.forEach((team) => {
+      const series = Array.isArray(seriesByTeam[team]) ? seriesByTeam[team] : [];
+      series.forEach((item) => {
+        const round = numeric(item?.round, 0);
+        if (round <= 0) return;
+        const points = numeric(item?.[pointsKey], 0);
+        const goalsFor = numeric(item?.goalsFor, 0);
+        const goalsAgainst = numeric(item?.goalsAgainst, 0);
+        const goalDiff = numeric(item?.goalDiff, goalsFor - goalsAgainst);
+        const list = rowsByRound.get(round) || [];
+        list.push({ team, round, points, goalDiff, goalsFor });
+        rowsByRound.set(round, list);
+      });
+    });
+
+    rowsByRound.forEach((list) => {
+      list.sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor || a.team.localeCompare(b.team));
+      list.forEach((item, idx) => {
+        map.set(`${item.team}::${item.round}`, idx + 1);
+      });
+    });
+    return map;
+  }, [metric, rankMetric, selectedTeams, seriesByTeam]);
+
+  const pointsByTeam = useMemo(() => {
+    const out: Record<string, Array<{ team: string; round: number; value: number; x: number; y: number }>> = {};
+    selectedTeams.forEach((team) => {
+      const series = Array.isArray(seriesByTeam[team]) ? seriesByTeam[team] : [];
+      const points = series
+        .map((item) => {
+          const round = numeric(item?.round, 0);
+          const rawValue = numeric(item?.[metric], rankMetric ? yMax : 0);
+          const normalizedRank = rankMetric ? normalizedRankByTeamAndRound.get(`${team}::${round}`) : undefined;
+          const value = rankMetric ? numeric(normalizedRank, rawValue) : rawValue;
+          return {
+            team,
+            round,
+            value,
+            x: xAt(round),
+            y: yAt(value)
+          };
+        })
+        .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.round > 0);
+      out[team] = points;
+    });
+    return out;
+  }, [metric, normalizedRankByTeamAndRound, rankMetric, selectedTeams, seriesByTeam, xAt, yAt, yMax]);
+
+  const clustersByKey = useMemo(() => {
+    const map = new Map<
+      string,
+      { key: string; round: number; value: number; x: number; y: number; teams: string[]; points: Array<{ team: string; round: number; value: number; x: number; y: number }> }
+    >();
+    selectedTeams.forEach((team) => {
+      const points = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
+      points.forEach((point) => {
+        const key = `${point.round}::${point.value}`;
+        const existing = map.get(key);
+        if (existing) {
+          existing.teams.push(team);
+          existing.points.push(point);
+          return;
+        }
+        map.set(key, {
+          key,
+          round: point.round,
+          value: point.value,
+          x: point.x,
+          y: point.y,
+          teams: [team],
+          points: [point]
+        });
+      });
+    });
+    return map;
+  }, [pointsByTeam, selectedTeams]);
+
+  const overlapClusters = useMemo(
+    () => Array.from(clustersByKey.values()).filter((item) => item.teams.length >= 2),
+    [clustersByKey]
+  );
+
   const tooltipPayload = useMemo(() => {
     if (!hasRound) return "";
+    if (hoveredClusterKey && hoveredRound !== null) {
+      const cluster = clustersByKey.get(hoveredClusterKey);
+      if (cluster) {
+        const maxList = 4;
+        const total = cluster.teams.length;
+        const names = cluster.teams.slice(0, maxList).join("、");
+        const suffix = total > maxList ? ` 等${total}队` : "";
+        return `R${hoveredRound} | ${metricLabel}：${cluster.value} | 同值${total}队：${names}${suffix}`;
+      }
+    }
     if (hoveredTeam && hoveredRound !== null) {
       const item = pointByTeamAndRound.get(`${hoveredTeam}::${hoveredRound}`);
       const value = item ? numeric(item?.[metric], 0) : null;
       if (value !== null) return `R${hoveredRound} | ${hoveredTeam} | ${metricLabel}：${value}`;
     }
     if (hoveredRound !== null) {
-      if (!hasFocusTeam) return `R${hoveredRound} | 请先悬浮任意球队点位以锁定焦点球队`;
-      const team = String(focusTeam);
+      if (!activeLockedTeam) return `R${hoveredRound} | 请点击左侧球队名称锁定高亮，或悬浮任意球队点位`;
+      const team = activeLockedTeam;
       const item = pointByTeamAndRound.get(`${team}::${hoveredRound}`);
       const value = item ? numeric(item?.[metric], 0) : null;
       if (value !== null) return `R${hoveredRound} | ${team} | ${metricLabel}：${value}`;
       return `R${hoveredRound} | ${team} | ${metricLabel}：-`;
     }
     return "";
-  }, [focusTeam, hasFocusTeam, hasRound, hoveredRound, hoveredTeam, metric, metricLabel, pointByTeamAndRound]);
+  }, [activeLockedTeam, clustersByKey, hasRound, hoveredClusterKey, hoveredRound, hoveredTeam, metric, metricLabel, pointByTeamAndRound]);
 
   const activeRound = hoveredRound;
-  const activeTeam = hoveredTeam || (activeRound !== null && hasFocusTeam ? String(focusTeam) : "");
+  const activeTeam = hoveredTeam || activeLockedTeam;
   const activeSeriesRow = activeRound !== null && activeTeam ? pointByTeamAndRound.get(`${activeTeam}::${activeRound}`) : null;
-  const activeValue = activeSeriesRow ? numeric(activeSeriesRow?.[metric], NaN) : NaN;
+  const activeCluster = hoveredClusterKey && activeRound !== null ? clustersByKey.get(hoveredClusterKey) : null;
+  const activeValue = activeCluster ? numeric(activeCluster.value, NaN) : activeSeriesRow ? numeric(activeSeriesRow?.[metric], NaN) : NaN;
 
   return (
     <div className="csl-trend-card">
@@ -189,9 +306,22 @@ function CslTrendChart({
           onMouseLeave={() => {
             setHoveredRound(null);
             setHoveredTeam(null);
+            setHoveredClusterKey(null);
           }}
         >
-          <rect x={0} y={0} width={width} height={height} fill="#fffdf8" />
+          <rect
+            x={0}
+            y={0}
+            width={width}
+            height={height}
+            fill="#fffdf8"
+            onClick={() => {
+              onClearLockedTeam();
+              setHoveredRound(null);
+              setHoveredTeam(null);
+              setHoveredClusterKey(null);
+            }}
+          />
           {[0, 0.5, 1].map((ratio) => {
             const y = padT + ratio * plotH;
             return <line key={`grid-${ratio}`} x1={padL} x2={padL + plotW} y1={y} y2={y} stroke="#e5dac9" strokeDasharray="4 4" />;
@@ -242,6 +372,7 @@ function CslTrendChart({
                   className={`csl-axis-text csl-axis-text-x${isActiveRound ? " active" : ""}`}
                   onMouseEnter={() => setHoveredRound(round)}
                   onMouseLeave={() => setHoveredRound(null)}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   R{round}
                 </text>
@@ -250,26 +381,31 @@ function CslTrendChart({
           })}
 
           {selectedTeams.map((team) => {
-            const series = Array.isArray(seriesByTeam[team]) ? seriesByTeam[team] : [];
-            const points = series
-              .map((item) => ({
-                round: numeric(item?.round, 0),
-                value: numeric(item?.[metric], rankMetric ? yMax : 0),
-                x: xAt(numeric(item?.round, 0)),
-                y: yAt(numeric(item?.[metric], rankMetric ? yMax : 0))
-              }))
-              .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.round > 0);
+            const points = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
             const path = buildPath(points.map((p) => ({ x: p.x, y: p.y })));
             if (!path) return null;
             const teamActive = activeTeam === team;
             return (
               <g key={`${metric}-${team}`}>
-                <path d={path} fill="none" stroke={colorByTeam[team] || "#111"} strokeWidth={teamActive ? 3 : 2} opacity={teamActive || !activeTeam ? 1 : 0.68} />
+                <path
+                  d={path}
+                  fill="none"
+                  stroke={colorByTeam[team] || "#111"}
+                  strokeWidth={teamActive ? 4.6 : 1.8}
+                  opacity={teamActive || !activeTeam ? 1 : 0.42}
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleLockedTeam(team);
+                  }}
+                />
                 {points.map((p, idx) => {
+                  const cluster = clustersByKey.get(`${p.round}::${p.value}`);
+                  if (cluster && cluster.teams.length >= 2) return null;
                   const pointActive = teamActive && activeRound === p.round;
                   return (
                     <g key={`${metric}-${team}-${idx}`}>
-                      <circle cx={p.x} cy={p.y} r={pointActive ? 4.2 : 2.4} fill={colorByTeam[team] || "#111"} />
+                      <circle cx={p.x} cy={p.y} r={pointActive ? 5.2 : 2.2} fill={colorByTeam[team] || "#111"} />
                       <circle
                         className="csl-point-hitbox"
                         cx={p.x}
@@ -277,18 +413,54 @@ function CslTrendChart({
                         r={8}
                         fill="transparent"
                         onMouseEnter={() => {
-                          setFocusTeam(team);
                           setHoveredTeam(team);
                           setHoveredRound(p.round);
+                          setHoveredClusterKey(null);
                         }}
                         onMouseLeave={() => {
                           setHoveredTeam(null);
                           setHoveredRound(null);
+                          setHoveredClusterKey(null);
                         }}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </g>
                   );
                 })}
+              </g>
+            );
+          })}
+
+          {overlapClusters.map((cluster) => {
+            const lockInCluster = activeLockedTeam ? cluster.teams.includes(activeLockedTeam) : false;
+            const clusterActive = hoveredClusterKey === cluster.key || (activeRound === cluster.round && lockInCluster && !hoveredTeam);
+            const primaryTeam = cluster.teams[0];
+            const primaryColor = colorByTeam[primaryTeam] || "#111";
+            const countLabel = `x${cluster.teams.length}`;
+            return (
+              <g key={`cluster-${metric}-${cluster.key}`}>
+                <circle cx={cluster.x} cy={cluster.y} r={clusterActive ? 7.4 : 5.2} fill="#fffdf8" stroke="#5f554a" strokeWidth={1.2} />
+                <circle cx={cluster.x} cy={cluster.y} r={clusterActive ? 3.4 : 2.4} fill={primaryColor} />
+                <text x={cluster.x + 8} y={cluster.y - 7} className="csl-cluster-count">
+                  {countLabel}
+                </text>
+                <circle
+                  className="csl-point-hitbox"
+                  cx={cluster.x}
+                  cy={cluster.y}
+                  r={10}
+                  fill="transparent"
+                  onMouseEnter={() => {
+                    setHoveredTeam(null);
+                    setHoveredRound(cluster.round);
+                    setHoveredClusterKey(cluster.key);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredRound(null);
+                    setHoveredClusterKey(null);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
               </g>
             );
           })}
@@ -313,6 +485,7 @@ function CslStandingsTrendPage() {
     return normalized.length > 0 ? normalized : defaultMetrics;
   });
   const [selectedRoundByDataset, setSelectedRoundByDataset] = useState(() => readLocalStore(STORAGE_KEYS.cslStandingsSelectedRoundByDataset, {}));
+  const [lockedTeamByDataset, setLockedTeamByDataset] = useState(() => readLocalStore(STORAGE_KEYS.cslStandingsLockedTeamByDataset, {}));
   const [datasetDoc, setDatasetDoc] = useState(null as any);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -341,6 +514,12 @@ function CslStandingsTrendPage() {
     return rounds.length > 0 ? rounds[rounds.length - 1] : 0;
   }, [selectedDatasetId, selectedRoundByDataset, rounds]);
 
+  const lockedTeam = useMemo(() => {
+    if (!selectedDatasetId) return "";
+    const raw = String(lockedTeamByDataset[selectedDatasetId] || "");
+    return selectedTeams.includes(raw) ? raw : "";
+  }, [lockedTeamByDataset, selectedDatasetId, selectedTeams]);
+
   const standingsRows = useMemo(() => {
     const snapshots = Array.isArray(datasetDoc?.standingsByRound) ? datasetDoc.standingsByRound : [];
     const found = snapshots.find((item: any) => numeric(item?.round, 0) === selectedRound);
@@ -352,13 +531,17 @@ function CslStandingsTrendPage() {
     return map && typeof map === "object" ? map : {};
   }, [datasetDoc]);
 
+  const teamMappingByName = useMemo(() => getTeamMappingRowsByName(), []);
+
   const colorByTeam = useMemo(() => {
     const out: Record<string, string> = {};
     teams.forEach((team, idx) => {
-      out[team] = TEAM_COLORS[idx % TEAM_COLORS.length];
+      const key = normalizeTeamName(team).toLowerCase();
+      const mappedColor = normalizeHexColor(key ? teamMappingByName.get(key)?.color : "");
+      out[team] = mappedColor || TEAM_COLORS[idx % TEAM_COLORS.length];
     });
     return out;
-  }, [teams]);
+  }, [teamMappingByName, teams]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.cslStandingsSelectedDatasetId, selectedDatasetId);
@@ -379,6 +562,10 @@ function CslStandingsTrendPage() {
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.cslStandingsSelectedRoundByDataset, selectedRoundByDataset);
   }, [selectedRoundByDataset]);
+
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.cslStandingsLockedTeamByDataset, lockedTeamByDataset);
+  }, [lockedTeamByDataset]);
 
   const verifyBackendHealth = async () => {
     try {
@@ -466,6 +653,14 @@ function CslStandingsTrendPage() {
     setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: rounds[rounds.length - 1] }));
   }, [selectedDatasetId, rounds, selectedRoundByDataset]);
 
+  useEffect(() => {
+    if (!selectedDatasetId) return;
+    const current = String(lockedTeamByDataset[selectedDatasetId] || "");
+    if (!current) return;
+    if (selectedTeams.includes(current)) return;
+    setLockedTeamByDataset((old: any) => ({ ...old, [selectedDatasetId]: "" }));
+  }, [lockedTeamByDataset, selectedDatasetId, selectedTeams]);
+
   const onUploadClick = () => fileInputRef.current?.click();
 
   const onExcelChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -526,6 +721,25 @@ function CslStandingsTrendPage() {
         [selectedDatasetId]: next.length > 0 ? next : current
       };
     });
+  };
+
+  const toggleLockedTeam = (team: string) => {
+    if (!selectedDatasetId) return;
+    setLockedTeamByDataset((prev: any) => {
+      const current = String(prev[selectedDatasetId] || "");
+      return {
+        ...prev,
+        [selectedDatasetId]: current === team ? "" : team
+      };
+    });
+  };
+
+  const clearLockedTeam = () => {
+    if (!selectedDatasetId) return;
+    setLockedTeamByDataset((prev: any) => ({
+      ...prev,
+      [selectedDatasetId]: ""
+    }));
   };
 
   return (
@@ -593,13 +807,19 @@ function CslStandingsTrendPage() {
             <h2>球队（默认全选）</h2>
             <div className="csl-team-check-grid">
               {teams.map((team) => (
-                <label key={team} className="csl-check-item">
+                <div key={team} className="csl-check-item">
                   <input type="checkbox" checked={selectedTeams.includes(team)} onChange={() => toggleTeam(team)} />
-                  <span className="csl-team-label" title={team}>
+                  <button
+                    type="button"
+                    className={`csl-team-label csl-team-name-btn${lockedTeam === team ? " is-locked" : ""}`}
+                    title={team}
+                    aria-pressed={lockedTeam === team}
+                    onClick={() => toggleLockedTeam(team)}
+                  >
                     <i style={{ background: colorByTeam[team] || "#111" }} />
                     {team}
-                  </span>
-                </label>
+                  </button>
+                </div>
               ))}
               {teams.length === 0 ? <p className="fitness-empty">暂无球队数据。</p> : null}
             </div>
@@ -677,6 +897,9 @@ function CslStandingsTrendPage() {
                 selectedTeams={selectedTeams}
                 seriesByTeam={seriesByTeam}
                 colorByTeam={colorByTeam}
+                lockedTeam={lockedTeam}
+                onToggleLockedTeam={toggleLockedTeam}
+                onClearLockedTeam={clearLockedTeam}
               />
             ))}
           </div>
