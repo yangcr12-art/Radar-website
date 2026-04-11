@@ -189,6 +189,31 @@ export function deleteOptaDataset(datasetId) {
   return request(`/api/opta-data/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
 }
 
+export function importCslStandingsExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/csl-standings/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function fetchCslStandingsDatasets() {
+  return request("/api/csl-standings/datasets", { method: "GET" });
+}
+
+export function fetchCslStandingsDataset(datasetId = "", season = "") {
+  const query = new URLSearchParams();
+  if (datasetId) query.set("datasetId", datasetId);
+  if (season) query.set("season", season);
+  const suffix = query.toString();
+  return request(`/api/csl-standings${suffix ? `?${suffix}` : ""}`, { method: "GET" });
+}
+
+export function deleteCslStandingsDataset(datasetId) {
+  return request(`/api/csl-standings/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
+}
+
 export function importMatchProjectExcel(file) {
   const form = new FormData();
   form.append("file", file);

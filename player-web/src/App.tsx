@@ -7,6 +7,7 @@ import { getNameMappingRowsByEnglish, normalizePlayerName } from "./utils/nameMa
 import { getProjectGroupByColumn, getProjectZhByColumn } from "./utils/projectMappingStore";
 import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 import { formatDateTime, formatPresetTime } from "./utils/timeFormat";
+import { compactPresetsForLocalStorage, compactSnapshotForLocalStorage, isQuotaExceededResult } from "./utils/localStorageQuota";
 import {
   ALL_COLUMNS,
   BAR_INNER_GAP,
@@ -35,7 +36,6 @@ import {
 } from "./app/constants";
 import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
 import { renderActivePage } from "./app/renderActivePage";
-
 function polarPoint(radius, angle) {
   return {
     x: CENTER_X + radius * Math.cos(angle),
@@ -77,7 +77,6 @@ function colorToAlpha(hex, alpha = 0.22) {
   const b = parseInt(h.slice(4, 6), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
-
 function splitCsvLine(line) {
   const cells = [];
   let cur = "";
@@ -254,18 +253,17 @@ function readStorage(key, fallbackValue) {
 function writeStorageWithResult(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-    return { ok: true, error: "" };
+    return { ok: true, error: "", name: "" };
   } catch (err) {
     const name = err && typeof err === "object" && typeof err.name === "string" ? err.name : "UnknownError";
     const message = err && typeof err === "object" && typeof err.message === "string" ? err.message : "";
-    return { ok: false, error: message ? `${name}: ${message}` : name };
+    return { ok: false, error: message ? `${name}: ${message}` : name, name };
   }
 }
 
 function writeStorage(key, value) {
   return writeStorageWithResult(key, value).ok;
 }
-
 function normalizePresets(input) {
   if (!Array.isArray(input)) return [];
   return input
@@ -1039,10 +1037,25 @@ function App() {
     if (!isHydrated) return;
     const snapshot = getSnapshot();
     const writes = [{ label: "draft", key: STORAGE_KEYS.draft, value: snapshot }, { label: "selectedPresetId", key: STORAGE_KEYS.selectedPresetId, value: selectedPresetId }, { label: "presets", key: STORAGE_KEYS.presets, value: presets }];
-    const failed = writes.map((item) => ({ ...item, result: writeStorageWithResult(item.key, item.value) })).filter((item) => !item.result.ok);
+    const failed = [];
+    for (const item of writes) {
+      let result = writeStorageWithResult(item.key, item.value);
+      if (!result.ok && isQuotaExceededResult(result)) {
+        if (item.label === "draft") {
+          result = writeStorageWithResult(item.key, compactSnapshotForLocalStorage(snapshot));
+        } else if (item.label === "presets") {
+          result = writeStorageWithResult(item.key, compactPresetsForLocalStorage(presets));
+        }
+      }
+      if (!result.ok) {
+        failed.push({ ...item, result });
+      }
+    }
     if (failed.length > 0) {
       const detail = failed.map((item) => `${item.label}(${item.result.error})`).join("; ");
       setError(`本地缓存写入失败：${detail}`);
+    } else {
+      setError((prev) => (prev.startsWith("本地缓存写入失败：") ? "" : prev));
     }
   }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, presets, isHydrated]);
 

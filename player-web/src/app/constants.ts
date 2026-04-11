@@ -119,6 +119,11 @@ export const STORAGE_KEYS = {
   fitnessPer90RadarConfigByDataset: "player_web_fitness_per90_radar_config_by_dataset_v1",
   optaSelectedDatasetId: "player_web_opta_selected_dataset_id_v1",
   optaImportSide: "player_web_opta_import_side_v1",
+  cslStandingsSelectedDatasetId: "player_web_csl_standings_selected_dataset_id_v1",
+  cslStandingsSelectedSeason: "player_web_csl_standings_selected_season_v1",
+  cslStandingsSelectedTeamsByDataset: "player_web_csl_standings_selected_teams_by_dataset_v1",
+  cslStandingsSelectedMetrics: "player_web_csl_standings_selected_metrics_v1",
+  cslStandingsSelectedRoundByDataset: "player_web_csl_standings_selected_round_by_dataset_v1",
   playerPersonalRadarSelectedMetricsByDataset: "player_web_player_personal_radar_selected_metrics_by_dataset_v1",
   playerPersonalRadarSelectedPlayersByDataset: "player_web_player_personal_radar_selected_players_by_dataset_v1",
   playerPersonalRadarSelectedOverlayPlayerByDataset: "player_web_player_personal_radar_selected_overlay_player_by_dataset_v1",
@@ -175,6 +180,7 @@ export const NAV_ITEMS = [
     ]
   },
   { key: "opta_analysis", label: "opta数据分析" },
+  { key: "csl_standings_trend", label: "中超积分走势" },
   {
     key: "mapping_menu",
     label: "对应表",

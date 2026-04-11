@@ -13,6 +13,7 @@ from server_core.routes.fitness_data_api import fitness_data_bp
 from server_core.routes.match_data_api import match_data_bp
 from server_core.routes.match_project_mapping_api import match_project_mapping_bp
 from server_core.routes.opta_data_api import opta_data_bp
+from server_core.routes.csl_standings_api import csl_standings_bp
 from server_core.services.ranking_service import (
     compute_player_metrics as _svc_compute_player_metrics,
     is_lower_better_column as _svc_is_lower_better_column,
@@ -27,14 +28,14 @@ PLAYER_DATA_BAK_PATH = DATA_DIR / "player_dataset.json.bak"
 PLAYER_DATASETS_DIR = DATA_DIR / "player_datasets"
 PLAYER_DATA_INDEX_PATH = DATA_DIR / "player_datasets_index.json"
 PLAYER_DATA_INDEX_BAK_PATH = DATA_DIR / "player_datasets_index.json.bak"
-VERSION = 1
-WRITE_LOCK = Lock()
+VERSION = 1; WRITE_LOCK = Lock()
 
 app = Flask(__name__)
 app.register_blueprint(match_data_bp)
 app.register_blueprint(match_project_mapping_bp)
 app.register_blueprint(fitness_data_bp)
 app.register_blueprint(opta_data_bp)
+app.register_blueprint(csl_standings_bp)
 def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
