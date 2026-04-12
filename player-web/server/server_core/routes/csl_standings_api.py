@@ -240,7 +240,8 @@ def _build_trend_payload(doc: dict[str, Any], season: str) -> dict[str, Any]:
             "trendSeriesByTeam": {},
         }
 
-    rounds = sorted({int(m["round"]) for m in season_matches if isinstance(m.get("round"), int)})
+    base_rounds = sorted({int(m["round"]) for m in season_matches if isinstance(m.get("round"), int)})
+    rounds = [0, *[r for r in base_rounds if r != 0]]
     teams = sorted(
         {
             str(m.get("homeTeam") or "").strip()
@@ -275,7 +276,59 @@ def _build_trend_payload(doc: dict[str, Any], season: str) -> dict[str, Any]:
     standings_by_round: list[dict[str, Any]] = []
     trend_series_by_team: dict[str, list[dict[str, Any]]] = {team: [] for team in teams}
 
-    for round_num in rounds:
+    def _build_ranked_rows() -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for team, stat in stats_by_team.items():
+            goals_for = int(stat["goalsFor"])
+            goals_against = int(stat["goalsAgainst"])
+            points_raw = int(stat["points"])
+            deduction = _deduction_for_team(season, team)
+            rows.append(
+                {
+                    "team": team,
+                    "played": int(stat["played"]),
+                    "won": int(stat["won"]),
+                    "draw": int(stat["draw"]),
+                    "lost": int(stat["lost"]),
+                    "deduction": int(deduction),
+                    "pointsRaw": points_raw,
+                    "pointsNet": points_raw - int(deduction),
+                    "goalsFor": goals_for,
+                    "goalsAgainst": goals_against,
+                    "goalDiff": goals_for - goals_against,
+                }
+            )
+        _assign_rank(rows, "pointsRaw", "rankRaw")
+        ranked_rows = _assign_rank(rows, "pointsNet", "rankNet")
+        for row in ranked_rows:
+            row["points"] = int(row.get("pointsRaw", 0))
+            row["rank"] = int(row.get("rankRaw", 0))
+        return ranked_rows
+
+    # Round 0: season baseline before first finished match.
+    round0_rows = _build_ranked_rows()
+    standings_by_round.append({"round": 0, "rows": round0_rows})
+    round0_by_team = {str(row["team"]): row for row in round0_rows}
+    for team in teams:
+        row = round0_by_team.get(team)
+        if row is None:
+            continue
+        trend_series_by_team[team].append(
+            {
+                "round": 0,
+                "deduction": int(row.get("deduction", 0)),
+                "pointsRaw": int(row.get("pointsRaw", 0)),
+                "pointsNet": int(row.get("pointsNet", 0)),
+                "rankRaw": int(row.get("rankRaw", 0)),
+                "rankNet": int(row.get("rankNet", 0)),
+                "points": int(row.get("pointsRaw", 0)),
+                "rank": int(row.get("rankRaw", 0)),
+                "goalsFor": int(row["goalsFor"]),
+                "goalsAgainst": int(row["goalsAgainst"]),
+            }
+        )
+
+    for round_num in [r for r in rounds if r > 0]:
         for match in matches_by_round.get(round_num, []):
             home_team = str(match.get("homeTeam") or "").strip()
             away_team = str(match.get("awayTeam") or "").strip()
@@ -313,33 +366,7 @@ def _build_trend_payload(doc: dict[str, Any], season: str) -> dict[str, Any]:
                 home["points"] += 1
                 away["points"] += 1
 
-        rows: list[dict[str, Any]] = []
-        for team, stat in stats_by_team.items():
-            goals_for = int(stat["goalsFor"])
-            goals_against = int(stat["goalsAgainst"])
-            points_raw = int(stat["points"])
-            deduction = _deduction_for_team(season, team)
-            rows.append(
-                {
-                    "team": team,
-                    "played": int(stat["played"]),
-                    "won": int(stat["won"]),
-                    "draw": int(stat["draw"]),
-                    "lost": int(stat["lost"]),
-                    "deduction": int(deduction),
-                    "pointsRaw": points_raw,
-                    "pointsNet": points_raw - int(deduction),
-                    "goalsFor": goals_for,
-                    "goalsAgainst": goals_against,
-                    "goalDiff": goals_for - goals_against,
-                }
-            )
-
-        _assign_rank(rows, "pointsRaw", "rankRaw")
-        ranked_rows = _assign_rank(rows, "pointsNet", "rankNet")
-        for row in ranked_rows:
-            row["points"] = int(row.get("pointsRaw", 0))
-            row["rank"] = int(row.get("rankRaw", 0))
+        ranked_rows = _build_ranked_rows()
         standings_by_round.append({"round": round_num, "rows": ranked_rows})
 
         row_by_team = {str(row["team"]): row for row in ranked_rows}

@@ -4,6 +4,9 @@ import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
 import { formatDateTime } from "../../utils/timeFormat";
+import { normalizeHexColor } from "../../utils/color";
+import { numeric } from "../../utils/number";
+import { normalizeTrendData } from "./utils/normalizeTrendData";
 
 const METRIC_OPTIONS = [
   { key: "points", label: "原积分" },
@@ -35,9 +38,28 @@ const TEAM_COLORS = [
   "#9b2226"
 ];
 
-function numeric(value: unknown, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
+const PLAY_SPEED_MIN_MS = 200;
+const PLAY_SPEED_MAX_MS = 2000;
+const PLAY_SPEED_STEP_MS = 100;
+const PLAY_SPEED_DEFAULT_MS = 800;
+const POINT_OFFSET_STEP = 8;
+const LOGO_OFFSET_STEP = 14;
+const MAX_OFFSET_SPREAD = 42;
+
+function clampPlaySpeedMs(value: unknown) {
+  const raw = numeric(value, PLAY_SPEED_DEFAULT_MS);
+  const stepped = Math.round(raw / PLAY_SPEED_STEP_MS) * PLAY_SPEED_STEP_MS;
+  return Math.min(PLAY_SPEED_MAX_MS, Math.max(PLAY_SPEED_MIN_MS, stepped));
+}
+
+function easeInOutCubic(t: number) {
+  const v = Math.min(1, Math.max(0, t));
+  if (v < 0.5) return 4 * v * v * v;
+  return 1 - Math.pow(-2 * v + 2, 3) / 2;
+}
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
 }
 
 function buildPath(points: Array<{ x: number; y: number }>) {
@@ -54,36 +76,42 @@ function isRankMetric(metric: string) {
   return metric === "rank" || metric === "rankNet";
 }
 
-function normalizeHexColor(value: unknown) {
-  const text = String(value || "").trim();
-  if (!text) return "";
-  if (/^#[0-9a-fA-F]{3}$/.test(text)) {
-    return `#${text.slice(1).toLowerCase()}`;
-  }
-  if (/^#[0-9a-fA-F]{6}$/.test(text)) {
-    return `#${text.slice(1).toLowerCase()}`;
-  }
-  return "";
-}
-
 function CslTrendChart({
   metric,
   metricLabel,
+  revealRound,
+  playbackFromRound,
+  playbackToRound,
+  playbackProgress,
+  isPlaying,
   rounds,
   selectedTeams,
   seriesByTeam,
   colorByTeam,
+  logoByTeam,
+  failedLogoByTeam,
+  persistLogoRound,
   lockedTeam,
+  onLogoError,
   onToggleLockedTeam,
   onClearLockedTeam
 }: {
   metric: string;
   metricLabel: string;
+  revealRound: number;
+  playbackFromRound: number;
+  playbackToRound: number;
+  playbackProgress: number;
+  isPlaying: boolean;
   rounds: number[];
   selectedTeams: string[];
   seriesByTeam: Record<string, any[]>;
   colorByTeam: Record<string, string>;
+  logoByTeam: Record<string, string>;
+  failedLogoByTeam: Record<string, boolean>;
+  persistLogoRound: number;
   lockedTeam: string;
+  onLogoError: (team: string) => void;
   onToggleLockedTeam: (team: string) => void;
   onClearLockedTeam: () => void;
 }) {
@@ -109,12 +137,16 @@ function CslTrendChart({
     .map((item) => numeric(item?.[metric], 0));
   const step = getMetricStep(metric);
   const rankMetric = isRankMetric(metric);
+  const netPointsMetric = metric === "pointsNet";
 
-  const yMin = rankMetric ? 1 : 0;
+  const yMin = rankMetric ? 1 : netPointsMetric ? -10 : 0;
   let yMax = rankMetric ? Math.max(1, ...metricValues, selectedTeams.length, 1) : Math.max(1, ...metricValues, 1);
   if (rankMetric) {
     yMax = Math.max(1, Math.ceil(yMax / step) * step);
   } else {
+    if (netPointsMetric) {
+      yMax = Math.max(0, yMax);
+    }
     yMax = Math.max(step, Math.ceil(yMax / step) * step);
   }
   const yDen = Math.max(1, yMax - yMin);
@@ -144,23 +176,24 @@ function CslTrendChart({
       if (ticks[ticks.length - 1] !== yMax) ticks.push(yMax);
       return ticks;
     }
-    let cursor = 0;
+    let cursor = yMin;
     while (cursor <= yMax) {
       ticks.push(cursor);
       cursor += step;
     }
     if (ticks[ticks.length - 1] !== yMax) ticks.push(yMax);
     return ticks;
-  }, [rankMetric, step, yMax]);
+  }, [rankMetric, step, yMax, yMin]);
   const activeLockedTeam = selectedTeams.includes(String(lockedTeam || "")) ? String(lockedTeam) : "";
+  const settledRound = isPlaying ? Math.max(0, playbackFromRound) : revealRound;
 
-  const pointByTeamAndRound = useMemo(() => {
+  const seriesRowByTeamAndRound = useMemo(() => {
     const map = new Map<string, any>();
     selectedTeams.forEach((team) => {
       const series = Array.isArray(seriesByTeam[team]) ? seriesByTeam[team] : [];
       series.forEach((item) => {
         const round = numeric(item?.round, 0);
-        if (round <= 0) return;
+        if (round < 0) return;
         map.set(`${team}::${round}`, item);
       });
     });
@@ -176,7 +209,7 @@ function CslTrendChart({
       const series = Array.isArray(seriesByTeam[team]) ? seriesByTeam[team] : [];
       series.forEach((item) => {
         const round = numeric(item?.round, 0);
-        if (round <= 0) return;
+        if (round < 0) return;
         const points = numeric(item?.[pointsKey], 0);
         const goalsFor = numeric(item?.goalsFor, 0);
         const goalsAgainst = numeric(item?.goalsAgainst, 0);
@@ -196,6 +229,15 @@ function CslTrendChart({
     return map;
   }, [metric, rankMetric, selectedTeams, seriesByTeam]);
 
+  const getMetricValueAtRound = (team: string, round: number) => {
+    const row = seriesRowByTeamAndRound.get(`${team}::${round}`);
+    if (!row) return null;
+    const rawValue = numeric(row?.[metric], rankMetric ? yMax : 0);
+    if (!rankMetric) return rawValue;
+    const normalizedRank = normalizedRankByTeamAndRound.get(`${team}::${round}`);
+    return numeric(normalizedRank, rawValue);
+  };
+
   const pointsByTeam = useMemo(() => {
     const out: Record<string, Array<{ team: string; round: number; value: number; x: number; y: number }>> = {};
     selectedTeams.forEach((team) => {
@@ -203,28 +245,63 @@ function CslTrendChart({
       const points = series
         .map((item) => {
           const round = numeric(item?.round, 0);
-          const rawValue = numeric(item?.[metric], rankMetric ? yMax : 0);
-          const normalizedRank = rankMetric ? normalizedRankByTeamAndRound.get(`${team}::${round}`) : undefined;
-          const value = rankMetric ? numeric(normalizedRank, rawValue) : rawValue;
+          const value = getMetricValueAtRound(team, round);
           return {
             team,
             round,
-            value,
+            value: numeric(value, rankMetric ? yMax : 0),
             x: xAt(round),
-            y: yAt(value)
+            y: yAt(numeric(value, rankMetric ? yMax : 0))
           };
         })
-        .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.round > 0);
+        .filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y) && item.round >= 0 && item.round <= settledRound);
       out[team] = points;
     });
     return out;
-  }, [metric, normalizedRankByTeamAndRound, rankMetric, selectedTeams, seriesByTeam, xAt, yAt, yMax]);
+  }, [rankMetric, selectedTeams, seriesByTeam, settledRound, xAt, yAt, yMax]);
+
+  const movingPointByTeam = useMemo(() => {
+    const out = new Map<string, { team: string; round: number; value: number; x: number; y: number }>();
+    if (!isPlaying) return out;
+    if (playbackToRound <= playbackFromRound) return out;
+    const fromX = xAt(playbackFromRound);
+    const toX = xAt(playbackToRound);
+    selectedTeams.forEach((team) => {
+      const fromValue = getMetricValueAtRound(team, playbackFromRound);
+      const toValue = getMetricValueAtRound(team, playbackToRound);
+      if (fromValue === null || toValue === null) return;
+      const value = lerp(fromValue, toValue, playbackProgress);
+      out.set(team, {
+        team,
+        round: playbackToRound,
+        value,
+        x: lerp(fromX, toX, playbackProgress),
+        y: yAt(value)
+      });
+    });
+    return out;
+  }, [isPlaying, playbackFromRound, playbackProgress, playbackToRound, selectedTeams, xAt, yAt]);
+
+  const persistPointByTeam = useMemo(() => {
+    const out = new Map<string, { team: string; round: number; value: number; x: number; y: number }>();
+    if (isPlaying) return out;
+    if (persistLogoRound < 0) return out;
+    selectedTeams.forEach((team) => {
+      const value = getMetricValueAtRound(team, persistLogoRound);
+      if (value === null) return;
+      out.set(team, {
+        team,
+        round: persistLogoRound,
+        value,
+        x: xAt(persistLogoRound),
+        y: yAt(value)
+      });
+    });
+    return out;
+  }, [isPlaying, persistLogoRound, selectedTeams, xAt, yAt]);
 
   const clustersByKey = useMemo(() => {
-    const map = new Map<
-      string,
-      { key: string; round: number; value: number; x: number; y: number; teams: string[]; points: Array<{ team: string; round: number; value: number; x: number; y: number }> }
-    >();
+    const map = new Map<string, { key: string; round: number; value: number; teams: string[] }>();
     selectedTeams.forEach((team) => {
       const points = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
       points.forEach((point) => {
@@ -232,27 +309,63 @@ function CslTrendChart({
         const existing = map.get(key);
         if (existing) {
           existing.teams.push(team);
-          existing.points.push(point);
           return;
         }
         map.set(key, {
           key,
           round: point.round,
           value: point.value,
-          x: point.x,
-          y: point.y,
-          teams: [team],
-          points: [point]
+          teams: [team]
         });
       });
     });
     return map;
   }, [pointsByTeam, selectedTeams]);
 
-  const overlapClusters = useMemo(
-    () => Array.from(clustersByKey.values()).filter((item) => item.teams.length >= 2),
-    [clustersByKey]
-  );
+  const displayXByTeamRound = useMemo(() => {
+    const out = new Map<string, number>();
+    const roundsSet = new Set<number>();
+    selectedTeams.forEach((team) => {
+      const points = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
+      points.forEach((point) => roundsSet.add(point.round));
+      const logoPoint = movingPointByTeam.get(team) || persistPointByTeam.get(team);
+      if (logoPoint) roundsSet.add(logoPoint.round);
+    });
+
+    roundsSet.forEach((round) => {
+      const grouped = new Map<string, Array<{ team: string; x: number; isLogo: boolean }>>();
+      selectedTeams.forEach((team) => {
+        const settledPoint = (Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : []).find((row) => row.round === round) || null;
+        const logoPoint = (movingPointByTeam.get(team) || persistPointByTeam.get(team)) || null;
+        const useLogo = Boolean(logoPoint && logoPoint.round === round);
+        const point = useLogo ? logoPoint : settledPoint;
+        if (!point) return;
+        const key = `${round}::${point.value}`;
+        const list = grouped.get(key) || [];
+        list.push({ team, x: point.x, isLogo: useLogo });
+        grouped.set(key, list);
+      });
+
+      grouped.forEach((list) => {
+        if (list.length <= 1) {
+          const item = list[0];
+          if (!item) return;
+          out.set(`${item.team}::${round}`, item.x);
+          return;
+        }
+        const hasLogo = list.some((item) => item.isLogo);
+        const baseStep = hasLogo ? LOGO_OFFSET_STEP : POINT_OFFSET_STEP;
+        const maxDistance = (list.length - 1) * baseStep;
+        const scale = maxDistance > MAX_OFFSET_SPREAD ? MAX_OFFSET_SPREAD / maxDistance : 1;
+        const sorted = [...list].sort((a, b) => a.team.localeCompare(b.team));
+        sorted.forEach((item, idx) => {
+          const offset = (idx - (sorted.length - 1) / 2) * baseStep * scale;
+          out.set(`${item.team}::${round}`, item.x + offset);
+        });
+      });
+    });
+    return out;
+  }, [movingPointByTeam, persistPointByTeam, pointsByTeam, selectedTeams]);
 
   const tooltipPayload = useMemo(() => {
     if (!hasRound) return "";
@@ -267,26 +380,30 @@ function CslTrendChart({
       }
     }
     if (hoveredTeam && hoveredRound !== null) {
-      const item = pointByTeamAndRound.get(`${hoveredTeam}::${hoveredRound}`);
-      const value = item ? numeric(item?.[metric], 0) : null;
+      const value = getMetricValueAtRound(hoveredTeam, hoveredRound);
       if (value !== null) return `R${hoveredRound} | ${hoveredTeam} | ${metricLabel}：${value}`;
     }
     if (hoveredRound !== null) {
       if (!activeLockedTeam) return `R${hoveredRound} | 请点击左侧球队名称锁定高亮，或悬浮任意球队点位`;
       const team = activeLockedTeam;
-      const item = pointByTeamAndRound.get(`${team}::${hoveredRound}`);
-      const value = item ? numeric(item?.[metric], 0) : null;
+      const value = getMetricValueAtRound(team, hoveredRound);
       if (value !== null) return `R${hoveredRound} | ${team} | ${metricLabel}：${value}`;
       return `R${hoveredRound} | ${team} | ${metricLabel}：-`;
     }
     return "";
-  }, [activeLockedTeam, clustersByKey, hasRound, hoveredClusterKey, hoveredRound, hoveredTeam, metric, metricLabel, pointByTeamAndRound]);
+  }, [activeLockedTeam, clustersByKey, hasRound, hoveredClusterKey, hoveredRound, hoveredTeam, metricLabel]);
 
-  const activeRound = hoveredRound;
+  const activeRound = hoveredRound !== null ? hoveredRound : isPlaying ? playbackFromRound : revealRound >= 0 ? revealRound : null;
   const activeTeam = hoveredTeam || activeLockedTeam;
-  const activeSeriesRow = activeRound !== null && activeTeam ? pointByTeamAndRound.get(`${activeTeam}::${activeRound}`) : null;
   const activeCluster = hoveredClusterKey && activeRound !== null ? clustersByKey.get(hoveredClusterKey) : null;
-  const activeValue = activeCluster ? numeric(activeCluster.value, NaN) : activeSeriesRow ? numeric(activeSeriesRow?.[metric], NaN) : NaN;
+  const movingActive = activeTeam ? movingPointByTeam.get(activeTeam) : null;
+  const activeValue = activeCluster
+    ? numeric(activeCluster.value, NaN)
+    : movingActive && isPlaying
+      ? numeric(movingActive.value, NaN)
+      : activeRound !== null && activeTeam
+        ? numeric(getMetricValueAtRound(activeTeam, activeRound), NaN)
+        : NaN;
 
   return (
     <div className="csl-trend-card">
@@ -346,7 +463,7 @@ function CslTrendChart({
             />
           ) : null}
 
-          <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} stroke="#8d7f6f" />
+          <line x1={padL} y1={netPointsMetric ? yAt(0) : padT + plotH} x2={padL + plotW} y2={netPointsMetric ? yAt(0) : padT + plotH} stroke="#8d7f6f" />
           <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="#8d7f6f" />
 
           {yTicks.map((tick) => {
@@ -361,6 +478,7 @@ function CslTrendChart({
           {rounds.map((round) => {
             const x = xAt(round);
             const isActiveRound = activeRound === round;
+            const roundReachable = round <= settledRound;
             return (
               <g key={`xt-${round}`}>
                 <circle cx={x} cy={padT + plotH} r={2.1} fill={isActiveRound ? "#7a201d" : "#8d7f6f"} />
@@ -370,7 +488,10 @@ function CslTrendChart({
                   textAnchor="end"
                   transform={`rotate(45 ${x} ${padT + plotH + 16})`}
                   className={`csl-axis-text csl-axis-text-x${isActiveRound ? " active" : ""}`}
-                  onMouseEnter={() => setHoveredRound(round)}
+                  onMouseEnter={() => {
+                    if (!roundReachable) return;
+                    setHoveredRound(round);
+                  }}
                   onMouseLeave={() => setHoveredRound(null)}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -381,8 +502,14 @@ function CslTrendChart({
           })}
 
           {selectedTeams.map((team) => {
-            const points = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
-            const path = buildPath(points.map((p) => ({ x: p.x, y: p.y })));
+            const settledPoints = Array.isArray(pointsByTeam[team]) ? pointsByTeam[team] : [];
+            const movingPoint = movingPointByTeam.get(team);
+            const persistPoint = persistPointByTeam.get(team);
+            const movingLogo = String(logoByTeam[team] || "").trim();
+            const logoPoint = movingPoint || persistPoint;
+            const shouldShowLogo = Boolean(logoPoint && movingLogo && !failedLogoByTeam[team]);
+            const pathPoints = movingPoint ? [...settledPoints, movingPoint] : settledPoints;
+            const path = buildPath(pathPoints.map((p) => ({ x: p.x, y: p.y })));
             if (!path) return null;
             const teamActive = activeTeam === team;
             return (
@@ -399,16 +526,15 @@ function CslTrendChart({
                     onToggleLockedTeam(team);
                   }}
                 />
-                {points.map((p, idx) => {
-                  const cluster = clustersByKey.get(`${p.round}::${p.value}`);
-                  if (cluster && cluster.teams.length >= 2) return null;
+                {settledPoints.map((p, idx) => {
+                  const px = numeric(displayXByTeamRound.get(`${team}::${p.round}`), p.x);
                   const pointActive = teamActive && activeRound === p.round;
                   return (
                     <g key={`${metric}-${team}-${idx}`}>
-                      <circle cx={p.x} cy={p.y} r={pointActive ? 5.2 : 2.2} fill={colorByTeam[team] || "#111"} />
+                      <circle cx={px} cy={p.y} r={pointActive ? 5.2 : 2.2} fill={colorByTeam[team] || "#111"} />
                       <circle
                         className="csl-point-hitbox"
-                        cx={p.x}
+                        cx={px}
                         cy={p.y}
                         r={8}
                         fill="transparent"
@@ -427,40 +553,37 @@ function CslTrendChart({
                     </g>
                   );
                 })}
-              </g>
-            );
-          })}
-
-          {overlapClusters.map((cluster) => {
-            const lockInCluster = activeLockedTeam ? cluster.teams.includes(activeLockedTeam) : false;
-            const clusterActive = hoveredClusterKey === cluster.key || (activeRound === cluster.round && lockInCluster && !hoveredTeam);
-            const primaryTeam = cluster.teams[0];
-            const primaryColor = colorByTeam[primaryTeam] || "#111";
-            const countLabel = `x${cluster.teams.length}`;
-            return (
-              <g key={`cluster-${metric}-${cluster.key}`}>
-                <circle cx={cluster.x} cy={cluster.y} r={clusterActive ? 7.4 : 5.2} fill="#fffdf8" stroke="#5f554a" strokeWidth={1.2} />
-                <circle cx={cluster.x} cy={cluster.y} r={clusterActive ? 3.4 : 2.4} fill={primaryColor} />
-                <text x={cluster.x + 8} y={cluster.y - 7} className="csl-cluster-count">
-                  {countLabel}
-                </text>
-                <circle
-                  className="csl-point-hitbox"
-                  cx={cluster.x}
-                  cy={cluster.y}
-                  r={10}
-                  fill="transparent"
-                  onMouseEnter={() => {
-                    setHoveredTeam(null);
-                    setHoveredRound(cluster.round);
-                    setHoveredClusterKey(cluster.key);
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredRound(null);
-                    setHoveredClusterKey(null);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
+                {logoPoint ? (
+                  shouldShowLogo ? (
+                    <g>
+                      <circle
+                        cx={numeric(displayXByTeamRound.get(`${team}::${logoPoint.round}`), logoPoint.x)}
+                        cy={logoPoint.y}
+                        r={teamActive ? 8.5 : 7.2}
+                        fill="#fff"
+                        stroke={colorByTeam[team] || "#111"}
+                        strokeWidth={1}
+                      />
+                      <image
+                        x={numeric(displayXByTeamRound.get(`${team}::${logoPoint.round}`), logoPoint.x) - (teamActive ? 7.5 : 6.5)}
+                        y={logoPoint.y - (teamActive ? 7.5 : 6.5)}
+                        width={teamActive ? 15 : 13}
+                        height={teamActive ? 15 : 13}
+                        href={movingLogo}
+                        preserveAspectRatio="xMidYMid meet"
+                        onError={() => onLogoError(team)}
+                        style={{ pointerEvents: "none" }}
+                      />
+                    </g>
+                  ) : (
+                    <circle
+                      cx={numeric(displayXByTeamRound.get(`${team}::${logoPoint.round}`), logoPoint.x)}
+                      cy={logoPoint.y}
+                      r={teamActive ? 4.6 : 3.1}
+                      fill={colorByTeam[team] || "#111"}
+                    />
+                  )
+                ) : null}
               </g>
             );
           })}
@@ -486,18 +609,33 @@ function CslStandingsTrendPage() {
   });
   const [selectedRoundByDataset, setSelectedRoundByDataset] = useState(() => readLocalStore(STORAGE_KEYS.cslStandingsSelectedRoundByDataset, {}));
   const [lockedTeamByDataset, setLockedTeamByDataset] = useState(() => readLocalStore(STORAGE_KEYS.cslStandingsLockedTeamByDataset, {}));
+  const [playRoundByDataset, setPlayRoundByDataset] = useState(() => readLocalStore(STORAGE_KEYS.cslStandingsPlayRoundByDataset, {}));
+  const [playSpeedMs, setPlaySpeedMs] = useState(() => clampPlaySpeedMs(readLocalStore(STORAGE_KEYS.cslStandingsPlaySpeedMs, PLAY_SPEED_DEFAULT_MS)));
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [transitionFromRound, setTransitionFromRound] = useState(0);
+  const [transitionToRound, setTransitionToRound] = useState(0);
+  const [transitionProgress, setTransitionProgress] = useState(1);
+  const [persistLogoRound, setPersistLogoRound] = useState(-1);
+  const [failedLogoByTeam, setFailedLogoByTeam] = useState<Record<string, boolean>>({});
   const [datasetDoc, setDatasetDoc] = useState(null as any);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const playRunIdRef = useRef(0);
 
   const backendOnline = backendHealth === "online";
 
-  const seasons = Array.isArray(datasetDoc?.seasons) ? datasetDoc.seasons.map((item: any) => String(item)) : [];
-  const rounds = Array.isArray(datasetDoc?.rounds) ? datasetDoc.rounds.map((item: any) => numeric(item, 0)).filter((item: number) => item > 0) : [];
-  const teams = Array.isArray(datasetDoc?.teams) ? datasetDoc.teams.map((item: any) => String(item)).filter(Boolean) : [];
+  const seasons = useMemo(
+    () => (Array.isArray(datasetDoc?.seasons) ? datasetDoc.seasons.map((item: any) => String(item)) : []),
+    [datasetDoc]
+  );
+  const normalizedTrendData = useMemo(() => normalizeTrendData(datasetDoc), [datasetDoc]);
+
+  const rounds = normalizedTrendData.rounds;
+  const teams = normalizedTrendData.teams;
 
   const selectedTeams = useMemo(() => {
     if (!selectedDatasetId) return [] as string[];
@@ -510,9 +648,17 @@ function CslStandingsTrendPage() {
   const selectedRound = useMemo(() => {
     if (!selectedDatasetId) return 0;
     const current = numeric(selectedRoundByDataset[selectedDatasetId], 0);
-    if (current > 0 && rounds.includes(current)) return current;
+    if (current >= 0 && rounds.includes(current)) return current;
     return rounds.length > 0 ? rounds[rounds.length - 1] : 0;
   }, [selectedDatasetId, selectedRoundByDataset, rounds]);
+  const playRound = useMemo(() => {
+    if (!selectedDatasetId) return 0;
+    const current = numeric(playRoundByDataset[selectedDatasetId], 0);
+    if (current >= 0 && rounds.includes(current)) return current;
+    return rounds.length > 0 ? rounds[0] : 0;
+  }, [playRoundByDataset, rounds, selectedDatasetId]);
+  const revealRound = isPlaying ? Math.max(0, transitionFromRound) : rounds.length > 0 ? rounds[rounds.length - 1] : 0;
+  const playbackRoundLabel = rounds.length > 0 ? (isPlaying ? Math.max(0, transitionFromRound) : playRound >= 0 ? playRound : rounds[0]) : 0;
 
   const lockedTeam = useMemo(() => {
     if (!selectedDatasetId) return "";
@@ -521,15 +667,15 @@ function CslStandingsTrendPage() {
   }, [lockedTeamByDataset, selectedDatasetId, selectedTeams]);
 
   const standingsRows = useMemo(() => {
-    const snapshots = Array.isArray(datasetDoc?.standingsByRound) ? datasetDoc.standingsByRound : [];
+    const snapshots = Array.isArray(normalizedTrendData.standingsByRound) ? normalizedTrendData.standingsByRound : [];
     const found = snapshots.find((item: any) => numeric(item?.round, 0) === selectedRound);
     return Array.isArray(found?.rows) ? found.rows : [];
-  }, [datasetDoc, selectedRound]);
+  }, [normalizedTrendData, selectedRound]);
 
   const seriesByTeam = useMemo(() => {
-    const map = datasetDoc?.trendSeriesByTeam;
+    const map = normalizedTrendData?.trendSeriesByTeam;
     return map && typeof map === "object" ? map : {};
-  }, [datasetDoc]);
+  }, [normalizedTrendData]);
 
   const teamMappingByName = useMemo(() => getTeamMappingRowsByName(), []);
 
@@ -542,6 +688,22 @@ function CslStandingsTrendPage() {
     });
     return out;
   }, [teamMappingByName, teams]);
+  const logoByTeam = useMemo(() => {
+    const out: Record<string, string> = {};
+    teams.forEach((team) => {
+      const key = normalizeTeamName(team).toLowerCase();
+      out[team] = String(key ? teamMappingByName.get(key)?.logoDataUrl || "" : "").trim();
+    });
+    return out;
+  }, [teamMappingByName, teams]);
+
+  const stopRaf = () => {
+    playRunIdRef.current += 1;
+    if (rafIdRef.current !== null) {
+      window.cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+  };
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.cslStandingsSelectedDatasetId, selectedDatasetId);
@@ -566,6 +728,12 @@ function CslStandingsTrendPage() {
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.cslStandingsLockedTeamByDataset, lockedTeamByDataset);
   }, [lockedTeamByDataset]);
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.cslStandingsPlayRoundByDataset, playRoundByDataset);
+  }, [playRoundByDataset]);
+  useEffect(() => {
+    writeLocalStore(STORAGE_KEYS.cslStandingsPlaySpeedMs, playSpeedMs);
+  }, [playSpeedMs]);
 
   const verifyBackendHealth = async () => {
     try {
@@ -635,6 +803,15 @@ function CslStandingsTrendPage() {
   useEffect(() => {
     loadDatasetDetail(selectedDatasetId, selectedSeason);
   }, [selectedDatasetId, selectedSeason]);
+  useEffect(() => {
+    stopRaf();
+    setIsPlaying(false);
+    setTransitionFromRound(0);
+    setTransitionToRound(0);
+    setTransitionProgress(1);
+    setPersistLogoRound(-1);
+    setFailedLogoByTeam({});
+  }, [selectedDatasetId, selectedSeason]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
@@ -649,9 +826,115 @@ function CslStandingsTrendPage() {
     if (!selectedDatasetId) return;
     if (rounds.length === 0) return;
     const current = numeric(selectedRoundByDataset[selectedDatasetId], 0);
-    if (current > 0 && rounds.includes(current)) return;
+    if (current >= 0 && rounds.includes(current)) return;
     setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: rounds[rounds.length - 1] }));
   }, [selectedDatasetId, rounds, selectedRoundByDataset]);
+  useEffect(() => {
+    if (!selectedDatasetId) return;
+    if (rounds.length === 0) return;
+    const current = numeric(playRoundByDataset[selectedDatasetId], 0);
+    if (current >= 0 && rounds.includes(current)) return;
+    setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: rounds[0] }));
+  }, [playRoundByDataset, rounds, selectedDatasetId]);
+  useEffect(() => {
+    if (!selectedDatasetId || isPlaying) return;
+    if (selectedRound < 0) return;
+    const currentPlayRound = numeric(playRoundByDataset[selectedDatasetId], 0);
+    if (currentPlayRound === selectedRound) return;
+    setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: selectedRound }));
+  }, [isPlaying, playRoundByDataset, selectedDatasetId, selectedRound]);
+
+  useEffect(() => {
+    if (!selectedDatasetId || rounds.length === 0 || isPlaying) return;
+    const current = numeric(playRoundByDataset[selectedDatasetId], rounds[0]);
+    const stableRound = rounds.includes(current) ? current : rounds[0];
+    setTransitionFromRound(stableRound);
+    setTransitionToRound(stableRound);
+    setTransitionProgress(1);
+  }, [isPlaying, playRoundByDataset, rounds, selectedDatasetId]);
+
+  useEffect(() => {
+    return () => stopRaf();
+  }, []);
+
+  useEffect(() => {
+    stopRaf();
+    if (!isPlaying) return;
+    if (!selectedDatasetId) return;
+    if (rounds.length === 0) return;
+    const firstRound = rounds[0];
+    const current = rounds.includes(playRound) ? playRound : firstRound;
+    const currentIdx = rounds.indexOf(current);
+    if (currentIdx < 0 || currentIdx >= rounds.length - 1) {
+      const lastRound = rounds[rounds.length - 1];
+      setIsPlaying(false);
+      setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: lastRound }));
+      setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: lastRound }));
+      setTransitionFromRound(lastRound);
+      setTransitionToRound(lastRound);
+      setTransitionProgress(1);
+      return;
+    }
+
+    let fromRound = current;
+    let toRound = rounds[currentIdx + 1];
+    let segmentStart = 0;
+    let awaitingNextSegment = false;
+    const runId = playRunIdRef.current;
+    setTransitionFromRound(fromRound);
+    setTransitionToRound(toRound);
+    setTransitionProgress(0);
+
+    const tick = (ts: number) => {
+      if (runId !== playRunIdRef.current) return;
+      if (awaitingNextSegment) {
+        const idx = rounds.indexOf(fromRound);
+        if (idx < 0 || idx >= rounds.length - 1) {
+          setIsPlaying(false);
+          setPersistLogoRound(fromRound);
+          setTransitionFromRound(fromRound);
+          setTransitionToRound(fromRound);
+          setTransitionProgress(1);
+          if (rafIdRef.current !== null) {
+            window.cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+          }
+          return;
+        }
+        toRound = rounds[idx + 1];
+        segmentStart = ts;
+        awaitingNextSegment = false;
+        setTransitionFromRound(fromRound);
+        setTransitionToRound(toRound);
+        setTransitionProgress(0);
+        rafIdRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+      if (segmentStart <= 0) segmentStart = ts;
+      const elapsed = ts - segmentStart;
+      const raw = Math.min(1, Math.max(0, elapsed / Math.max(1, playSpeedMs)));
+      const eased = easeInOutCubic(raw);
+      setTransitionProgress(eased);
+
+      if (raw >= 1) {
+        const reachedRound = toRound;
+        setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: reachedRound }));
+        setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: reachedRound }));
+        fromRound = reachedRound;
+        setTransitionFromRound(reachedRound);
+        setTransitionToRound(reachedRound);
+        setTransitionProgress(1);
+        awaitingNextSegment = true;
+        rafIdRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      rafIdRef.current = window.requestAnimationFrame(tick);
+    };
+
+    rafIdRef.current = window.requestAnimationFrame(tick);
+    return () => stopRaf();
+  }, [isPlaying, playSpeedMs, rounds, selectedDatasetId]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
@@ -741,6 +1024,42 @@ function CslStandingsTrendPage() {
       [selectedDatasetId]: ""
     }));
   };
+  const handleTogglePlay = () => {
+    if (!selectedDatasetId || rounds.length === 0) return;
+    if (isPlaying) {
+      stopRaf();
+      setIsPlaying(false);
+      setPersistLogoRound(Math.max(0, transitionFromRound));
+      return;
+    }
+    const firstRound = rounds[0];
+    const startRound = firstRound;
+    const startIdx = rounds.indexOf(startRound);
+    const nextRound = startIdx >= 0 && startIdx < rounds.length - 1 ? rounds[startIdx + 1] : startRound;
+    setPersistLogoRound(-1);
+    setTransitionFromRound(startRound);
+    setTransitionToRound(nextRound);
+    setTransitionProgress(0);
+    setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: startRound }));
+    setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: startRound }));
+    setIsPlaying(true);
+  };
+  const handleReplay = () => {
+    if (!selectedDatasetId || rounds.length === 0) return;
+    const firstRound = rounds[0];
+    stopRaf();
+    setIsPlaying(false);
+    setPersistLogoRound(-1);
+    setPlayRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: firstRound }));
+    setSelectedRoundByDataset((old: any) => ({ ...old, [selectedDatasetId]: firstRound }));
+    setTransitionFromRound(firstRound);
+    setTransitionToRound(firstRound);
+    setTransitionProgress(1);
+  };
+  const handleLogoError = (team: string) => {
+    if (!team) return;
+    setFailedLogoByTeam((prev) => (prev[team] ? prev : { ...prev, [team]: true }));
+  };
 
   return (
     <section className="info-page">
@@ -782,7 +1101,7 @@ function CslStandingsTrendPage() {
           <p>{`联赛：中超`}</p>
           <p>{`赛季：${selectedSeason || "-"}`}</p>
           <p>{`球队数：${teams.length}`}</p>
-          <p>{`轮次：${rounds.length > 0 ? `1-${rounds[rounds.length - 1]}` : "-"}`}</p>
+          <p>{`轮次：${rounds.length > 0 ? `${rounds[0]}-${rounds[rounds.length - 1]}` : "-"}`}</p>
           <p>{`更新时间：${formatDateTime(datasetDoc?.updatedAt) || "-"}`}</p>
         </div>
 
@@ -790,6 +1109,31 @@ function CslStandingsTrendPage() {
         {loading ? <p className="fitness-empty">数据加载中...</p> : null}
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
+
+        <div className="fitness-card csl-playback-bar">
+          <div className="csl-playback-actions">
+            <button className="fitness-top-control" onClick={handleTogglePlay} disabled={rounds.length === 0}>
+              {isPlaying ? "暂停" : "播放"}
+            </button>
+            <button className="fitness-top-control" onClick={handleReplay} disabled={rounds.length === 0}>
+              重播
+            </button>
+            <p className="csl-play-status">{rounds.length > 0 ? `第${playbackRoundLabel}轮 / 共${rounds.length}轮` : "暂无可播放轮次"}</p>
+          </div>
+          <label className="csl-speed-control">
+            <span>{`播放速度：${playSpeedMs}ms/轮`}</span>
+            <input
+              className="csl-speed-slider"
+              type="range"
+              min={PLAY_SPEED_MIN_MS}
+              max={PLAY_SPEED_MAX_MS}
+              step={PLAY_SPEED_STEP_MS}
+              value={playSpeedMs}
+              onChange={(e) => setPlaySpeedMs(clampPlaySpeedMs(e.target.value))}
+              disabled={rounds.length === 0}
+            />
+          </label>
+        </div>
 
         <div className="csl-control-grid">
           <div className="fitness-card">
@@ -833,11 +1177,17 @@ function CslStandingsTrendPage() {
                 <h2>每轮积分榜</h2>
                 <select
                   className="fitness-top-control csl-round-select"
-                  value={selectedRound > 0 ? selectedRound : ""}
+                  value={selectedRound >= 0 ? selectedRound : ""}
                   onChange={(e) => {
                     const value = numeric(e.target.value, 0);
-                    if (!selectedDatasetId || value <= 0) return;
+                    if (!selectedDatasetId || value < 0) return;
+                    stopRaf();
+                    setIsPlaying(false);
                     setSelectedRoundByDataset((prev: any) => ({ ...prev, [selectedDatasetId]: value }));
+                    setPlayRoundByDataset((prev: any) => ({ ...prev, [selectedDatasetId]: value }));
+                    setTransitionFromRound(value);
+                    setTransitionToRound(value);
+                    setTransitionProgress(1);
                   }}
                   disabled={rounds.length === 0}
                 >
@@ -893,11 +1243,20 @@ function CslStandingsTrendPage() {
                 key={item.key}
                 metric={item.key}
                 metricLabel={item.label}
+                revealRound={revealRound}
+                playbackFromRound={transitionFromRound}
+                playbackToRound={transitionToRound}
+                playbackProgress={transitionProgress}
+                isPlaying={isPlaying}
                 rounds={rounds}
                 selectedTeams={selectedTeams}
                 seriesByTeam={seriesByTeam}
                 colorByTeam={colorByTeam}
+                logoByTeam={logoByTeam}
+                failedLogoByTeam={failedLogoByTeam}
+                persistLogoRound={persistLogoRound}
                 lockedTeam={lockedTeam}
+                onLogoError={handleLogoError}
                 onToggleLockedTeam={toggleLockedTeam}
                 onClearLockedTeam={clearLockedTeam}
               />

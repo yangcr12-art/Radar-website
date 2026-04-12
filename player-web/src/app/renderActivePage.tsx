@@ -36,13 +36,7 @@ export function renderActivePage({
 }: RenderActivePageArgs) {
   switch (activePage) {
     case "home":
-      return (
-        <HomePage
-          onEnterRadar={() => setActivePage("radar")}
-          onEnterScatter={() => setActivePage("scatter_plot")}
-          onEnterMatchRadar={() => setActivePage("match_radar")}
-        />
-      );
+      return <HomePage onNavigate={(pageKey: string) => setActivePage(pageKey as AppPageKey)} />;
     case "radar":
       return radarPage;
     case "about":

@@ -1,57 +1,65 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { NAV_ITEMS, type NavItem } from "../../app/constants";
 
-function HomePage({ onEnterRadar, onEnterScatter, onEnterMatchRadar }) {
+function HomePage({ onNavigate }: { onNavigate: (pageKey: string) => void }) {
+  const featureCards = useMemo(
+    () =>
+      NAV_ITEMS.flatMap((item: NavItem) => {
+        if (item.key === "home") return [];
+        const childItems = Array.isArray(item.children) ? item.children : [];
+        const targetKey = childItems.length > 0 ? String(childItems[0]?.key || "") : item.key;
+        const clickable = item.key !== "mapping_menu" && Boolean(targetKey);
+        return [
+          {
+            key: item.key,
+            title: item.label,
+            group: "一级菜单",
+            targetKey,
+            clickable
+          }
+        ];
+      }),
+    []
+  );
+
   return (
     <section className="info-page home-page">
       <div className="info-card home-shell">
-        <div className="home-hero">
-          <p className="home-kicker">Player Chart System</p>
-          <h1>足球数据分析可视化工作台</h1>
-          <div className="home-cta">
-            <div className="home-cta-actions">
-              <button onClick={onEnterRadar}>进入雷达图生成器</button>
-              <button className="home-cta-secondary" onClick={onEnterScatter}>
-                进入数据散点图
-              </button>
-              <button className="home-cta-secondary" onClick={onEnterMatchRadar}>
-                进入比赛雷达图
-              </button>
-            </div>
+        <header className="home-editorial-hero">
+          <div className="home-hero-copy">
+            <p className="home-kicker">Player Chart System</p>
+            <h1>足球数据分析可视化工作台</h1>
+            <p className="home-hero-subtitle">规则稳定、视觉清晰、协作可追溯。</p>
           </div>
-        </div>
+          <aside className="home-hero-art" aria-hidden="true">
+            <p className="home-hero-art-mark">VOL.26</p>
+            <p className="home-hero-art-title">made by YCR</p>
+            <p className="home-hero-art-note">Data, Design, Discipline</p>
+          </aside>
+        </header>
 
-        <div className="home-proof">
-          <article className="home-proof-card">
-            <h2>输入口径统一</h2>
-            <p>围绕字段语义设计流程，避免硬编码造成不可复现结果。</p>
-          </article>
-          <article className="home-proof-card">
-            <h2>统计规则稳定</h2>
-            <p>筛选、展示与统计基准分离，交互变化不影响业务口径。</p>
-          </article>
-          <article className="home-proof-card">
-            <h2>变更可审计</h2>
-            <p>默认值与行为变更有文档可查，适配长期协作与复盘。</p>
-          </article>
-        </div>
-
-        <div className="home-flow">
-          <article className="home-flow-step">
-            <p className="home-flow-index">01</p>
-            <h3>导入数据</h3>
-            <p>从 Excel/CSV 读取球员数据，建立可追溯输入基线。</p>
-          </article>
-          <article className="home-flow-step">
-            <p className="home-flow-index">02</p>
-            <h3>选择指标</h3>
-            <p>在统一映射和分组规则下，选择要展示与对比的核心指标。</p>
-          </article>
-          <article className="home-flow-step">
-            <p className="home-flow-index">03</p>
-            <h3>生成并导出</h3>
-            <p>一键生成图表并导出结果，确保展示值可回溯到源字段。</p>
-          </article>
-        </div>
+        <section className="home-feature-hub-wrap">
+          <div className="home-feature-head">
+            <p className="home-kicker">Features</p>
+            <h2>全部功能入口</h2>
+          </div>
+          <div className="home-feature-hub">
+            {featureCards.map((card) => (
+              <article key={card.key} className={`home-feature-card${card.clickable ? "" : " is-disabled"}`}>
+                <p className="home-feature-meta">{card.group}</p>
+                <h3>{card.title}</h3>
+                {card.clickable ? (
+                  <button type="button" onClick={() => onNavigate(card.targetKey)}>
+                    进入
+                  </button>
+                ) : (
+                  <span className="home-feature-disabled-tag">仅展示</span>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+        <div className="home-bottom-pad" aria-hidden="true" />
       </div>
     </section>
   );

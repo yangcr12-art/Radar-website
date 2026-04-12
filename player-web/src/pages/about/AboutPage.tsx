@@ -4,38 +4,51 @@ function AboutPage() {
   return (
     <section className="info-page about-page">
       <div className="info-card about-shell">
-        <div className="about-head">
+        <header className="about-editorial-head">
           <p className="about-kicker">About</p>
-          <h1>规则先行，面向长期协作</h1>
-          <p>项目聚焦模板化出图与 Web 交互分析，核心目标是稳定口径、可追溯与可持续迭代。</p>
-        </div>
+          <h1>规则先行，长期协作</h1>
+          <p>聚焦模板化出图与 Web 分析，让数据表达既准确又有节奏。</p>
+        </header>
 
-        <div className="about-grid">
-          <article className="about-card">
-            <h2>项目定位</h2>
-            <p>服务于足球数据分析工作流，支持 CSV/Excel 输入、图表生成与导出，不扩展为数据抓取平台。</p>
-          </article>
-          <article className="about-card">
-            <h2>字段与口径</h2>
-            <p>标准输入字段为 metric/value/group/order。展示值必须可追溯到原始字段，不做不可追溯改写。</p>
-          </article>
-          <article className="about-card">
-            <h2>协作原则</h2>
-            <p>默认值、语义和行为变化都需要文档同步，确保团队在同一事实源上迭代。</p>
-          </article>
-          <article className="about-card">
-            <h2>版本信息</h2>
-            <p>当前构建：26.3.1</p>
-            <p>感谢大飞提供技术支持。</p>
-          </article>
-          <article className="about-card about-roadmap-card">
-            <h2>版本路线</h2>
-            <ul className="about-roadmap-list">
-              <li>V3.3：模板化出图与 Web 交互能力整合</li>
-              <li>下一步：比赛数据链路与映射维护体验优化</li>
-              <li>持续项：默认值、回退策略与文档一致性治理</li>
-            </ul>
-          </article>
+        <div className="about-columns">
+          <div className="about-core-cards">
+            <article className="about-card">
+              <h2>项目定位</h2>
+              <p>服务足球数据分析，不扩展为抓取平台。</p>
+            </article>
+            <article className="about-card">
+              <h2>字段口径</h2>
+              <p>展示值可追溯到源字段，不做静默改写。</p>
+            </article>
+            <article className="about-card">
+              <h2>协作原则</h2>
+              <p>行为变更先落文档，再进入团队流程。</p>
+            </article>
+          </div>
+          <aside className="about-side-panel">
+            <article className="about-card about-version-panel">
+              <h2>版本信息</h2>
+              <p>当前构建：26.3.1</p>
+              <p>技术支持：大飞</p>
+            </article>
+            <article className="about-card about-roadmap-card">
+              <h2>版本路线</h2>
+              <ul className="about-timeline">
+                <li>
+                  <span>V3.3</span>
+                  <p>模板化出图与 Web 交互整合。</p>
+                </li>
+                <li>
+                  <span>Next</span>
+                  <p>比赛链路与映射维护体验优化。</p>
+                </li>
+                <li>
+                  <span>Ongoing</span>
+                  <p>默认值与文档一致性治理。</p>
+                </li>
+              </ul>
+            </article>
+          </aside>
         </div>
       </div>
     </section>
