@@ -193,6 +193,17 @@ function getTeamLogoSrc(teamName: string, mapping: Map<string, any>) {
   return String(mapping.get(key)?.logoDataUrl || "").trim();
 }
 
+function resolveTeamRadarColors(homeTeamName: string, awayTeamName: string, mapping: Map<string, any>) {
+  const homeKey = normalizeTeamName(homeTeamName).toLowerCase();
+  const awayKey = normalizeTeamName(awayTeamName).toLowerCase();
+  const mappedHomeColor = normalizeHexColor(mapping.get(homeKey)?.color || "");
+  const mappedAwayColor = normalizeHexColor(mapping.get(awayKey)?.color || "");
+  return {
+    homeColor: mappedHomeColor || DEFAULT_TEAM_RADAR_CONFIG.homeColor,
+    awayColor: mappedAwayColor || DEFAULT_TEAM_RADAR_CONFIG.awayColor
+  };
+}
+
 type FitnessAnalysisPageProps = {
   view?: "team" | "player" | "per90";
 };
@@ -589,15 +600,15 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
     const current = teamRadarConfigByDataset[ds];
     if (current && typeof current === "object") return;
     const inheritedSubtitle = Object.values(teamRadarConfigByDataset || {}).find((item: any) => String(item?.subtitle || "").trim()) as any;
-    const mappedHomeColor = normalizeHexColor(teamMapping.get(normalizeTeamName(String(homeTeam.team || "")).toLowerCase())?.color || "");
-    const mappedAwayColor = normalizeHexColor(teamMapping.get(normalizeTeamName(String(awayTeam.team || "")).toLowerCase())?.color || "");
+    const latestTeamMapping = getTeamMappingRowsByName();
+    const resolvedColors = resolveTeamRadarColors(String(homeTeam.team || ""), String(awayTeam.team || ""), latestTeamMapping);
     setTeamRadarConfigByDataset((prev: any) => ({
       ...prev,
       [ds]: {
         ...DEFAULT_TEAM_RADAR_CONFIG,
         subtitle: String(inheritedSubtitle?.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle),
-        homeColor: mappedHomeColor || DEFAULT_TEAM_RADAR_CONFIG.homeColor,
-        awayColor: mappedAwayColor || DEFAULT_TEAM_RADAR_CONFIG.awayColor
+        homeColor: resolvedColors.homeColor,
+        awayColor: resolvedColors.awayColor
       }
     }));
   }, [selectedDatasetId, homeTeam, awayTeam, teamRadarConfigByDataset, teamMapping]);
@@ -957,6 +968,23 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
       const nextDatasetId = await loadDatasets(String(res.datasetId || ""));
       const detailRes = await fetchFitnessDataset(nextDatasetId);
       setDatasetDoc(detailRes.data || null);
+
+      const nextTeams = Array.isArray(detailRes?.data?.teamSheet?.teams) ? detailRes.data.teamSheet.teams.slice(0, 2) : [];
+      const nextHomeTeam = nextTeams[0] || null;
+      const nextAwayTeam = nextTeams[1] || null;
+      if (nextHomeTeam && nextAwayTeam) {
+        const latestTeamMapping = getTeamMappingRowsByName();
+        const resolvedColors = resolveTeamRadarColors(String(nextHomeTeam.team || ""), String(nextAwayTeam.team || ""), latestTeamMapping);
+        setTeamRadarConfigByDataset((prev: any) => ({
+          ...prev,
+          [nextDatasetId]: {
+            ...(prev[nextDatasetId] && typeof prev[nextDatasetId] === "object" ? prev[nextDatasetId] : DEFAULT_TEAM_RADAR_CONFIG),
+            homeColor: resolvedColors.homeColor,
+            awayColor: resolvedColors.awayColor
+          }
+        }));
+      }
+
       writeLocalStore(STORAGE_KEYS.fitnessSharedDatasetId, nextDatasetId);
       window.dispatchEvent(new Event("fitness-dataset-updated"));
 

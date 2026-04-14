@@ -1356,7 +1356,7 @@ function App() {
     const reader = new FileReader();
     reader.onload = () => {
       const src = typeof reader.result === "string" ? reader.result : "";
-      setCornerImage((prev) => ({ ...prev, src }));
+      setCornerImage({ ...DEFAULT_CORNER_IMAGE, src });
       setMessage("左上角图片已更新。");
       setError("");
     };

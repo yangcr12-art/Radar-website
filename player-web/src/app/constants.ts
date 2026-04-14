@@ -246,8 +246,8 @@ export const DEFAULT_CENTER_IMAGE = {
 
 export const DEFAULT_CORNER_IMAGE = {
   src: "",
-  size: 130,
-  x: 60,
+  size: 200,
+  x: 0,
   y: 120
 };
 
