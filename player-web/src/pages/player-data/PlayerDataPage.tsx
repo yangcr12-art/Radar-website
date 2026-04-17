@@ -24,8 +24,14 @@ function PlayerDataPage(props) {
     playerDataError,
     selectedPlayerName,
     selectedMetricColumns,
+    playerMetricPresetOptions,
+    selectedPlayerMetricPresetId,
     handleSelectAllMetricColumns,
     handleClearMetricColumns,
+    handleSavePlayerMetricPreset,
+    handleRenamePlayerMetricPreset,
+    handleDeletePlayerMetricPreset,
+    applyPlayerMetricPreset,
     handleImportSelectedMetricsToRadar,
     playerDataLoading,
     playerDataMetaNumericColumns,
@@ -99,6 +105,32 @@ function PlayerDataPage(props) {
           <div className="player-export-section player-export-inline">
             <p className="meta-title">在下方同一张表里勾选指标并导出到雷达图生成器</p>
             <p>{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
+            <div className="player-metric-preset-row">
+              <label>指标预设</label>
+              <select
+                value={selectedPlayerMetricPresetId}
+                onChange={(e) => applyPlayerMetricPreset(e.target.value)}
+                disabled={!selectedDatasetId || playerMetricPresetOptions.length === 0}
+              >
+                <option value="">{playerMetricPresetOptions.length === 0 ? "暂无已保存预设" : "不使用预设"}</option>
+                {playerMetricPresetOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {`${item.name}${item.columns?.length ? ` (${item.columns.length})` : ""}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="btn-row">
+              <button onClick={handleSavePlayerMetricPreset} disabled={!selectedDatasetId || selectedMetricColumns.length === 0}>
+                保存为预设
+              </button>
+              <button onClick={handleRenamePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
+                预设改名
+              </button>
+              <button onClick={handleDeletePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
+                删除预设
+              </button>
+            </div>
             <div className="btn-row">
               <button onClick={handleSelectAllMetricColumns} disabled={!selectedDatasetId || playerDataMetaNumericColumns.length === 0}>
                 全选指标

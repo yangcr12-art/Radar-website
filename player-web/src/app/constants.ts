@@ -86,6 +86,8 @@ export const STORAGE_KEYS = {
   selectedPresetId: "player_web_selected_preset_id_v1",
   localMigrated: "player_web_local_migrated_to_backend_v1",
   metricSelectionsByDataset: "player_web_metric_selection_by_dataset_v1",
+  playerMetricPresetsByDataset: "player_web_player_metric_presets_by_dataset_v1",
+  selectedPlayerMetricPresetByDataset: "player_web_selected_player_metric_preset_by_dataset_v1",
   playerSearchByDataset: "player_web_player_search_by_dataset_v1",
   selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1",
   scatterConfigByDataset: "player_web_scatter_config_by_dataset_v1",

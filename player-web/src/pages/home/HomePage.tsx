@@ -13,7 +13,6 @@ function HomePage({ onNavigate }: { onNavigate: (pageKey: string) => void }) {
           {
             key: item.key,
             title: item.label,
-            group: "一级菜单",
             targetKey,
             clickable
           }
@@ -46,7 +45,6 @@ function HomePage({ onNavigate }: { onNavigate: (pageKey: string) => void }) {
           <div className="home-feature-hub">
             {featureCards.map((card) => (
               <article key={card.key} className={`home-feature-card${card.clickable ? "" : " is-disabled"}`}>
-                <p className="home-feature-meta">{card.group}</p>
                 <h3>{card.title}</h3>
                 {card.clickable ? (
                   <button type="button" onClick={() => onNavigate(card.targetKey)}>

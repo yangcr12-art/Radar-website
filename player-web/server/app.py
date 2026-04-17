@@ -1,4 +1,5 @@
 from __future__ import annotations
+from io import BytesIO
 import json
 import os
 from datetime import datetime, timezone
@@ -154,6 +155,9 @@ def _validate_payload(payload: Any) -> tuple[bool, str]:
         return False, "presets must be array"
     if not isinstance(payload["selectedPresetId"], str):
         return False, "selectedPresetId must be string"
+    player_metric_presets = payload.get("playerMetricPresetsByDataset")
+    if player_metric_presets is not None and not isinstance(player_metric_presets, dict):
+        return False, "playerMetricPresetsByDataset must be object"
     return True, ""
 
 
@@ -189,6 +193,25 @@ def _build_doc(payload: dict[str, Any]) -> dict[str, Any]:
         "updatedAt": _iso_now(),
         "data": payload,
     }
+
+
+def _delete_state_player_metric_presets(dataset_id: str) -> None:
+    if not dataset_id or not STATE_PATH.exists():
+        return
+    doc = _load_doc()
+    if not isinstance(doc, dict):
+        return
+    data = doc.get("data")
+    if not isinstance(data, dict):
+        return
+    preset_map = data.get("playerMetricPresetsByDataset")
+    if not isinstance(preset_map, dict) or dataset_id not in preset_map:
+        return
+    next_map = dict(preset_map)
+    del next_map[dataset_id]
+    data["playerMetricPresetsByDataset"] = next_map
+    doc["updatedAt"] = _iso_now()
+    _atomic_write_doc(doc)
 
 
 def _to_float(value: Any) -> float | None:
@@ -375,7 +398,10 @@ def import_player_data_excel():
         return jsonify({"ok": False, "error": "only .xlsx is supported"}), 400
 
     try:
-        wb = load_workbook(file, data_only=True, read_only=True)
+        payload = file.read()
+        if not payload:
+            return jsonify({"ok": False, "error": "empty excel file"}), 400
+        wb = load_workbook(BytesIO(payload), data_only=True, read_only=True)
     except Exception as exc:
         return jsonify({"ok": False, "error": f"invalid excel file: {exc}"}), 400
 
@@ -394,13 +420,21 @@ def import_player_data_excel():
 
     parsed_players: list[dict[str, Any]] = []
     used_ids: dict[str, int] = {}
-    candidate_numeric_cols = [h for h in headers if h and h.lower() != "player"]
+    seen_numeric_cols: set[str] = set()
+    candidate_numeric_cols = []
+    for h in headers:
+        if not h or h.lower() == "player" or h in seen_numeric_cols:
+            continue
+        seen_numeric_cols.add(h)
+        candidate_numeric_cols.append(h)
 
     for row_idx, excel_row in enumerate(rows[1:], start=1):
         cells = list(excel_row) + [None] * max(0, len(headers) - len(excel_row))
         raw = {}
         for i, col in enumerate(headers):
-            raw[col] = _to_cell_value(cells[i] if i < len(cells) else None)
+            value = _to_cell_value(cells[i] if i < len(cells) else None)
+            if col not in raw or (raw[col] == "" and value != ""):
+                raw[col] = value
 
         player_name = str(raw.get(headers[player_idx], "")).strip()
         if not player_name:
@@ -633,6 +667,7 @@ def delete_player_dataset(dataset_id: str):
             index["selectedDatasetId"] = remaining[0].get("id") if remaining else ""
         index["updatedAt"] = _iso_now()
         _atomic_write_player_index(index)
+        _delete_state_player_metric_presets(dataset_id)
         return jsonify({"ok": True, "deletedDatasetId": dataset_id, "selectedDatasetId": index.get("selectedDatasetId", ""), "datasets": remaining})
     except Exception as exc:
         return jsonify({"ok": False, "error": f"delete failed: {exc}"}), 500

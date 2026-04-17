@@ -183,6 +183,23 @@ body {
   margin: 0 0 10px;
 }
 
+.player-metric-preset-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.player-metric-preset-row label {
+  font-size: 13px;
+  color: #5a4f42;
+}
+
+.player-metric-preset-row select {
+  width: 100%;
+  min-width: 0;
+}
+
 .metric-checklist {
   border: 1px solid var(--line);
   background: #fff;
@@ -241,5 +258,4 @@ body {
 .scatter-page .scatter-card {
   margin: 0 auto;
 }
-
 

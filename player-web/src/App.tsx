@@ -264,6 +264,52 @@ function writeStorageWithResult(key, value) {
 function writeStorage(key, value) {
   return writeStorageWithResult(key, value).ok;
 }
+
+function normalizePlayerMetricPreset(item) {
+  if (!item || typeof item !== "object") return null;
+  const id = typeof item.id === "string" ? item.id.trim() : "";
+  const name = typeof item.name === "string" ? item.name.trim() : "";
+  if (!id || !name) return null;
+  const seen = new Set();
+  const columns = (Array.isArray(item.columns) ? item.columns : [])
+    .map((column) => String(column || "").trim())
+    .filter((column) => {
+      if (!column || seen.has(column)) return false;
+      seen.add(column);
+      return true;
+    });
+  return {
+    id,
+    name,
+    columns,
+    createdAt: typeof item.createdAt === "string" ? item.createdAt : "",
+    updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : ""
+  };
+}
+
+function normalizePlayerMetricPresetsByDataset(input) {
+  if (!input || typeof input !== "object") return {};
+  return Object.entries(input).reduce((acc: Record<string, any[]>, [datasetId, list]) => {
+    const key = String(datasetId || "").trim();
+    if (!key) return acc;
+    const normalized = Array.isArray(list) ? list.map(normalizePlayerMetricPreset).filter(Boolean) : [];
+    acc[key] = normalized.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    return acc;
+  }, {});
+}
+
+function normalizeSelectionMap(input) {
+  if (!input || typeof input !== "object") return {};
+  return Object.entries(input).reduce((acc: Record<string, string>, [datasetId, value]) => {
+    const key = String(datasetId || "").trim();
+    const presetId = String(value || "").trim();
+    if (key && presetId) {
+      acc[key] = presetId;
+    }
+    return acc;
+  }, {});
+}
+
 function normalizePresets(input) {
   if (!Array.isArray(input)) return [];
   return input
@@ -331,7 +377,8 @@ function normalizePersistedState(input) {
     return {
       draft: normalizeSnapshot(null),
       presets: [],
-      selectedPresetId: "draft"
+      selectedPresetId: "draft",
+      playerMetricPresetsByDataset: {}
     };
   }
 
@@ -339,8 +386,9 @@ function normalizePersistedState(input) {
   const presets = normalizePresets(input.presets);
   const selected = typeof input.selectedPresetId === "string" ? input.selectedPresetId : "draft";
   const selectedPresetId = selected === "draft" || presets.some((item) => item.id === selected) ? selected : "draft";
+  const playerMetricPresetsByDataset = normalizePlayerMetricPresetsByDataset(input.playerMetricPresetsByDataset);
 
-  return { draft, presets, selectedPresetId };
+  return { draft, presets, selectedPresetId, playerMetricPresetsByDataset };
 }
 
 function formatPlayerDataColumnLabel(column) {
@@ -453,6 +501,14 @@ function App() {
     const raw = readStorage(STORAGE_KEYS.metricSelectionsByDataset, {});
     return raw && typeof raw === "object" ? raw : {};
   });
+  const [playerMetricPresetsByDataset, setPlayerMetricPresetsByDataset] = useState(() => {
+    const raw = readStorage(STORAGE_KEYS.playerMetricPresetsByDataset, {});
+    return normalizePlayerMetricPresetsByDataset(raw);
+  });
+  const [selectedPlayerMetricPresetByDataset, setSelectedPlayerMetricPresetByDataset] = useState(() => {
+    const raw = readStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, {});
+    return normalizeSelectionMap(raw);
+  });
   const [playerSearchByDataset, setPlayerSearchByDataset] = useState(() => {
     const raw = readStorage(STORAGE_KEYS.playerSearchByDataset, {});
     return raw && typeof raw === "object" ? raw : {};
@@ -491,6 +547,19 @@ function App() {
     const selected = Array.isArray(metricSelectionsByDataset[selectedDatasetId]) ? metricSelectionsByDataset[selectedDatasetId] : [];
     return selected.filter((col) => numericColumns.includes(col));
   }, [selectedDatasetId, metricSelectionsByDataset, playerDataMeta.numericColumns]);
+
+  const playerMetricPresetOptions = useMemo(() => {
+    if (!selectedDatasetId) return [];
+    const items = playerMetricPresetsByDataset[selectedDatasetId];
+    return Array.isArray(items) ? items : [];
+  }, [selectedDatasetId, playerMetricPresetsByDataset]);
+
+  const selectedPlayerMetricPresetId = useMemo(() => {
+    if (!selectedDatasetId) return "";
+    const presetId = String(selectedPlayerMetricPresetByDataset[selectedDatasetId] || "").trim();
+    if (!presetId) return "";
+    return playerMetricPresetOptions.some((item) => item.id === presetId) ? presetId : "";
+  }, [selectedDatasetId, selectedPlayerMetricPresetByDataset, playerMetricPresetOptions]);
 
   const selectedPlayerName = useMemo(() => {
     if (selectedPlayerDetail?.player) return String(selectedPlayerDetail.player);
@@ -778,11 +847,37 @@ function App() {
   const handleDeleteCurrentDataset = async () => {
     if (!selectedDatasetId) return;
     if (!window.confirm("确认删除当前导入数据集吗？删除后不可恢复。")) return;
+    const deletingDatasetId = selectedDatasetId;
     setPlayerDataError("");
     setPlayerDataMessage("");
     try {
       const res = await deletePlayerDataset(selectedDatasetId);
       const next = String(res.selectedDatasetId || "");
+      setMetricSelectionsByDataset((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[deletingDatasetId];
+        return nextMap;
+      });
+      setPlayerMetricPresetsByDataset((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[deletingDatasetId];
+        return nextMap;
+      });
+      setSelectedPlayerMetricPresetByDataset((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[deletingDatasetId];
+        return nextMap;
+      });
+      setPlayerSearchByDataset((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[deletingDatasetId];
+        return nextMap;
+      });
+      setSelectedPlayerByDataset((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[deletingDatasetId];
+        return nextMap;
+      });
       await loadDatasets(next);
       await loadPlayerList(next, "");
       setPlayerDataMessage("已删除当前数据集。");
@@ -795,6 +890,11 @@ function App() {
     if (!selectedDatasetId) return;
     const numericColumns = Array.isArray(playerDataMeta.numericColumns) ? playerDataMeta.numericColumns : [];
     if (!numericColumns.includes(column)) return;
+    setSelectedPlayerMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
     setMetricSelectionsByDataset((prev) => {
       const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
       const next = current.includes(column) ? current.filter((item) => item !== column) : [...current, column];
@@ -805,12 +905,165 @@ function App() {
   const handleSelectAllMetricColumns = () => {
     if (!selectedDatasetId) return;
     const numericColumns = Array.isArray(playerDataMeta.numericColumns) ? playerDataMeta.numericColumns : [];
+    setSelectedPlayerMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
     setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: numericColumns }));
   };
 
   const handleClearMetricColumns = () => {
     if (!selectedDatasetId) return;
+    setSelectedPlayerMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
     setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: [] }));
+  };
+
+  const applyPlayerMetricPreset = (presetId) => {
+    if (!selectedDatasetId) return;
+    setSelectedPlayerMetricPresetByDataset((prev) => {
+      const next = { ...prev };
+      if (presetId) {
+        next[selectedDatasetId] = presetId;
+      } else {
+        delete next[selectedDatasetId];
+      }
+      return next;
+    });
+
+    if (!presetId) {
+      setPlayerDataMessage("已取消指标预设选择。");
+      setPlayerDataError("");
+      return;
+    }
+
+    const found = playerMetricPresetOptions.find((item) => item.id === presetId);
+    if (!found) {
+      setPlayerDataError("未找到该指标预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+
+    const numericColumns = Array.isArray(playerDataMeta.numericColumns) ? playerDataMeta.numericColumns : [];
+    const validColumns = found.columns.filter((column) => numericColumns.includes(column));
+    if (validColumns.length === 0) {
+      setPlayerDataError("该预设在当前数据集没有可用指标，未覆盖当前勾选。");
+      setPlayerDataMessage("");
+      return;
+    }
+
+    setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: validColumns }));
+    const skippedCount = found.columns.length - validColumns.length;
+    setPlayerDataMessage(skippedCount > 0 ? `已应用预设：${found.name}（忽略 ${skippedCount} 个失效指标）` : `已应用预设：${found.name}`);
+    setPlayerDataError("");
+  };
+
+  const handleSavePlayerMetricPreset = () => {
+    if (!selectedDatasetId) {
+      setPlayerDataError("请先选择数据集。");
+      setPlayerDataMessage("");
+      return;
+    }
+    if (selectedMetricColumns.length === 0) {
+      setPlayerDataError("请先勾选至少一个指标后再保存预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+    const input = window.prompt("请输入指标预设名称：", "");
+    if (input === null) return;
+    const name = input.trim();
+    if (!name) {
+      setPlayerDataError("预设名称不能为空。");
+      setPlayerDataMessage("");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const newPreset = {
+      id: `player_metric_preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      columns: selectedMetricColumns,
+      createdAt: now,
+      updatedAt: now
+    };
+    setPlayerMetricPresetsByDataset((prev) => {
+      const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
+      return { ...prev, [selectedDatasetId]: [newPreset, ...current] };
+    });
+    setSelectedPlayerMetricPresetByDataset((prev) => ({ ...prev, [selectedDatasetId]: newPreset.id }));
+    setPlayerDataMessage(`已保存指标预设：${name}`);
+    setPlayerDataError("");
+  };
+
+  const handleRenamePlayerMetricPreset = () => {
+    if (!selectedDatasetId || !selectedPlayerMetricPresetId) {
+      setPlayerDataError("请先选择一个指标预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+    const found = playerMetricPresetOptions.find((item) => item.id === selectedPlayerMetricPresetId);
+    if (!found) {
+      setPlayerDataError("未找到该指标预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+    const input = window.prompt("请输入新的预设名称：", found.name);
+    if (input === null) return;
+    const nextName = input.trim();
+    if (!nextName) {
+      setPlayerDataError("预设名称不能为空。");
+      setPlayerDataMessage("");
+      return;
+    }
+
+    setPlayerMetricPresetsByDataset((prev) => {
+      const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
+      return {
+        ...prev,
+        [selectedDatasetId]: current
+          .map((item) => (item.id === found.id ? { ...item, name: nextName, updatedAt: new Date().toISOString() } : item))
+          .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
+      };
+    });
+    setPlayerDataMessage(`已重命名指标预设：${nextName}`);
+    setPlayerDataError("");
+  };
+
+  const handleDeletePlayerMetricPreset = () => {
+    if (!selectedDatasetId || !selectedPlayerMetricPresetId) {
+      setPlayerDataError("请先选择一个指标预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+    const found = playerMetricPresetOptions.find((item) => item.id === selectedPlayerMetricPresetId);
+    if (!found) {
+      setPlayerDataError("未找到该指标预设。");
+      setPlayerDataMessage("");
+      return;
+    }
+    if (!window.confirm(`确认删除指标预设「${found.name}」吗？此操作不可撤销。`)) return;
+
+    setPlayerMetricPresetsByDataset((prev) => {
+      const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
+      const nextList = current.filter((item) => item.id !== found.id);
+      if (nextList.length === 0) {
+        const nextMap = { ...prev };
+        delete nextMap[selectedDatasetId];
+        return nextMap;
+      }
+      return { ...prev, [selectedDatasetId]: nextList };
+    });
+    setSelectedPlayerMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
+    setPlayerDataMessage(`已删除指标预设：${found.name}`);
+    setPlayerDataError("");
   };
 
   const handleImportSelectedMetricsToRadar = () => {
@@ -955,10 +1208,16 @@ function App() {
     setCornerImage(normalized.cornerImage);
   };
 
-  const getPersistedState = (snapshot = getSnapshot(), presetList = presets, selectedId = selectedPresetId) => ({
+  const getPersistedState = (
+    snapshot = getSnapshot(),
+    presetList = presets,
+    selectedId = selectedPresetId,
+    playerMetricPresetMap = playerMetricPresetsByDataset
+  ) => ({
     draft: snapshot,
     presets: presetList,
-    selectedPresetId: selectedId
+    selectedPresetId: selectedId,
+    playerMetricPresetsByDataset: playerMetricPresetMap
   });
 
   const applyPersistedState = (persisted) => {
@@ -971,6 +1230,7 @@ function App() {
     }
     setPresets(normalized.presets);
     setSelectedPresetId(normalized.selectedPresetId);
+    setPlayerMetricPresetsByDataset(normalized.playerMetricPresetsByDataset);
   };
 
   useEffect(() => {
@@ -979,15 +1239,19 @@ function App() {
       const localRawDraft = readStorage(STORAGE_KEYS.draft, null);
       const localRawPresets = readStorage(STORAGE_KEYS.presets, []);
       const localRawSelected = readStorage(STORAGE_KEYS.selectedPresetId, "draft");
+      const localRawPlayerMetricPresets = readStorage(STORAGE_KEYS.playerMetricPresetsByDataset, {});
       const localPersisted = normalizePersistedState({
         draft: localRawDraft,
         presets: localRawPresets,
-        selectedPresetId: localRawSelected
+        selectedPresetId: localRawSelected,
+        playerMetricPresetsByDataset: localRawPlayerMetricPresets
       });
       const hasLocalSaved =
         Boolean(localRawDraft) ||
         (Array.isArray(localRawPresets) && localRawPresets.length > 0) ||
+        Object.keys(normalizePlayerMetricPresetsByDataset(localRawPlayerMetricPresets)).length > 0 ||
         localRawSelected !== "draft";
+      const localMetricPresetSelection = normalizeSelectionMap(readStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, {}));
 
       try {
         const remote = await fetchState();
@@ -995,6 +1259,7 @@ function App() {
 
         if (remote?.data) {
           applyPersistedState(remote.data);
+          setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else if (hasLocalSaved && !readStorage(STORAGE_KEYS.localMigrated, false)) {
           const migrated = await migrateFromLocal(localPersisted);
@@ -1012,14 +1277,17 @@ function App() {
           } else {
             applyPersistedState(localPersisted);
           }
+          setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else {
           applyPersistedState(localPersisted);
+          setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         }
       } catch {
         if (cancelled) return;
         applyPersistedState(localPersisted);
+        setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
         setStorageStatus("offline");
       } finally {
         if (cancelled) return;
@@ -1063,6 +1331,16 @@ function App() {
     if (!isHydrated) return;
     writeStorage(STORAGE_KEYS.metricSelectionsByDataset, metricSelectionsByDataset);
   }, [metricSelectionsByDataset, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    writeStorage(STORAGE_KEYS.playerMetricPresetsByDataset, playerMetricPresetsByDataset);
+  }, [playerMetricPresetsByDataset, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    writeStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, selectedPlayerMetricPresetByDataset);
+  }, [selectedPlayerMetricPresetByDataset, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1113,7 +1391,7 @@ function App() {
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, isHydrated]);
+  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, playerMetricPresetsByDataset, isHydrated]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1961,8 +2239,14 @@ function App() {
             playerDataError,
             selectedPlayerName,
             selectedMetricColumns,
+            playerMetricPresetOptions,
+            selectedPlayerMetricPresetId,
             handleSelectAllMetricColumns,
             handleClearMetricColumns,
+            handleSavePlayerMetricPreset,
+            handleRenamePlayerMetricPreset,
+            handleDeletePlayerMetricPreset,
+            applyPlayerMetricPreset,
             handleImportSelectedMetricsToRadar,
             playerDataLoading,
             playerDataMetaNumericColumns: playerDataMeta.numericColumns || [],
