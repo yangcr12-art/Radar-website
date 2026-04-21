@@ -103,16 +103,16 @@ function PlayerDataPage(props) {
         <div className="player-data-right">
           <p className="selected-player-title">{`当前球员：${selectedPlayerName || "-"}`}</p>
           <div className="player-export-section player-export-inline">
-            <p className="meta-title">在下方同一张表里勾选指标并导出到雷达图生成器</p>
+            <p className="meta-title">在下方同一张表里勾选指标并导出到雷达图生成器，已保存预设可跨数据集复用</p>
             <p>{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
             <div className="player-metric-preset-row">
               <label>指标预设</label>
               <select
                 value={selectedPlayerMetricPresetId}
                 onChange={(e) => applyPlayerMetricPreset(e.target.value)}
-                disabled={!selectedDatasetId || playerMetricPresetOptions.length === 0}
+                disabled={!selectedDatasetId}
               >
-                <option value="">{playerMetricPresetOptions.length === 0 ? "暂无已保存预设" : "不使用预设"}</option>
+                <option value="">{playerMetricPresetOptions.length === 0 ? "暂无可复用预设" : "不使用预设"}</option>
                 {playerMetricPresetOptions.map((item) => (
                   <option key={item.id} value={item.id}>
                     {`${item.name}${item.columns?.length ? ` (${item.columns.length})` : ""}`}
@@ -121,7 +121,7 @@ function PlayerDataPage(props) {
               </select>
             </div>
             <div className="btn-row">
-              <button onClick={handleSavePlayerMetricPreset} disabled={!selectedDatasetId || selectedMetricColumns.length === 0}>
+              <button onClick={handleSavePlayerMetricPreset} disabled={selectedMetricColumns.length === 0}>
                 保存为预设
               </button>
               <button onClick={handleRenamePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>

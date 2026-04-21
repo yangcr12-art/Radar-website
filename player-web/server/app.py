@@ -155,8 +155,11 @@ def _validate_payload(payload: Any) -> tuple[bool, str]:
         return False, "presets must be array"
     if not isinstance(payload["selectedPresetId"], str):
         return False, "selectedPresetId must be string"
-    player_metric_presets = payload.get("playerMetricPresetsByDataset")
-    if player_metric_presets is not None and not isinstance(player_metric_presets, dict):
+    player_metric_presets = payload.get("playerMetricPresets")
+    legacy_player_metric_presets = payload.get("playerMetricPresetsByDataset")
+    if player_metric_presets is not None and not isinstance(player_metric_presets, list):
+        return False, "playerMetricPresets must be array"
+    if legacy_player_metric_presets is not None and not isinstance(legacy_player_metric_presets, dict):
         return False, "playerMetricPresetsByDataset must be object"
     return True, ""
 
@@ -195,23 +198,74 @@ def _build_doc(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _delete_state_player_metric_presets(dataset_id: str) -> None:
-    if not dataset_id or not STATE_PATH.exists():
-        return
-    doc = _load_doc()
-    if not isinstance(doc, dict):
-        return
-    data = doc.get("data")
-    if not isinstance(data, dict):
-        return
-    preset_map = data.get("playerMetricPresetsByDataset")
-    if not isinstance(preset_map, dict) or dataset_id not in preset_map:
-        return
-    next_map = dict(preset_map)
-    del next_map[dataset_id]
-    data["playerMetricPresetsByDataset"] = next_map
-    doc["updatedAt"] = _iso_now()
-    _atomic_write_doc(doc)
+def _normalize_player_metric_preset(item: Any) -> dict[str, Any] | None:
+    if not isinstance(item, dict):
+        return None
+    preset_id = str(item.get("id") or "").strip()
+    name = str(item.get("name") or "").strip()
+    columns_raw = item.get("columns")
+    if not preset_id or not name or not isinstance(columns_raw, list):
+        return None
+    columns = [str(col).strip() for col in columns_raw if str(col).strip()]
+    if not columns:
+        return None
+    return {
+        "id": preset_id,
+        "name": name,
+        "columns": columns,
+        "createdAt": str(item.get("createdAt") or ""),
+        "updatedAt": str(item.get("updatedAt") or ""),
+    }
+
+
+def _normalize_player_metric_presets(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        seen_ids: set[str] = set()
+        normalized: list[dict[str, Any]] = []
+        for item in payload:
+            preset = _normalize_player_metric_preset(item)
+            if preset is None:
+                continue
+            preset_id = preset["id"]
+            while preset_id in seen_ids:
+                preset_id = f"{preset['id']}_{uuid4().hex[:6]}"
+            seen_ids.add(preset_id)
+            if preset_id != preset["id"]:
+                preset = {**preset, "id": preset_id}
+            normalized.append(preset)
+        normalized.sort(key=lambda item: str(item.get("updatedAt") or ""), reverse=True)
+        return normalized
+
+    if not isinstance(payload, dict):
+        return []
+
+    seen_ids: set[str] = set()
+    normalized = []
+    for items in payload.values():
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            preset = _normalize_player_metric_preset(item)
+            if preset is None:
+                continue
+            preset_id = preset["id"]
+            while preset_id in seen_ids:
+                preset_id = f"{preset['id']}_{uuid4().hex[:6]}"
+            seen_ids.add(preset_id)
+            if preset_id != preset["id"]:
+                preset = {**preset, "id": preset_id}
+            normalized.append(preset)
+    normalized.sort(key=lambda item: str(item.get("updatedAt") or ""), reverse=True)
+    return normalized
+
+
+def _normalize_state_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(payload)
+    normalized["playerMetricPresets"] = _normalize_player_metric_presets(
+        payload.get("playerMetricPresets", payload.get("playerMetricPresetsByDataset"))
+    )
+    normalized.pop("playerMetricPresetsByDataset", None)
+    return normalized
 
 
 def _to_float(value: Any) -> float | None:
@@ -343,12 +397,13 @@ def get_state():
         doc = _load_doc()
         if doc is None:
             return jsonify({"ok": True, "version": VERSION, "updatedAt": None, "data": None})
+        data = doc.get("data")
         return jsonify(
             {
                 "ok": True,
                 "version": int(doc.get("version", VERSION)),
                 "updatedAt": doc.get("updatedAt"),
-                "data": doc.get("data"),
+                "data": _normalize_state_payload(data) if isinstance(data, dict) else data,
             }
         )
     except Exception as exc:
@@ -363,7 +418,7 @@ def put_state():
         return jsonify({"ok": False, "error": message}), 400
 
     try:
-        doc = _build_doc(payload)
+        doc = _build_doc(_normalize_state_payload(payload))
         _atomic_write_doc(doc)
         return jsonify({"ok": True, "updatedAt": doc["updatedAt"]})
     except Exception as exc:
@@ -381,7 +436,7 @@ def migrate_from_local():
         existing = _load_doc()
         if existing and existing.get("data"):
             return jsonify({"ok": True, "migrated": False, "skipped": True})
-        doc = _build_doc(payload)
+        doc = _build_doc(_normalize_state_payload(payload))
         doc["migrationSource"] = "localStorage"
         _atomic_write_doc(doc)
         return jsonify({"ok": True, "migrated": True, "skipped": False, "updatedAt": doc["updatedAt"]})
@@ -667,7 +722,6 @@ def delete_player_dataset(dataset_id: str):
             index["selectedDatasetId"] = remaining[0].get("id") if remaining else ""
         index["updatedAt"] = _iso_now()
         _atomic_write_player_index(index)
-        _delete_state_player_metric_presets(dataset_id)
         return jsonify({"ok": True, "deletedDatasetId": dataset_id, "selectedDatasetId": index.get("selectedDatasetId", ""), "datasets": remaining})
     except Exception as exc:
         return jsonify({"ok": False, "error": f"delete failed: {exc}"}), 500
