@@ -13,6 +13,8 @@
 - `src/utils`：纯函数、映射、存储工具
 - `src/api`：后端 API 客户端
 - `src/app`：跨页面常量与规则（默认值、键名、口径）
+- `src/app/radar`：雷达图生成器专用规则、导出与归一化逻辑
+- `src/components`：跨页面或大页面内部可复用展示组件
 - `src/styles.css`：样式入口（仅导入，不承载大段规则）
 - `src/styles/*.css`：全局基础与通用样式分层
 - `src/home-about.css`、`src/match-pages.css`：页面特化样式
@@ -40,6 +42,8 @@
 - `player-web/server/app.py`：HTTP 入口
 - `player-web/server/server_core/routes/*`：路由编排
 - `player-web/server/server_core/services/*`：业务规则与计算
+- `player-web/server/server_core/services/state_store.py`：状态持久化与归一化
+- `player-web/server/server_core/services/player_dataset_store.py`：球员数据集导入、索引与读取
 
 禁止项：
 
@@ -116,4 +120,4 @@ python3 scripts/audit_architecture.py
 
 ---
 
-_最后更新：2026-03-18_
+_最后更新：2026-04-22_

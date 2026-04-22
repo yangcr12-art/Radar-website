@@ -44,14 +44,14 @@ type OptaTableCardProps = {
 
 function OptaTableCard({ title, columns, rows, footnote, sortColumn, onSort }: OptaTableCardProps) {
   return (
-    <div className="fitness-card">
+    <div className="fitness-card opta-table-card">
       <h2>{title}</h2>
       <div className="player-data-table-wrap fitness-table-wrap opta-table-scroll">
         <table className="player-data-table opta-data-table">
           <thead>
             <tr>
-              {columns.map((column: string) => (
-                <th key={column}>
+              {columns.map((column: string, index: number) => (
+                <th key={column} className={index === 1 ? "opta-player-name-cell" : undefined}>
                   <button type="button" className={`opta-sort-btn${sortColumn === column ? " active" : ""}`} onClick={() => onSort(column)}>
                     {column}
                     {sortColumn === column ? " ↓" : ""}
@@ -63,8 +63,10 @@ function OptaTableCard({ title, columns, rows, footnote, sortColumn, onSort }: O
           <tbody>
             {rows.map((row: any) => (
               <tr key={String(row.id || "")}>
-                {columns.map((column: string) => (
-                  <td key={`${row.id}-${column}`}>{String(row?.raw?.[column] ?? "")}</td>
+                {columns.map((column: string, index: number) => (
+                  <td key={`${row.id}-${column}`} className={index === 1 ? "opta-player-name-cell" : undefined}>
+                    {String(row?.raw?.[column] ?? "")}
+                  </td>
                 ))}
               </tr>
             ))}

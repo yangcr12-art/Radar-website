@@ -1187,7 +1187,6 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
   const chartBackgroundColor = normalizeHexColor(teamRadarConfig.chartBackgroundColor) || "#f8f5ef";
   const playerChartBackgroundColor = normalizeHexColor(playerRadarConfig.chartBackgroundColor) || "#f8f5ef";
   const overlayModeLabel = isPer90View ? "分均体能数据" : "球员体能叠加雷达";
-  const overlaySectionTitle = isPer90View ? "分均体能叠加雷达（Team Overview）" : "球员体能叠加雷达（Team Overview）";
   const overlaySingleMetricTitle = isPer90View ? "单项比较（分均口径）" : "单项比较（Team Overview）";
   const per90Blocked = isPer90View && !per90MinutesColumn;
 
@@ -1273,7 +1272,6 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
           <div className="fitness-left-col">
             {isTeamView ? (
               <div className="fitness-card">
-              <h2>两队体能雷达图（第1个Sheet）</h2>
               <p>{`对阵：${homeTeamDisplayName || "主队"} vs ${awayTeamDisplayName || "客队"}`}</p>
 
               <div className="match-radar-grid-2">
@@ -1384,8 +1382,6 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
             {isOverlayView ? (
               <div className="fitness-card">
-              <h2>{overlaySectionTitle}</h2>
-
               <div className="match-radar-grid-2">
                 <div className="title-row">
                   <label>主标题</label>

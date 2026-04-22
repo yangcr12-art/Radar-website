@@ -96,40 +96,44 @@ function PlayerDataPage(props) {
               ))}
             </select>
           </div>
+          <p className="player-data-side-note">在下方同一张表里勾选指标并导出到雷达图生成器，已保存预设可跨数据集复用</p>
           {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
           {playerDataMessage ? <p className="msg ok">{playerDataMessage}</p> : null}
           {playerDataError ? <p className="msg err">{playerDataError}</p> : null}
         </div>
         <div className="player-data-right">
-          <p className="selected-player-title">{`当前球员：${selectedPlayerName || "-"}`}</p>
           <div className="player-export-section player-export-inline">
-            <p className="meta-title">在下方同一张表里勾选指标并导出到雷达图生成器，已保存预设可跨数据集复用</p>
-            <p>{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
-            <div className="player-metric-preset-row">
-              <label>指标预设</label>
-              <select
-                value={selectedPlayerMetricPresetId}
-                onChange={(e) => applyPlayerMetricPreset(e.target.value)}
-                disabled={!selectedDatasetId}
-              >
-                <option value="">{playerMetricPresetOptions.length === 0 ? "暂无可复用预设" : "不使用预设"}</option>
-                {playerMetricPresetOptions.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {`${item.name}${item.columns?.length ? ` (${item.columns.length})` : ""}`}
-                  </option>
-                ))}
-              </select>
+            <div className="player-export-summary-row">
+              <p className="selected-player-title">{`当前球员：${selectedPlayerName || "-"}`}</p>
+              <p className="player-export-count">{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
             </div>
-            <div className="btn-row">
-              <button onClick={handleSavePlayerMetricPreset} disabled={selectedMetricColumns.length === 0}>
-                保存为预设
-              </button>
-              <button onClick={handleRenamePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
-                预设改名
-              </button>
-              <button onClick={handleDeletePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
-                删除预设
-              </button>
+            <div className="player-metric-preset-actions">
+              <div className="player-metric-preset-row">
+                <label>指标预设</label>
+                <select
+                  value={selectedPlayerMetricPresetId}
+                  onChange={(e) => applyPlayerMetricPreset(e.target.value)}
+                  disabled={!selectedDatasetId}
+                >
+                  <option value="">{playerMetricPresetOptions.length === 0 ? "暂无可复用预设" : "不使用预设"}</option>
+                  {playerMetricPresetOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {`${item.name}${item.columns?.length ? ` (${item.columns.length})` : ""}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="btn-row player-metric-preset-btn-row">
+                <button onClick={handleSavePlayerMetricPreset} disabled={selectedMetricColumns.length === 0}>
+                  保存为预设
+                </button>
+                <button onClick={handleRenamePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
+                  预设改名
+                </button>
+                <button onClick={handleDeletePlayerMetricPreset} disabled={!selectedPlayerMetricPresetId}>
+                  删除预设
+                </button>
+              </div>
             </div>
             <div className="btn-row">
               <button onClick={handleSelectAllMetricColumns} disabled={!selectedDatasetId || playerDataMetaNumericColumns.length === 0}>

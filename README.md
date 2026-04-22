@@ -85,6 +85,13 @@ player/
 └── contributing_ai.md
 ```
 
+当前重构后的关键落点：
+- `player-web/src/App.tsx`：应用壳层与跨页面桥接
+- `player-web/src/app/radar/*`：雷达图生成器专用规则、归一化和本地持久化工具
+- `player-web/src/components/RadarEditorPage.tsx`：雷达图生成器视图层
+- `player-web/server/app.py`：仅保留 Flask 入口、CORS 与蓝图注册
+- `player-web/server/server_core/routes/*` / `services/*`：后端路由编排与数据读写规则
+
 ---
 
 ## 5. 设计与架构原则
@@ -99,6 +106,7 @@ player/
 - 先重排结构，再考虑视觉；不在同一提交混入行为变更
 - 对外接口、字段语义、持久化键名默认保持不变
 - 每次重构必须附带行为不变性清单与验证命令结果
+- 可拆分超大文件，但不得借结构调整修改产品行为或统计口径
 
 详细规则见：`AGENTS.md` 与 `docs/ARCHITECTURE_RULES.md`。
 
@@ -125,4 +133,4 @@ npm run build
 
 ---
 
-_最后更新：2026-03-21_
+_最后更新：2026-04-22_

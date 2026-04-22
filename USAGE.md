@@ -115,6 +115,12 @@ Web 技术事实：
 - 源码统一为 TypeScript（`.ts/.tsx`）
 - 样式入口为 `player-web/src/styles.css`，分层文件位于 `player-web/src/styles/*.css`
 - 不变更现有后端接口路径与 JSON 字段口径
+- 当前结构约定：`App.tsx` 负责应用壳层，雷达图纯逻辑位于 `player-web/src/app/radar/*`，后端入口 `player-web/server/app.py` 仅负责注册蓝图
+
+结构整理不变性：
+
+- 可以拆分页面组件、hooks、utils、routes、services
+- 不得改变页面功能、接口路径、JSON 字段、默认值、回退策略和统计口径
 
 ---
 
@@ -502,6 +508,12 @@ python3 scripts/pdf_overlay_es.py \
 
 任一规则违规，命令返回非零退出码。
 
+若为“功能不变”的结构重排，交付中还必须说明：
+
+- 哪些入口文件被拆分
+- 新的职责分别落在什么目录
+- 哪些行为被明确验证为不变
+
 导入链路冒烟测试（需后端已启动）：
 
 ```bash
@@ -550,4 +562,4 @@ git push -u origin feature/<topic>
 
 ---
 
-_最后更新：2026-03-03_
+_最后更新：2026-04-22_
