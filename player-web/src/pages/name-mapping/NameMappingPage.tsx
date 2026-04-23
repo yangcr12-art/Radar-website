@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { fetchPlayerDataset, fetchPlayerDatasets } from "../../api/storageClient";
+import { exportNameMappingExcel, fetchPlayerDataset, fetchPlayerDatasets, importNameMappingExcel } from "../../api/storageClient";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getTeamMappingRowsByEnglish, normalizeTeamName } from "../../utils/teamMappingStore";
 import { getNameMappingRows, mergeNameMappingRows, normalizePlayerName, saveNameMappingRows } from "../../utils/nameMappingStore";
@@ -8,6 +8,15 @@ import { transliteratePlayerName } from "../../utils/nameTransliteration";
 
 function downloadFile(filename, content, type) {
   const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadBlobFile(filename, blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -43,12 +52,14 @@ function extractPlayerNamesFromDatasetDoc(doc) {
 }
 
 function NameMappingPage() {
-  const fileInputRef = useRef(null);
+  const csvInputRef = useRef(null);
+  const excelInputRef = useRef(null);
   const [rows, setRows] = useState(() => {
     const loaded = getNameMappingRows();
     return loaded.length > 0 ? loaded : [{ en: "", zh: "", team: "" }];
   });
   const [syncing, setSyncing] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -124,7 +135,13 @@ function NameMappingPage() {
   const handleImportCsvClick = () => {
     setError("");
     setMessage("");
-    fileInputRef.current?.click();
+    csvInputRef.current?.click();
+  };
+
+  const handleImportExcelClick = () => {
+    setError("");
+    setMessage("");
+    excelInputRef.current?.click();
   };
 
   const handleImportCsvChange = async (event) => {
@@ -253,14 +270,81 @@ function NameMappingPage() {
     setMessage(`已批量补全 ${filledCount} 条中文姓名。`);
   };
 
+  const handleImportExcelChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!String(file.name || "").toLowerCase().endsWith(".xlsx")) {
+      setError("仅支持 .xlsx 文件。");
+      return;
+    }
+
+    setSyncing(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await importNameMappingExcel(file);
+      const items = Array.isArray(res?.items) ? res.items : [];
+      const seen = new Set();
+      const importedRows = [];
+      for (const item of items) {
+        const en = normalizePlayerName(item?.en);
+        const key = en.toLowerCase();
+        const zh = String(item?.zh || "").trim();
+        const team = String(item?.team || "").trim();
+        if (!en && !zh && !team) continue;
+        if (!en || !key) {
+          setError("Excel 中每一行都必须填写 English。");
+          return;
+        }
+        if (seen.has(key)) {
+          setError(`Excel 中存在重复 English：${en}`);
+          return;
+        }
+        seen.add(key);
+        importedRows.push({ en, zh, team });
+      }
+
+      if (importedRows.length === 0) {
+        setError("Excel 中没有可导入的姓名行。");
+        return;
+      }
+
+      persistRows(importedRows);
+      setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条姓名映射。`);
+    } catch (err) {
+      setError(`导入失败：${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    setError("");
+    setMessage("");
+    setExportingExcel(true);
+    try {
+      const blob = await exportNameMappingExcel(displayRows);
+      downloadBlobFile("name_mapping.xlsx", blob);
+      setMessage("已下载姓名对应表 Excel。");
+    } catch (err) {
+      setError(`导出失败：${err.message}`);
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   return (
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>姓名对应表</h1>
-        <p>维护球员英文名与中文名对应关系，支持从球员数据同步姓名，并使用同一份 CSV 进行导入导出。</p>
+        <p>维护球员英文名与中文名对应关系，支持从球员数据同步姓名，并支持 CSV/Excel 双格式导入导出。</p>
         <div className="mapping-actions">
           <button onClick={handleImportCsvClick} disabled={syncing}>
             {syncing ? "处理中..." : "导入姓名 CSV"}
+          </button>
+          <button onClick={handleImportExcelClick} disabled={syncing}>
+            {syncing ? "处理中..." : "导入姓名 Excel"}
           </button>
           <button onClick={handleSyncNamesFromPlayerData} disabled={syncing}>
             {syncing ? "同步中..." : "从球员数据同步姓名"}
@@ -273,13 +357,23 @@ function NameMappingPage() {
             删除现有姓名
           </button>
           <button onClick={handleDownloadCsv}>下载姓名对应表 CSV</button>
+          <button onClick={handleDownloadExcel} disabled={exportingExcel}>
+            {exportingExcel ? "导出中..." : "下载姓名对应表 Excel"}
+          </button>
         </div>
         <input
-          ref={fileInputRef}
+          ref={csvInputRef}
           type="file"
           accept=".csv,text/csv"
           style={{ display: "none" }}
           onChange={handleImportCsvChange}
+        />
+        <input
+          ref={excelInputRef}
+          type="file"
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          style={{ display: "none" }}
+          onChange={handleImportExcelChange}
         />
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}

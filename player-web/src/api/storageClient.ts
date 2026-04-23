@@ -58,6 +58,36 @@ async function requestForm(path, options = {}) {
   }
 }
 
+async function requestBlob(path, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+
+    if (!resp.ok) {
+      let body = null;
+      try {
+        body = await resp.json();
+      } catch {
+        body = null;
+      }
+      const message = body?.error || `request failed: ${resp.status}`;
+      throw new Error(message);
+    }
+
+    return await resp.blob();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function getApiBase() {
   return API_BASE;
 }
@@ -199,6 +229,70 @@ export function importCslStandingsExcel(file) {
   return requestForm("/api/csl-standings/import-excel", {
     method: "POST",
     body: form
+  });
+}
+
+export function importProjectMappingExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/project-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function exportProjectMappingExcel(rows) {
+  return requestBlob("/api/project-mapping/export-excel", {
+    method: "POST",
+    body: JSON.stringify({ rows })
+  });
+}
+
+export function importMatchProjectMappingExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/match-project-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function exportMatchProjectMappingExcel(rows) {
+  return requestBlob("/api/match-project-mapping/export-excel", {
+    method: "POST",
+    body: JSON.stringify({ rows })
+  });
+}
+
+export function importNameMappingExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/name-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function exportNameMappingExcel(rows) {
+  return requestBlob("/api/name-mapping/export-excel", {
+    method: "POST",
+    body: JSON.stringify({ rows })
+  });
+}
+
+export function importTeamMappingExcel(file) {
+  const form = new FormData();
+  form.append("file", file);
+  return requestForm("/api/team-mapping/import-excel", {
+    method: "POST",
+    body: form
+  });
+}
+
+export function exportTeamMappingExcel(rows) {
+  return requestBlob("/api/team-mapping/export-excel", {
+    method: "POST",
+    body: JSON.stringify({ rows })
   });
 }
 

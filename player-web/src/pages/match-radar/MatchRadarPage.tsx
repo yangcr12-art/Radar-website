@@ -287,6 +287,8 @@ function MatchRadarPage({ mappingRevision = 0 }) {
       const mappedAwayColor = normalizeHexColor(awayKey ? autoLogoMap.get(awayKey)?.color : "");
       const homeLocked = isColorAutoLocked(prev.homeColorAutoLocked);
       const awayLocked = isColorAutoLocked(prev.awayColorAutoLocked);
+      const nextHomeScore = String(payload.homeScore || "").trim();
+      const nextAwayScore = String(payload.awayScore || "").trim();
       return {
         ...prev,
         datasetId: String(payload.datasetId || prev.datasetId || ""),
@@ -298,6 +300,8 @@ function MatchRadarPage({ mappingRevision = 0 }) {
         awayColor: !awayLocked && mappedAwayColor ? mappedAwayColor : String(prev.awayColor || DEFAULT_CONFIG.awayColor),
         homeColorAutoLocked: homeLocked ? "1" : "0",
         awayColorAutoLocked: awayLocked ? "1" : "0",
+        homeScore: nextHomeScore && nextAwayScore ? nextHomeScore : String(prev.homeScore || DEFAULT_CONFIG.homeScore),
+        awayScore: nextHomeScore && nextAwayScore ? nextAwayScore : String(prev.awayScore || DEFAULT_CONFIG.awayScore),
         subtitle: nextMatchDateText || "数据来源：比赛总结 / 球队数据"
       };
     });

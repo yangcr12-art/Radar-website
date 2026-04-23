@@ -11,6 +11,7 @@ import {
   inferMetricGroupAndOrder,
   normalizeExportSequenceMap,
   normalizePersistedState,
+  normalizeMatchMetricPresets,
   normalizePlayerMetricPresets,
   normalizeSelectionMap,
   normalizeSnapshot,
@@ -95,8 +96,16 @@ function App() {
     const raw = readStorage(STORAGE_KEYS.playerMetricPresets, readStorage(STORAGE_KEYS.legacyPlayerMetricPresetsByDataset, []));
     return normalizePlayerMetricPresets(raw);
   });
+  const [matchMetricPresets, setMatchMetricPresets] = useState(() => {
+    const raw = readStorage(STORAGE_KEYS.matchMetricPresets, []);
+    return normalizeMatchMetricPresets(raw);
+  });
   const [selectedPlayerMetricPresetByDataset, setSelectedPlayerMetricPresetByDataset] = useState(() => {
     const raw = readStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, {});
+    return normalizeSelectionMap(raw);
+  });
+  const [selectedMatchMetricPresetByDataset, setSelectedMatchMetricPresetByDataset] = useState(() => {
+    const raw = readStorage(STORAGE_KEYS.selectedMatchMetricPresetByDataset, {});
     return normalizeSelectionMap(raw);
   });
   const [playerSearchByDataset, setPlayerSearchByDataset] = useState(() => {
@@ -781,6 +790,8 @@ function App() {
     presetList = presets,
     selectedId = selectedPresetId,
     playerMetricPresetList = playerMetricPresets,
+    matchMetricPresetList = matchMetricPresets,
+    selectedMatchMetricPresetMap = selectedMatchMetricPresetByDataset,
     projectMappingRowList = projectMappingRows,
     matchProjectMappingRowList = matchProjectMappingRows,
     nameMappingRowList = nameMappingRows,
@@ -790,6 +801,8 @@ function App() {
     presets: presetList,
     selectedPresetId: selectedId,
     playerMetricPresets: playerMetricPresetList,
+    matchMetricPresets: matchMetricPresetList,
+    selectedMatchMetricPresetByDataset: selectedMatchMetricPresetMap,
     projectMappingRows: projectMappingRowList,
     matchProjectMappingRows: matchProjectMappingRowList,
     nameMappingRows: nameMappingRowList,
@@ -807,6 +820,8 @@ function App() {
     setPresets(normalized.presets);
     setSelectedPresetId(normalized.selectedPresetId);
     setPlayerMetricPresets(normalized.playerMetricPresets);
+    setMatchMetricPresets(normalized.matchMetricPresets);
+    setSelectedMatchMetricPresetByDataset(normalized.selectedMatchMetricPresetByDataset);
   };
 
   const refreshMappingState = () => {
@@ -865,13 +880,17 @@ function App() {
         draft: localRawDraft,
         presets: localRawPresets,
         selectedPresetId: localRawSelected,
-        playerMetricPresets: localRawPlayerMetricPresets
+        playerMetricPresets: localRawPlayerMetricPresets,
+        matchMetricPresets: readStorage(STORAGE_KEYS.matchMetricPresets, []),
+        selectedMatchMetricPresetByDataset: readStorage(STORAGE_KEYS.selectedMatchMetricPresetByDataset, {})
       });
       const localMappingState = getLocalMappingState();
       const hasLocalSaved =
         Boolean(localRawDraft) ||
         (Array.isArray(localRawPresets) && localRawPresets.length > 0) ||
         normalizePlayerMetricPresets(localRawPlayerMetricPresets).length > 0 ||
+        normalizeMatchMetricPresets(readStorage(STORAGE_KEYS.matchMetricPresets, [])).length > 0 ||
+        Object.keys(normalizeSelectionMap(readStorage(STORAGE_KEYS.selectedMatchMetricPresetByDataset, {}))).length > 0 ||
         localRawSelected !== "draft";
       const shouldMigrateLocal =
         hasLocalSaved ||
@@ -995,8 +1014,18 @@ function App() {
 
   useEffect(() => {
     if (!isHydrated) return;
+    writeStorage(STORAGE_KEYS.matchMetricPresets, matchMetricPresets);
+  }, [matchMetricPresets, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
     writeStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, selectedPlayerMetricPresetByDataset);
   }, [selectedPlayerMetricPresetByDataset, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    writeStorage(STORAGE_KEYS.selectedMatchMetricPresetByDataset, selectedMatchMetricPresetByDataset);
+  }, [selectedMatchMetricPresetByDataset, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1065,6 +1094,8 @@ function App() {
     presets,
     selectedPresetId,
     playerMetricPresets,
+    matchMetricPresets,
+    selectedMatchMetricPresetByDataset,
     projectMappingRows,
     matchProjectMappingRows,
     nameMappingRows,
@@ -1511,6 +1542,12 @@ function App() {
             scatterError: scatterDataError,
             scatterDoc: scatterDatasetDoc,
             mappingRevision
+          },
+          matchTeamDataPageProps: {
+            matchMetricPresets,
+            setMatchMetricPresets,
+            selectedMatchMetricPresetByDataset,
+            setSelectedMatchMetricPresetByDataset
           },
           mappingRevision
         })}

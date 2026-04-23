@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { exportProjectMappingExcel, importProjectMappingExcel } from "../../api/storageClient";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getProjectMappingRows, hasProjectMappingColumn, saveProjectMappingRows } from "../../utils/projectMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
@@ -34,6 +35,15 @@ function downloadFile(filename, content, type) {
   URL.revokeObjectURL(url);
 }
 
+function downloadBlobFile(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function escapeCsvCell(value) {
   const text = String(value || "");
   if (/[",\n]/.test(text)) {
@@ -49,9 +59,11 @@ function toCsv(rows) {
 }
 
 function ProjectMappingPage() {
-  const fileInputRef = useRef(null);
+  const csvInputRef = useRef(null);
+  const excelInputRef = useRef(null);
   const [rows, setRows] = useState(() => getProjectMappingRows());
   const [importing, setImporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -138,7 +150,13 @@ function ProjectMappingPage() {
   const handleImportCsvClick = () => {
     setError("");
     setMessage("");
-    fileInputRef.current?.click();
+    csvInputRef.current?.click();
+  };
+
+  const handleImportExcelClick = () => {
+    setError("");
+    setMessage("");
+    excelInputRef.current?.click();
   };
 
   const handleImportCsvChange = async (event) => {
@@ -207,19 +225,114 @@ function ProjectMappingPage() {
     downloadFile("project_mapping_columns.csv", toCsv(rows), "text/csv;charset=utf-8");
   };
 
+  const handleImportExcelChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!String(file.name || "").toLowerCase().endsWith(".xlsx")) {
+      setError("仅支持 .xlsx 文件。");
+      return;
+    }
+
+    setImporting(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await importProjectMappingExcel(file);
+      const items = Array.isArray(res?.items) ? res.items : [];
+      const columns = Array.isArray(res?.columns) ? res.columns : [];
+      let importedRows = [];
+      if (items.length > 0) {
+        const seen = new Set();
+        for (const item of items) {
+          const en = String(item?.en || "").trim();
+          const key = normalizeColumnKey(en);
+          const zh = String(item?.zh || "").trim();
+          const group = String(item?.group || "").trim();
+          if (!en && !zh && !group) continue;
+          if (!en || !key) {
+            setError("Excel 中每一行都必须填写 English。");
+            return;
+          }
+          if (seen.has(key)) {
+            setError(`Excel 中存在重复 English：${en}`);
+            return;
+          }
+          seen.add(key);
+          importedRows.push({
+            en,
+            zh: zh || String(FITNESS_ZH_BY_EN[en] || "").trim(),
+            group,
+            isBuiltin: !hasProjectMappingColumn(en)
+          });
+        }
+      } else {
+        const seen = new Set();
+        importedRows = columns
+          .map((en) => String(en || "").trim())
+          .filter((en) => {
+            const key = normalizeColumnKey(en);
+            if (!en || !key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          .map((en) => ({
+            en,
+            zh: String(FITNESS_ZH_BY_EN[en] || "").trim(),
+            group: "体能",
+            isBuiltin: !hasProjectMappingColumn(en)
+          }));
+      }
+
+      if (importedRows.length === 0) {
+        setError("Excel 中没有可导入的项目行。");
+        return;
+      }
+
+      persistRows(importedRows);
+      setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条项目。`);
+    } catch (err) {
+      setError(`导入失败：${err.message}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    setError("");
+    setMessage("");
+    setExportingExcel(true);
+    try {
+      const blob = await exportProjectMappingExcel(rows);
+      downloadBlobFile("project_mapping.xlsx", blob);
+      setMessage("已下载项目对应表 Excel。");
+    } catch (err) {
+      setError(`导出失败：${err.message}`);
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
   return (
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>项目对应表</h1>
-        <p>维护字段中英映射与分组，支持新增、删除，以及按同一份 CSV 模板导入导出。</p>
+        <p>维护字段中英映射与分组，支持新增、删除，并同时支持 CSV/Excel 导入导出。</p>
         <div className="mapping-actions btn-row">
           <button onClick={handleImportCsvClick} disabled={importing}>
             {importing ? "导入中..." : "从 CSV 导入项目"}
           </button>
+          <button onClick={handleImportExcelClick} disabled={importing}>
+            {importing ? "导入中..." : "从 Excel 导入项目"}
+          </button>
           <button onClick={handleAddRow}>新增项目</button>
           <button onClick={handleDownloadCsv}>下载对应表 CSV</button>
+          <button onClick={handleDownloadExcel} disabled={exportingExcel}>
+            {exportingExcel ? "导出中..." : "下载对应表 Excel"}
+          </button>
         </div>
-        <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden-file" onChange={handleImportCsvChange} />
+        <input ref={csvInputRef} type="file" accept=".csv,text/csv" className="hidden-file" onChange={handleImportCsvChange} />
+        <input ref={excelInputRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden-file" onChange={handleImportExcelChange} />
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
         <div className="mapping-table-wrap">

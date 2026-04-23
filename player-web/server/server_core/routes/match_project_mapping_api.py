@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from io import BytesIO
 from typing import Any
 
-from flask import Blueprint, jsonify, request
-from openpyxl import load_workbook
+from flask import Blueprint, jsonify, request, send_file
+from openpyxl import Workbook, load_workbook
 
 
 match_project_mapping_bp = Blueprint("match_project_mapping_api", __name__)
@@ -143,6 +144,51 @@ def _normalize_penalty_entries(en: str, zh: str) -> tuple[str, str]:
     return en_text, _cell_text(zh)
 
 
+def _table_rows_from_sheet(rows) -> list[dict[str, str]] | None:
+    if len(rows) < 2:
+        return None
+    headers = [_cell_text(item) for item in rows[0]]
+    required_headers = ["English", "中文翻译", "group"]
+    if not all(header in headers for header in required_headers):
+        return None
+    index_by_header = {header: headers.index(header) for header in required_headers}
+    items: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for excel_row in rows[1:]:
+        cells = list(excel_row)
+        item = {
+            header: _cell_text(cells[index_by_header[header]]) if index_by_header[header] < len(cells) else ""
+            for header in required_headers
+        }
+        en = _cell_text(item.get("English"))
+        key = en.lower()
+        if not any(item.values()):
+            continue
+        if not en or key in seen:
+            continue
+        seen.add(key)
+        items.append(item)
+    return items
+
+
+def _build_excel_response(filename: str, rows: list[list[str]]):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws.append(["English", "中文翻译", "group"])
+    for row in rows:
+        ws.append(row)
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return send_file(
+        stream,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
 @match_project_mapping_bp.route("/api/match-project-mapping/import-excel", methods=["POST"])
 def import_match_project_mapping_excel():
     file = request.files.get("file")
@@ -157,6 +203,20 @@ def import_match_project_mapping_excel():
         return jsonify({"ok": False, "error": f"invalid excel file: {exc}"}), 400
 
     ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    table_items = _table_rows_from_sheet(rows)
+    if table_items is not None:
+        wb.close()
+        return jsonify(
+            {
+                "ok": True,
+                "sheet": ws.title if ws else "",
+                "count": len(table_items),
+                "items": [{"en": item["English"], "zh": item["中文翻译"], "group": item["group"]} for item in table_items],
+                "warnings": [],
+            }
+        )
+
     maxc = ws.max_column or 0
     if maxc <= 0:
         wb.close()
@@ -206,3 +266,21 @@ def import_match_project_mapping_excel():
             "warnings": warnings,
         }
     )
+
+
+@match_project_mapping_bp.route("/api/match-project-mapping/export-excel", methods=["POST"])
+def export_match_project_mapping_excel():
+    payload = request.get_json(silent=True) or {}
+    rows = payload.get("rows")
+    if not isinstance(rows, list):
+        return jsonify({"ok": False, "error": "rows must be array"}), 400
+    data_rows = []
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        data_rows.append([
+            _cell_text(item.get("en")),
+            _cell_text(item.get("zh")),
+            _cell_text(item.get("group")),
+        ])
+    return _build_excel_response("match_project_mapping.xlsx", data_rows)

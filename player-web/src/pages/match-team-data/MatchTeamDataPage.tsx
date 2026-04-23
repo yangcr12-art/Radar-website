@@ -15,6 +15,14 @@ const GROUP_SORT_ORDER: Record<string, number> = {
   "定位球": 5
 };
 
+const SCORE_COLUMN_ALIASES = [
+  "goals",
+  "goal",
+  "goals scored",
+  "进球",
+  "进球数"
+];
+
 function formatColumnLabel(column) {
   const en = String(column || "").trim();
   const zh = getMatchProjectZhByColumn(en);
@@ -57,6 +65,13 @@ function parseNumericValue(value) {
   const cleaned = text.replace(/,/g, "").replace(/%/g, "").trim();
   const num = Number(cleaned);
   return Number.isFinite(num) ? num : null;
+}
+
+function isScoreColumn(column, metric) {
+  const candidates = [String(column || "").trim(), String(metric || "").trim()]
+    .map((item) => item.toLowerCase())
+    .filter(Boolean);
+  return candidates.some((item) => SCORE_COLUMN_ALIASES.some((alias) => item === alias || item.includes(alias)));
 }
 
 const MATCH_DATE_COLUMN_KEYWORDS = [
@@ -119,7 +134,13 @@ function buildTeamMetricMap(teamDetail) {
   return map;
 }
 
-function MatchTeamDataPage({ mappingRevision = 0 }) {
+function MatchTeamDataPage({
+  mappingRevision = 0,
+  matchMetricPresets = [],
+  setMatchMetricPresets,
+  selectedMatchMetricPresetByDataset = {},
+  setSelectedMatchMetricPresetByDataset
+}) {
   const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
   const [dataMeta, setDataMeta] = useState({ teamCount: 0, updatedAt: "", numericColumns: [] as string[] });
@@ -210,6 +231,15 @@ function MatchTeamDataPage({ mappingRevision = 0 }) {
     const availableSet = new Set(sharedMetricRows.map((row) => row.column));
     return selected.filter((col) => availableSet.has(col));
   }, [selectedDatasetId, metricSelectionsByDataset, sharedMetricRows]);
+
+  const matchMetricPresetOptions = useMemo(() => matchMetricPresets, [matchMetricPresets]);
+
+  const selectedMatchMetricPresetId = useMemo(() => {
+    if (!selectedDatasetId) return "";
+    const presetId = String(selectedMatchMetricPresetByDataset[selectedDatasetId] || "").trim();
+    if (!presetId) return "";
+    return matchMetricPresetOptions.some((item) => item.id === presetId) ? presetId : "";
+  }, [selectedDatasetId, selectedMatchMetricPresetByDataset, matchMetricPresetOptions]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.matchMetricSelectionsByDataset, metricSelectionsByDataset);
@@ -448,12 +478,147 @@ function MatchTeamDataPage({ mappingRevision = 0 }) {
   const handleSelectAllMetricColumns = () => {
     if (!selectedDatasetId) return;
     const columns = sharedMetricRows.map((row) => row.column);
+    setSelectedMatchMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
     setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: columns }));
   };
 
   const handleClearMetricColumns = () => {
     if (!selectedDatasetId) return;
+    setSelectedMatchMetricPresetByDataset((prev) => {
+      const nextMap = { ...prev };
+      delete nextMap[selectedDatasetId];
+      return nextMap;
+    });
     setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: [] }));
+  };
+
+  const applyMatchMetricPreset = (presetId: string) => {
+    if (!selectedDatasetId) return;
+    setSelectedMatchMetricPresetByDataset((prev) => {
+      const next = { ...prev };
+      if (presetId) {
+        next[selectedDatasetId] = presetId;
+      } else {
+        delete next[selectedDatasetId];
+      }
+      return next;
+    });
+
+    if (!presetId) {
+      setMatchDataMessage("已取消球队指标预设选择。");
+      setMatchDataError("");
+      return;
+    }
+
+    const found = matchMetricPresetOptions.find((item) => item.id === presetId);
+    if (!found) {
+      setMatchDataError("未找到该球队指标预设。");
+      setMatchDataMessage("");
+      return;
+    }
+
+    const availableColumns = new Set(sharedMetricRows.map((row) => row.column));
+    const validColumns = found.columns.filter((column) => availableColumns.has(column));
+    if (validColumns.length === 0) {
+      setMatchDataError("该预设在当前比赛数据集没有可用指标，未覆盖当前勾选。");
+      setMatchDataMessage("");
+      return;
+    }
+
+    setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: validColumns }));
+    const skippedCount = found.columns.length - validColumns.length;
+    setMatchDataMessage(skippedCount > 0 ? `已应用预设：${found.name}（忽略 ${skippedCount} 个失效指标）` : `已应用预设：${found.name}`);
+    setMatchDataError("");
+  };
+
+  const handleSaveMatchMetricPreset = () => {
+    if (!selectedDatasetId) {
+      setMatchDataError("请先选择比赛数据集。");
+      setMatchDataMessage("");
+      return;
+    }
+    if (selectedMetricColumns.length === 0) {
+      setMatchDataError("请先勾选至少一个球队指标后再保存预设。");
+      setMatchDataMessage("");
+      return;
+    }
+    const input = window.prompt("请输入球队指标预设名称：", "");
+    if (input === null) return;
+    const name = input.trim();
+    if (!name) {
+      setMatchDataError("预设名称不能为空。");
+      setMatchDataMessage("");
+      return;
+    }
+    const now = new Date().toISOString();
+    const newPreset = {
+      id: `match_metric_preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      columns: selectedMetricColumns,
+      createdAt: now,
+      updatedAt: now
+    };
+    setMatchMetricPresets((prev) => [newPreset, ...prev]);
+    setSelectedMatchMetricPresetByDataset((prev) => ({ ...prev, [selectedDatasetId]: newPreset.id }));
+    setMatchDataMessage(`已保存球队指标预设：${name}`);
+    setMatchDataError("");
+  };
+
+  const handleRenameMatchMetricPreset = () => {
+    if (!selectedDatasetId || !selectedMatchMetricPresetId) {
+      setMatchDataError("请先选择一个球队指标预设。");
+      setMatchDataMessage("");
+      return;
+    }
+    const found = matchMetricPresetOptions.find((item) => item.id === selectedMatchMetricPresetId);
+    if (!found) {
+      setMatchDataError("未找到该球队指标预设。");
+      setMatchDataMessage("");
+      return;
+    }
+    const input = window.prompt("请输入新的预设名称：", found.name);
+    if (input === null) return;
+    const nextName = input.trim();
+    if (!nextName) {
+      setMatchDataError("预设名称不能为空。");
+      setMatchDataMessage("");
+      return;
+    }
+    setMatchMetricPresets((prev) =>
+      prev
+        .map((item) => (item.id === found.id ? { ...item, name: nextName, updatedAt: new Date().toISOString() } : item))
+        .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
+    );
+    setMatchDataMessage(`已重命名球队指标预设：${nextName}`);
+    setMatchDataError("");
+  };
+
+  const handleDeleteMatchMetricPreset = () => {
+    if (!selectedDatasetId || !selectedMatchMetricPresetId) {
+      setMatchDataError("请先选择一个球队指标预设。");
+      setMatchDataMessage("");
+      return;
+    }
+    const found = matchMetricPresetOptions.find((item) => item.id === selectedMatchMetricPresetId);
+    if (!found) {
+      setMatchDataError("未找到该球队指标预设。");
+      setMatchDataMessage("");
+      return;
+    }
+    if (!window.confirm(`确认删除球队指标预设「${found.name}」吗？此操作不可撤销。`)) return;
+    setMatchMetricPresets((prev) => prev.filter((item) => item.id !== found.id));
+    setSelectedMatchMetricPresetByDataset((prev) =>
+      Object.entries(prev).reduce((acc, [datasetId, presetId]) => {
+        if (presetId !== found.id) acc[datasetId] = presetId;
+        return acc;
+      }, {} as Record<string, string>)
+    );
+    setMatchDataMessage(`已删除球队指标预设：${found.name}`);
+    setMatchDataError("");
   };
 
   const handleImportSelectedMetricsToMatchRadar = () => {
@@ -483,6 +648,12 @@ function MatchTeamDataPage({ mappingRevision = 0 }) {
       return;
     }
 
+    const scoreRow = sharedMetricRows.find((row: any) => isScoreColumn(row.column, row.metric));
+    const homeScoreValue = parseNumericValue(scoreRow?.homeRaw);
+    const awayScoreValue = parseNumericValue(scoreRow?.awayRaw);
+    const homeScore = homeScoreValue === null ? "" : String(Math.round(homeScoreValue));
+    const awayScore = awayScoreValue === null ? "" : String(Math.round(awayScoreValue));
+
     const payload = {
       importedAt: new Date().toISOString(),
       datasetId: selectedDatasetId,
@@ -491,6 +662,8 @@ function MatchTeamDataPage({ mappingRevision = 0 }) {
       homeTeamName: homeTeamDisplayName || homeTeamName || "主队",
       awayTeamName: awayTeamDisplayName || awayTeamName || "客队",
       matchDateText: extractMatchDateFromTeamDetail(selectedHomeTeamDetail) || extractMatchDateFromTeamDetail(selectedAwayTeamDetail) || "",
+      homeScore: homeScore && awayScore ? homeScore : "",
+      awayScore: homeScore && awayScore ? awayScore : "",
       rows
     };
 
@@ -575,6 +748,30 @@ function MatchTeamDataPage({ mappingRevision = 0 }) {
           <div className="player-export-section player-export-inline">
             <p className="meta-title">勾选指标并导入到比赛雷达图（原始值对比）</p>
             <p>{`已勾选：${selectedMetricColumns.length}/${sharedMetricRows.length || 0}`}</p>
+            <div className="player-metric-preset-actions">
+              <div className="player-metric-preset-row">
+                <label>球队指标预设</label>
+                <select value={selectedMatchMetricPresetId} onChange={(e) => applyMatchMetricPreset(e.target.value)} disabled={!selectedDatasetId}>
+                  <option value="">{matchMetricPresetOptions.length === 0 ? "暂无可复用预设" : "不使用预设"}</option>
+                  {matchMetricPresetOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {`${item.name}${item.columns?.length ? ` (${item.columns.length})` : ""}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="btn-row player-metric-preset-btn-row">
+                <button onClick={handleSaveMatchMetricPreset} disabled={selectedMetricColumns.length === 0}>
+                  保存为预设
+                </button>
+                <button onClick={handleRenameMatchMetricPreset} disabled={!selectedMatchMetricPresetId}>
+                  预设改名
+                </button>
+                <button onClick={handleDeleteMatchMetricPreset} disabled={!selectedMatchMetricPresetId}>
+                  删除预设
+                </button>
+              </div>
+            </div>
             <div className="btn-row">
               <button onClick={handleSelectAllMetricColumns} disabled={!selectedDatasetId || sharedMetricRows.length === 0}>
                 全选指标

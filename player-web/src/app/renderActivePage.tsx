@@ -23,6 +23,7 @@ type RenderActivePageArgs = {
   mappingRevision: number;
   radarPage: React.ReactNode;
   playerDataPageProps: any;
+  matchTeamDataPageProps: any;
   scatterPageProps: any;
   playerPersonalRadarProps: any;
 };
@@ -33,6 +34,7 @@ export function renderActivePage({
   mappingRevision,
   radarPage,
   playerDataPageProps,
+  matchTeamDataPageProps,
   scatterPageProps,
   playerPersonalRadarProps
 }: RenderActivePageArgs) {
@@ -52,7 +54,7 @@ export function renderActivePage({
     case "team_mapping":
       return <TeamMappingPage />;
     case "match_team_data":
-      return <MatchTeamDataPage mappingRevision={mappingRevision} />;
+      return <MatchTeamDataPage mappingRevision={mappingRevision} {...matchTeamDataPageProps} />;
     case "match_radar":
       return <MatchRadarPage mappingRevision={mappingRevision} />;
     case "fitness_team_radar":

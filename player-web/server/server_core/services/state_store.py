@@ -57,14 +57,20 @@ def validate_state_payload(payload: Any) -> tuple[bool, str]:
         return False, "selectedPresetId must be string"
     player_metric_presets = payload.get("playerMetricPresets")
     legacy_player_metric_presets = payload.get("playerMetricPresetsByDataset")
+    match_metric_presets = payload.get("matchMetricPresets")
+    selected_match_metric_preset_by_dataset = payload.get("selectedMatchMetricPresetByDataset")
     if player_metric_presets is not None and not isinstance(player_metric_presets, list):
         return False, "playerMetricPresets must be array"
     if legacy_player_metric_presets is not None and not isinstance(legacy_player_metric_presets, dict):
         return False, "playerMetricPresetsByDataset must be object"
+    if match_metric_presets is not None and not isinstance(match_metric_presets, list):
+        return False, "matchMetricPresets must be array"
+    if selected_match_metric_preset_by_dataset is not None and not isinstance(selected_match_metric_preset_by_dataset, dict):
+        return False, "selectedMatchMetricPresetByDataset must be object"
     return True, ""
 
 
-def normalize_player_metric_preset(item: Any) -> dict[str, Any] | None:
+def normalize_metric_preset(item: Any) -> dict[str, Any] | None:
     if not isinstance(item, dict):
         return None
     preset_id = str(item.get("id") or "").strip()
@@ -84,12 +90,12 @@ def normalize_player_metric_preset(item: Any) -> dict[str, Any] | None:
     }
 
 
-def normalize_player_metric_presets(payload: Any) -> list[dict[str, Any]]:
+def normalize_metric_presets(payload: Any) -> list[dict[str, Any]]:
     if isinstance(payload, list):
         seen_ids: set[str] = set()
         normalized: list[dict[str, Any]] = []
         for item in payload:
-            preset = normalize_player_metric_preset(item)
+            preset = normalize_metric_preset(item)
             if preset is None:
                 continue
             preset_id = preset["id"]
@@ -111,7 +117,7 @@ def normalize_player_metric_presets(payload: Any) -> list[dict[str, Any]]:
         if not isinstance(items, list):
             continue
         for item in items:
-            preset = normalize_player_metric_preset(item)
+            preset = normalize_metric_preset(item)
             if preset is None:
                 continue
             preset_id = preset["id"]
@@ -125,11 +131,25 @@ def normalize_player_metric_presets(payload: Any) -> list[dict[str, Any]]:
     return normalized
 
 
+def normalize_selection_map(payload: Any) -> dict[str, str]:
+    if not isinstance(payload, dict):
+        return {}
+    normalized: dict[str, str] = {}
+    for dataset_id, preset_id in payload.items():
+        key = str(dataset_id or "").strip()
+        value = str(preset_id or "").strip()
+        if key and value:
+            normalized[key] = value
+    return normalized
+
+
 def normalize_state_payload(payload: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(payload)
-    normalized["playerMetricPresets"] = normalize_player_metric_presets(
+    normalized["playerMetricPresets"] = normalize_metric_presets(
         payload.get("playerMetricPresets", payload.get("playerMetricPresetsByDataset"))
     )
+    normalized["matchMetricPresets"] = normalize_metric_presets(payload.get("matchMetricPresets"))
+    normalized["selectedMatchMetricPresetByDataset"] = normalize_selection_map(payload.get("selectedMatchMetricPresetByDataset"))
     normalized.pop("playerMetricPresetsByDataset", None)
     return normalized
 

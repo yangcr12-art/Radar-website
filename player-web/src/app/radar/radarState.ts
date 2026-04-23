@@ -301,6 +301,10 @@ export function normalizePlayerMetricPresets(input) {
   return merged.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
 }
 
+export function normalizeMatchMetricPresets(input) {
+  return normalizePlayerMetricPresets(input);
+}
+
 export function normalizeSelectionMap(input) {
   if (!input || typeof input !== "object") return {};
   return Object.entries(input).reduce((acc: Record<string, string>, [datasetId, value]) => {
@@ -401,7 +405,9 @@ export function normalizePersistedState(input) {
       draft: normalizeSnapshot(null),
       presets: [],
       selectedPresetId: "draft",
-      playerMetricPresets: []
+      playerMetricPresets: [],
+      matchMetricPresets: [],
+      selectedMatchMetricPresetByDataset: {}
     };
   }
 
@@ -410,8 +416,10 @@ export function normalizePersistedState(input) {
   const selected = typeof input.selectedPresetId === "string" ? input.selectedPresetId : "draft";
   const selectedPresetId = selected === "draft" || presets.some((item) => item.id === selected) ? selected : "draft";
   const playerMetricPresets = normalizePlayerMetricPresets(input.playerMetricPresets ?? input.playerMetricPresetsByDataset);
+  const matchMetricPresets = normalizeMatchMetricPresets(input.matchMetricPresets);
+  const selectedMatchMetricPresetByDataset = normalizeSelectionMap(input.selectedMatchMetricPresetByDataset);
 
-  return { draft, presets, selectedPresetId, playerMetricPresets };
+  return { draft, presets, selectedPresetId, playerMetricPresets, matchMetricPresets, selectedMatchMetricPresetByDataset };
 }
 
 export function formatPlayerDataColumnLabel(column) {

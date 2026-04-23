@@ -89,6 +89,8 @@ export const STORAGE_KEYS = {
   playerMetricPresets: "player_web_player_metric_presets_v2",
   legacyPlayerMetricPresetsByDataset: "player_web_player_metric_presets_by_dataset_v1",
   selectedPlayerMetricPresetByDataset: "player_web_selected_player_metric_preset_by_dataset_v1",
+  matchMetricPresets: "player_web_match_metric_presets_v1",
+  selectedMatchMetricPresetByDataset: "player_web_selected_match_metric_preset_by_dataset_v1",
   radarPngExportSequenceByVersion: "player_web_radar_png_export_sequence_by_version_v1",
   playerSearchByDataset: "player_web_player_search_by_dataset_v1",
   selectedPlayerByDataset: "player_web_selected_player_by_dataset_v1",
