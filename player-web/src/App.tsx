@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
+import { checkHealth, deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, getApiBaseLabel, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
 import RadarEditorPage from "./components/RadarEditorPage";
 import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
@@ -27,9 +27,12 @@ import {
   writeStorageWithResult
 } from "./app/radar/radarState";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
-import { getNameMappingRowsByEnglish, normalizePlayerName } from "./utils/nameMappingStore";
-import { getProjectGroupByColumn } from "./utils/projectMappingStore";
+import { getMatchProjectMappingRows, saveMatchProjectMappingRows } from "./utils/matchProjectMappingStore";
+import { getNameMappingRows, getNameMappingRowsByEnglish, normalizePlayerName, saveNameMappingRows } from "./utils/nameMappingStore";
+import { subscribeMappingStoreChanged } from "./utils/mappingSync";
+import { getProjectGroupByColumn, getProjectMappingRows, saveProjectMappingRows } from "./utils/projectMappingStore";
 import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
+import { getTeamMappingRows, saveTeamMappingRows } from "./utils/teamMappingStore";
 import { formatDateTime } from "./utils/timeFormat";
 import { compactPresetsForLocalStorage, compactSnapshotForLocalStorage, isQuotaExceededResult } from "./utils/localStorageQuota";
 import {
@@ -50,6 +53,7 @@ import {
 import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
 import { renderActivePage } from "./app/renderActivePage";
 function App() {
+  const apiBaseLabel = getApiBaseLabel();
   const [activePage, setActivePage] = useState<AppPageKey>("radar");
   const [title, setTitle] = useState("Player Radar (Template Mode)");
   const [subtitle, setSubtitle] = useState("Input metric CSV and export image");
@@ -107,6 +111,11 @@ function App() {
     const raw = readStorage(STORAGE_KEYS.radarPngExportSequenceByVersion, {});
     return normalizeExportSequenceMap(raw);
   });
+  const [projectMappingRows, setProjectMappingRows] = useState(() => getProjectMappingRows());
+  const [matchProjectMappingRows, setMatchProjectMappingRows] = useState(() => getMatchProjectMappingRows());
+  const [nameMappingRows, setNameMappingRows] = useState(() => getNameMappingRows());
+  const [teamMappingRows, setTeamMappingRows] = useState(() => getTeamMappingRows());
+  const [mappingRevision, setMappingRevision] = useState(0);
   const [, setStorageStatus] = useState("connecting");
   const fileInputRef = useRef(null);
   const playerExcelInputRef = useRef(null);
@@ -771,12 +780,20 @@ function App() {
     snapshot = getSnapshot(),
     presetList = presets,
     selectedId = selectedPresetId,
-    playerMetricPresetList = playerMetricPresets
+    playerMetricPresetList = playerMetricPresets,
+    projectMappingRowList = projectMappingRows,
+    matchProjectMappingRowList = matchProjectMappingRows,
+    nameMappingRowList = nameMappingRows,
+    teamMappingRowList = teamMappingRows
   ) => ({
     draft: snapshot,
     presets: presetList,
     selectedPresetId: selectedId,
-    playerMetricPresets: playerMetricPresetList
+    playerMetricPresets: playerMetricPresetList,
+    projectMappingRows: projectMappingRowList,
+    matchProjectMappingRows: matchProjectMappingRowList,
+    nameMappingRows: nameMappingRowList,
+    teamMappingRows: teamMappingRowList
   });
 
   const applyPersistedState = (persisted) => {
@@ -791,6 +808,48 @@ function App() {
     setSelectedPresetId(normalized.selectedPresetId);
     setPlayerMetricPresets(normalized.playerMetricPresets);
   };
+
+  const refreshMappingState = () => {
+    setProjectMappingRows(getProjectMappingRows());
+    setMatchProjectMappingRows(getMatchProjectMappingRows());
+    setNameMappingRows(getNameMappingRows());
+    setTeamMappingRows(getTeamMappingRows());
+    setMappingRevision((prev) => prev + 1);
+  };
+
+  const getLocalMappingState = () => ({
+    projectMappingRows: getProjectMappingRows(),
+    matchProjectMappingRows: getMatchProjectMappingRows(),
+    nameMappingRows: getNameMappingRows(),
+    teamMappingRows: getTeamMappingRows()
+  });
+
+  const applyRemoteMappingState = (payload) => {
+    let applied = false;
+    if (Array.isArray(payload?.projectMappingRows)) {
+      saveProjectMappingRows(payload.projectMappingRows);
+      applied = true;
+    }
+    if (Array.isArray(payload?.matchProjectMappingRows)) {
+      saveMatchProjectMappingRows(payload.matchProjectMappingRows);
+      applied = true;
+    }
+    if (Array.isArray(payload?.nameMappingRows)) {
+      saveNameMappingRows(payload.nameMappingRows);
+      applied = true;
+    }
+    if (Array.isArray(payload?.teamMappingRows)) {
+      saveTeamMappingRows(payload.teamMappingRows);
+      applied = true;
+    }
+    return applied;
+  };
+
+  useEffect(() => {
+    return subscribeMappingStoreChanged(() => {
+      refreshMappingState();
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -808,11 +867,18 @@ function App() {
         selectedPresetId: localRawSelected,
         playerMetricPresets: localRawPlayerMetricPresets
       });
+      const localMappingState = getLocalMappingState();
       const hasLocalSaved =
         Boolean(localRawDraft) ||
         (Array.isArray(localRawPresets) && localRawPresets.length > 0) ||
         normalizePlayerMetricPresets(localRawPlayerMetricPresets).length > 0 ||
         localRawSelected !== "draft";
+      const shouldMigrateLocal =
+        hasLocalSaved ||
+        localMappingState.projectMappingRows.length > 0 ||
+        localMappingState.matchProjectMappingRows.length > 0 ||
+        localMappingState.nameMappingRows.length > 0 ||
+        localMappingState.teamMappingRows.length > 0;
       const localMetricPresetSelection = normalizeSelectionMap(readStorage(STORAGE_KEYS.selectedPlayerMetricPresetByDataset, {}));
 
       try {
@@ -821,10 +887,32 @@ function App() {
 
         if (remote?.data) {
           applyPersistedState(remote.data);
+          applyRemoteMappingState(remote.data);
+          const payloadWithMappings = {
+            ...remote.data,
+            projectMappingRows: Array.isArray(remote.data.projectMappingRows) ? remote.data.projectMappingRows : localMappingState.projectMappingRows,
+            matchProjectMappingRows: Array.isArray(remote.data.matchProjectMappingRows)
+              ? remote.data.matchProjectMappingRows
+              : localMappingState.matchProjectMappingRows,
+            nameMappingRows: Array.isArray(remote.data.nameMappingRows) ? remote.data.nameMappingRows : localMappingState.nameMappingRows,
+            teamMappingRows: Array.isArray(remote.data.teamMappingRows) ? remote.data.teamMappingRows : localMappingState.teamMappingRows
+          };
+          const missingMappingData =
+            !Array.isArray(remote.data.projectMappingRows) ||
+            !Array.isArray(remote.data.matchProjectMappingRows) ||
+            !Array.isArray(remote.data.nameMappingRows) ||
+            !Array.isArray(remote.data.teamMappingRows);
+          if (missingMappingData) {
+            await saveState(payloadWithMappings);
+            if (cancelled) return;
+          }
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
-        } else if (hasLocalSaved && !readStorage(STORAGE_KEYS.localMigrated, false)) {
-          const migrated = await migrateFromLocal(localPersisted);
+        } else if (shouldMigrateLocal) {
+          const migrated = await migrateFromLocal({
+            ...localPersisted,
+            ...localMappingState
+          });
           if (cancelled) return;
           if (migrated?.migrated) {
             writeStorage(STORAGE_KEYS.localMigrated, true);
@@ -832,27 +920,33 @@ function App() {
             if (cancelled) return;
             if (migratedState?.data) {
               applyPersistedState(migratedState.data);
+              applyRemoteMappingState(migratedState.data);
             } else {
               applyPersistedState(localPersisted);
+              applyRemoteMappingState(localMappingState);
             }
             setMessage("已将本地历史数据迁移到后端。");
           } else {
             applyPersistedState(localPersisted);
+            applyRemoteMappingState(localMappingState);
           }
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else {
           applyPersistedState(localPersisted);
+          applyRemoteMappingState(localMappingState);
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         }
       } catch {
         if (cancelled) return;
         applyPersistedState(localPersisted);
+        applyRemoteMappingState(localMappingState);
         setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
         setStorageStatus("offline");
       } finally {
         if (cancelled) return;
+        refreshMappingState();
         setIsHydrated(true);
       }
     };
@@ -958,7 +1052,25 @@ function App() {
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, presets, selectedPresetId, playerMetricPresets, isHydrated]);
+  }, [
+    title,
+    subtitle,
+    rows,
+    rowReorderMode,
+    meta,
+    textStyle,
+    chartStyle,
+    centerImage,
+    cornerImage,
+    presets,
+    selectedPresetId,
+    playerMetricPresets,
+    projectMappingRows,
+    matchProjectMappingRows,
+    nameMappingRows,
+    teamMappingRows,
+    isHydrated
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -966,7 +1078,7 @@ function App() {
       const ok = await verifyBackendHealth();
       if (cancelled) return;
       if (!ok && activePage === "player_data" && !playerDataImporting) {
-        setPlayerDataError("后端未连接：请启动 player-web/server/app.py（默认 127.0.0.1:8787）");
+        setPlayerDataError(`后端未连接：请确认后端服务已启动并可访问（当前 API：${apiBaseLabel}）`);
       }
     };
     run();
@@ -1387,7 +1499,8 @@ function App() {
             scatterDoc: scatterDatasetDoc,
             scatterConfig,
             onScatterConfigChange: updateScatterConfig,
-            formatPlayerDataColumnLabel
+            formatPlayerDataColumnLabel,
+            mappingRevision
           },
           playerPersonalRadarProps: {
             datasetOptions,
@@ -1396,8 +1509,10 @@ function App() {
             onDeleteCurrentDataset: handleDeleteCurrentDataset,
             scatterLoading: scatterDataLoading,
             scatterError: scatterDataError,
-            scatterDoc: scatterDatasetDoc
-          }
+            scatterDoc: scatterDatasetDoc,
+            mappingRevision
+          },
+          mappingRevision
         })}
       </main>
     </div>

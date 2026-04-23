@@ -1,4 +1,5 @@
 import { PROJECT_MAPPING_COLUMNS } from "../data/projectMappingColumns";
+import { emitMappingStoreChanged } from "./mappingSync";
 
 const PROJECT_GROUP_STORAGE_KEY = "player_web_project_mapping_groups_v1";
 const PROJECT_CUSTOM_ROWS_STORAGE_KEY = "player_web_project_mapping_custom_rows_v1";
@@ -215,11 +216,18 @@ export function saveProjectMappingRows(rows) {
   const ok1 = saveGroupOverrides(groupMap);
   const ok2 = saveCustomRows(customRows);
   const ok3 = saveHiddenBuiltinKeys(hiddenBuiltinKeys);
+  if (ok1 && ok2 && ok3) {
+    emitMappingStoreChanged("project");
+  }
   return ok1 && ok2 && ok3;
 }
 
 export function saveProjectGroupByColumn(nextMap) {
-  return saveGroupOverrides(nextMap);
+  const ok = saveGroupOverrides(nextMap);
+  if (ok) {
+    emitMappingStoreChanged("project");
+  }
+  return ok;
 }
 
 export function getProjectZhByColumn(column) {

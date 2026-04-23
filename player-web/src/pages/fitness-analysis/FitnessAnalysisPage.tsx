@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deleteFitnessDataset, fetchFitnessDataset, fetchFitnessDatasets, importFitnessExcel } from "../../api/storageClient";
+import { checkHealth, deleteFitnessDataset, fetchFitnessDataset, fetchFitnessDatasets, getApiBaseLabel, importFitnessExcel } from "../../api/storageClient";
 import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
@@ -206,13 +206,15 @@ function resolveTeamRadarColors(homeTeamName: string, awayTeamName: string, mapp
 
 type FitnessAnalysisPageProps = {
   view?: "team" | "player" | "per90";
+  mappingRevision?: number;
 };
 
-function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
+function FitnessAnalysisPage({ view = "team", mappingRevision = 0 }: FitnessAnalysisPageProps) {
   const isTeamView = view === "team";
   const isPlayerView = view === "player";
   const isPer90View = view === "per90";
   const isOverlayView = isPlayerView || isPer90View;
+  const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
   const [datasetOptions, setDatasetOptions] = useState([] as any[]);
   const [selectedDatasetId, setSelectedDatasetId] = useState(() => {
@@ -248,7 +250,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
 
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
-  const teamMapping = useMemo(() => getTeamMappingRowsByName(), []);
+  const teamMapping = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
   const teamSheet = datasetDoc?.teamSheet || null;
   const playerSheet = datasetDoc?.playerSheet || null;
@@ -1263,7 +1265,7 @@ function FitnessAnalysisPage({ view = "team" }: FitnessAnalysisPageProps) {
           <p>{`更新时间：${formatDateTime(datasetDoc?.updatedAt) || "-"}`}</p>
         </div>
 
-        {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+        {!backendOnline ? <p className="msg err">{`导入已禁用：后端未连接（当前 API：${apiBaseLabel}）`}</p> : null}
         {per90Blocked ? <p className="msg err">分均体能数据：未识别到“出场时间/分钟”列，无法计算分均值。</p> : null}
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}

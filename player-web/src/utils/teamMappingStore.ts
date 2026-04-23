@@ -1,3 +1,5 @@
+import { emitMappingStoreChanged } from "./mappingSync";
+
 const TEAM_MAPPING_STORAGE_KEY = "player_web_team_mapping_rows_v1";
 
 export type TeamMappingRow = {
@@ -72,6 +74,7 @@ export function saveTeamMappingRows(rows) {
   try {
     const normalized = normalizeRows(rows);
     localStorage.setItem(TEAM_MAPPING_STORAGE_KEY, JSON.stringify(normalized));
+    emitMappingStoreChanged("team");
     return true;
   } catch {
     return false;

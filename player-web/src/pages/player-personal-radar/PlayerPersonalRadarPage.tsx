@@ -66,6 +66,7 @@ type PlayerPersonalRadarPageProps = {
   scatterLoading: boolean;
   scatterError: string;
   scatterDoc: ScatterDoc | null;
+  mappingRevision: number;
 };
 
 type MetricMinMax = {
@@ -138,7 +139,8 @@ function PlayerPersonalRadarPage({
   onDeleteCurrentDataset,
   scatterLoading,
   scatterError,
-  scatterDoc
+  scatterDoc,
+  mappingRevision
 }: PlayerPersonalRadarPageProps) {
   const [selectedMetricsByDataset, setSelectedMetricsByDataset] = useState<Record<string, string[]>>(
     () => readLocalStore(STORAGE_KEYS.playerPersonalRadarSelectedMetricsByDataset, {})
@@ -165,7 +167,7 @@ function PlayerPersonalRadarPage({
     return stripPer90Text(metric);
   };
 
-  const nameMappingByEnglish = useMemo(() => getNameMappingRowsByEnglish(), []);
+  const nameMappingByEnglish = useMemo(() => getNameMappingRowsByEnglish(), [mappingRevision]);
 
   const players = useMemo(() => {
     const base = Array.isArray(scatterDoc?.players) ? scatterDoc.players : [];

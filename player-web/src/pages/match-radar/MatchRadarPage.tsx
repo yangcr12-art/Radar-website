@@ -219,7 +219,7 @@ function renderLogoBlock({
   );
 }
 
-function MatchRadarPage() {
+function MatchRadarPage({ mappingRevision = 0 }) {
   const [config, setConfig] = useState(() => {
     const saved = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
     return { ...DEFAULT_CONFIG, ...(saved && typeof saved === "object" ? saved : {}) };
@@ -310,7 +310,7 @@ function MatchRadarPage() {
     const handler = () => applyImportPayload();
     window.addEventListener("match-radar-imported", handler as EventListener);
     return () => window.removeEventListener("match-radar-imported", handler as EventListener);
-  }, []);
+  }, [mappingRevision]);
 
   const logoOptions = useMemo(() => {
     const list = getTeamMappingRows();
@@ -321,9 +321,9 @@ function MatchRadarPage() {
         logoDataUrl: String(row.logoDataUrl || "").trim()
       }))
       .filter((item) => item.logoDataUrl);
-  }, []);
+  }, [mappingRevision]);
 
-  const autoLogoMap = useMemo(() => getTeamMappingRowsByName(), []);
+  const autoLogoMap = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
   const pickLogoSrc = (teamName: string, logoKey: string) => {
     if (logoKey && logoKey !== "auto") {

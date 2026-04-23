@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deleteCslStandingsDataset, fetchCslStandingsDataset, fetchCslStandingsDatasets, importCslStandingsExcel } from "../../api/storageClient";
+import { checkHealth, deleteCslStandingsDataset, fetchCslStandingsDataset, fetchCslStandingsDatasets, getApiBaseLabel, importCslStandingsExcel } from "../../api/storageClient";
 import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
@@ -593,8 +593,9 @@ function CslTrendChart({
   );
 }
 
-function CslStandingsTrendPage() {
+function CslStandingsTrendPage({ mappingRevision = 0 }) {
   const defaultMetrics = ["points", "pointsNet", "rank", "rankNet", "goalsFor", "goalsAgainst"];
+  const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
   const [datasetOptions, setDatasetOptions] = useState([] as any[]);
   const [selectedDatasetId, setSelectedDatasetId] = useState(() => String(readLocalStore(STORAGE_KEYS.cslStandingsSelectedDatasetId, "") || ""));
@@ -677,7 +678,7 @@ function CslStandingsTrendPage() {
     return map && typeof map === "object" ? map : {};
   }, [normalizedTrendData]);
 
-  const teamMappingByName = useMemo(() => getTeamMappingRowsByName(), []);
+  const teamMappingByName = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
   const colorByTeam = useMemo(() => {
     const out: Record<string, string> = {};
@@ -1105,7 +1106,7 @@ function CslStandingsTrendPage() {
           <p>{`更新时间：${formatDateTime(datasetDoc?.updatedAt) || "-"}`}</p>
         </div>
 
-        {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+        {!backendOnline ? <p className="msg err">{`导入已禁用：后端未连接（当前 API：${apiBaseLabel}）`}</p> : null}
         {loading ? <p className="fitness-empty">数据加载中...</p> : null}
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}

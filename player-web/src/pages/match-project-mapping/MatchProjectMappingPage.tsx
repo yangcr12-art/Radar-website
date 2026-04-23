@@ -1,6 +1,7 @@
-import React, { useRef, useState } from "react";
-import { importMatchProjectExcel } from "../../api/storageClient";
+import React, { useEffect, useRef, useState } from "react";
+import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getMatchProjectMappingRows, hasMatchProjectMappingColumn, saveMatchProjectMappingRows } from "../../utils/matchProjectMappingStore";
+import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
 
 function normalizeKey(text) {
   return String(text || "").trim().toLowerCase();
@@ -41,6 +42,12 @@ function MatchProjectMappingPage() {
     saveMatchProjectMappingRows(nextRows);
     setRows(getMatchProjectMappingRows());
   };
+
+  useEffect(() => {
+    return subscribeMappingStoreChanged(() => {
+      setRows(getMatchProjectMappingRows());
+    });
+  }, []);
 
   const hasDuplicateInRows = (targetValue, skipIndex) => {
     const targetKey = normalizeKey(targetValue);
@@ -98,18 +105,18 @@ function MatchProjectMappingPage() {
     setError("");
   };
 
-  const handleImportExcelClick = () => {
+  const handleImportCsvClick = () => {
     setError("");
     setMessage("");
     fileInputRef.current?.click();
   };
 
-  const handleImportExcelChange = async (event) => {
+  const handleImportCsvChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (!String(file.name || "").toLowerCase().endsWith(".xlsx")) {
-      setError("仅支持 .xlsx 文件。");
+    if (!String(file.name || "").toLowerCase().endsWith(".csv")) {
+      setError("仅支持 .csv 文件。");
       return;
     }
 
@@ -117,36 +124,46 @@ function MatchProjectMappingPage() {
     setError("");
     setMessage("");
     try {
-      const res = await importMatchProjectExcel(file);
-      const items = Array.isArray(res?.items) ? res.items : [];
-      if (items.length === 0) {
-        setError("未在 Excel 中识别到可导入的比赛项目。");
+      const csvText = await readTextFile(file);
+      const parsed = parseMappingCsv(csvText, {
+        requiredHeaders: ["English", "中文翻译", "group"]
+      });
+      if (parsed.error) {
+        setError(parsed.error);
         return;
       }
-      const existingKeySet = new Set(rows.map((row) => normalizeKey(row.en)));
-      const addedRows = [];
-      let skipped = 0;
-      items.forEach((item) => {
-        const en = String(item?.en || "").trim();
+
+      const seen = new Set();
+      const importedRows = [];
+      for (const item of parsed.rows) {
+        const en = String(item?.English || "").trim();
         const key = normalizeKey(en);
-        if (!en || !key || existingKeySet.has(key)) {
-          skipped += 1;
+        const zh = String(item?.中文翻译 || "").trim();
+        const group = String(item?.group || "").trim();
+        if (!en && !zh && !group) continue;
+        if (!en || !key) {
+          setError("CSV 中每一行都必须填写 English。");
           return;
         }
-        existingKeySet.add(key);
-        addedRows.push({
+        if (seen.has(key)) {
+          setError(`CSV 中存在重复 English：${en}`);
+          return;
+        }
+        seen.add(key);
+        importedRows.push({
           en,
-          zh: String(item?.zh || "").trim(),
-          group: String(item?.group || "").trim()
+          zh,
+          group
         });
-      });
-      if (addedRows.length === 0) {
-        setMessage(`导入完成：新增 0 条，跳过 ${skipped} 条（来源 ${res?.sheet || "Sheet1"}）。`);
+      }
+
+      if (importedRows.length === 0) {
+        setError("CSV 中没有可导入的比赛项目行。");
         return;
       }
-      persistRows([...rows, ...addedRows]);
-      const warnings = Array.isArray(res?.warnings) ? res.warnings.length : 0;
-      setMessage(`导入完成：新增 ${addedRows.length} 条，跳过 ${skipped} 条（来源 ${res?.sheet || "Sheet1"}，warnings: ${warnings}）。`);
+
+      persistRows(importedRows);
+      setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条比赛项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
     } finally {
@@ -162,15 +179,15 @@ function MatchProjectMappingPage() {
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>比赛项目对应表</h1>
-        <p>仅用于比赛总结数据的中英文映射与分组，不影响球员项目对应表。</p>
+        <p>仅用于比赛总结数据的中英文映射与分组，不影响球员项目对应表；导入导出统一使用 CSV。</p>
         <div className="mapping-actions btn-row">
-          <button onClick={handleImportExcelClick} disabled={importing}>
-            {importing ? "导入中..." : "从 Excel 导入比赛项目"}
+          <button onClick={handleImportCsvClick} disabled={importing}>
+            {importing ? "导入中..." : "从 CSV 导入比赛项目"}
           </button>
           <button onClick={handleAddRow}>新增项目</button>
           <button onClick={handleDownloadCsv}>下载对应表 CSV</button>
         </div>
-        <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden-file" onChange={handleImportExcelChange} />
+        <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden-file" onChange={handleImportCsvChange} />
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
         <div className="mapping-table-wrap">

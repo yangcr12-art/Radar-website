@@ -15,6 +15,9 @@ from server_core.services.ranking_service import is_lower_better_column as _rank
 from server_core.services.state_store import ensure_data_dir, iso_now
 
 
+ensure_data_dir()
+ensure_player_data_dir()
+
 app = Flask(__name__)
 app.register_blueprint(match_data_bp)
 app.register_blueprint(match_project_mapping_bp)
@@ -49,6 +52,4 @@ def health():
 
 
 if __name__ == "__main__":
-    ensure_data_dir()
-    ensure_player_data_dir()
     app.run(host="127.0.0.1", port=8787, debug=False)

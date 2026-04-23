@@ -1,6 +1,8 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { fetchPlayerDataset, fetchPlayerDatasets } from "../../api/storageClient";
+import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getTeamMappingRows, mergeTeamMappingRows, normalizeTeamName, saveTeamMappingRows } from "../../utils/teamMappingStore";
+import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
 
 const SHAPE_OPTIONS = [
   { value: "circle", label: "圆形" },
@@ -118,6 +120,7 @@ function TeamMappingPage() {
     return loaded.length > 0 ? loaded : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }];
   });
   const batchLogoInputRef = useRef<HTMLInputElement | null>(null);
+  const csvInputRef = useRef<HTMLInputElement | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -126,6 +129,13 @@ function TeamMappingPage() {
     () => (rows.length > 0 ? rows : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }]),
     [rows]
   );
+
+  useEffect(() => {
+    return subscribeMappingStoreChanged(() => {
+      const loaded = getTeamMappingRows();
+      setRows(loaded.length > 0 ? loaded : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }]);
+    });
+  }, []);
 
   const persistRows = (nextRows) => {
     const normalized = Array.isArray(nextRows) ? nextRows : [];
@@ -154,6 +164,91 @@ function TeamMappingPage() {
 
   const handleDownloadCsv = () => {
     downloadFile("team_mapping.csv", toCsv(displayRows), "text/csv;charset=utf-8");
+  };
+
+  const handleImportCsvClick = () => {
+    setError("");
+    setMessage("");
+    csvInputRef.current?.click();
+  };
+
+  const handleImportCsvChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!String(file.name || "").toLowerCase().endsWith(".csv")) {
+      setError("仅支持 .csv 文件。");
+      return;
+    }
+
+    setSyncing(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const csvText = await readTextFile(file);
+      const parsed = parseMappingCsv(csvText, {
+        requiredHeaders: ["English", "中文翻译", "color", "shape", "logoFileName"]
+      });
+      if (parsed.error) {
+        setError(parsed.error);
+        return;
+      }
+
+      const existingLogoByKey = new Map<string, { logoDataUrl: string; logoFileName: string }>();
+      displayRows.forEach((row) => {
+        const enKey = normalizeMatchKey(row.en);
+        const zhKey = normalizeMatchKey(row.zh);
+        const logo = {
+          logoDataUrl: String(row.logoDataUrl || "").trim(),
+          logoFileName: String(row.logoFileName || "").trim()
+        };
+        if (enKey && !existingLogoByKey.has(enKey)) existingLogoByKey.set(enKey, logo);
+        if (zhKey && !existingLogoByKey.has(zhKey)) existingLogoByKey.set(zhKey, logo);
+      });
+
+      const seen = new Set<string>();
+      const importedRows = [];
+      for (const item of parsed.rows) {
+        const en = normalizeTeamName(item?.English);
+        const zh = String(item?.中文翻译 || "").trim();
+        const color = String(item?.color || "").trim();
+        const shape = String(item?.shape || "").trim();
+        const logoFileName = String(item?.logoFileName || "").trim();
+        if (!en && !zh && !color && !shape && !logoFileName) continue;
+        const key = normalizeMatchKey(en);
+        if (!en || !key) {
+          setError("CSV 中每一行都必须填写 English。");
+          return;
+        }
+        if (seen.has(key)) {
+          setError(`CSV 中存在重复 English：${en}`);
+          return;
+        }
+        seen.add(key);
+        const logo = existingLogoByKey.get(key) || existingLogoByKey.get(normalizeMatchKey(zh)) || { logoDataUrl: "", logoFileName: "" };
+        importedRows.push({
+          en,
+          zh,
+          color,
+          shape,
+          logoDataUrl: logo.logoDataUrl,
+          logoFileName: logo.logoFileName || logoFileName
+        });
+      }
+
+      if (importedRows.length === 0) {
+        setError("CSV 中没有可导入的球队行。");
+        return;
+      }
+
+      persistRows(importedRows);
+      setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条球队映射，Logo 图片仍按现有上传结果保留。`);
+    } catch (err: any) {
+      setError(`导入失败：${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleSyncTeamsFromPlayerData = async () => {
@@ -294,12 +389,16 @@ function TeamMappingPage() {
         <h1>球队对应表</h1>
         <p>维护球队英文名与中文名、颜色、形状、logo；比赛雷达图可直接调用这些配置。</p>
         <div className="mapping-actions">
+          <button onClick={handleImportCsvClick} disabled={syncing}>
+            {syncing ? "处理中..." : "导入球队对应表 CSV"}
+          </button>
           <button onClick={handleSyncTeamsFromPlayerData} disabled={syncing}>
             {syncing ? "同步中..." : "从球员数据同步球队"}
           </button>
           <button onClick={handleAddRow}>新增一行</button>
           <button onClick={() => batchLogoInputRef.current?.click()}>批量导入 Logo</button>
           <button onClick={handleDownloadCsv}>下载球队对应表 CSV</button>
+          <input ref={csvInputRef} type="file" accept=".csv,text/csv" style={{ display: "none" }} onChange={handleImportCsvChange} />
           <input
             ref={batchLogoInputRef}
             type="file"

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deleteMatchDataset, fetchMatchDatasets, fetchMatchTeamById, fetchMatchTeamList, importMatchExcel } from "../../api/storageClient";
+import { checkHealth, deleteMatchDataset, fetchMatchDatasets, fetchMatchTeamById, fetchMatchTeamList, getApiBaseLabel, importMatchExcel } from "../../api/storageClient";
 import { METRIC_GROUP_RULES, STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getMatchProjectGroupByColumn, getMatchProjectZhByColumn } from "../../utils/matchProjectMappingStore";
@@ -119,7 +119,8 @@ function buildTeamMetricMap(teamDetail) {
   return map;
 }
 
-function MatchTeamDataPage() {
+function MatchTeamDataPage({ mappingRevision = 0 }) {
+  const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
   const [dataMeta, setDataMeta] = useState({ teamCount: 0, updatedAt: "", numericColumns: [] as string[] });
   const [datasetOptions, setDatasetOptions] = useState([] as any[]);
@@ -159,7 +160,7 @@ function MatchTeamDataPage() {
     return String(found?.team || "");
   }, [selectedAwayTeamDetail, teamOptions, selectedAwayTeamId]);
 
-  const teamNameMapping = useMemo(() => getTeamMappingRowsByName(), []);
+  const teamNameMapping = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
   const homeTeamDisplayName = useMemo(() => {
     const key = normalizeTeamName(homeTeamName).toLowerCase();
@@ -201,7 +202,7 @@ function MatchTeamDataPage() {
         if (sourceDelta !== 0) return sourceDelta;
         return String(a.metric).localeCompare(String(b.metric), "zh-CN");
       });
-  }, [selectedHomeTeamDetail, selectedAwayTeamDetail]);
+  }, [selectedHomeTeamDetail, selectedAwayTeamDetail, mappingRevision]);
 
   const selectedMetricColumns = useMemo(() => {
     if (!selectedDatasetId) return [];
@@ -564,7 +565,7 @@ function MatchTeamDataPage() {
             </div>
           </div>
 
-          {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+          {!backendOnline ? <p className="msg err">{`导入已禁用：后端未连接（当前 API：${apiBaseLabel}）`}</p> : null}
           {matchDataMessage ? <p className="msg ok">{matchDataMessage}</p> : null}
           {matchDataError ? <p className="msg err">{matchDataError}</p> : null}
         </div>

@@ -62,6 +62,10 @@ export function getApiBase() {
   return API_BASE;
 }
 
+export function getApiBaseLabel() {
+  return API_BASE || "当前网站同源地址";
+}
+
 export function fetchState() {
   return request("/api/state", { method: "GET" });
 }
@@ -212,31 +216,4 @@ export function fetchCslStandingsDataset(datasetId = "", season = "") {
 
 export function deleteCslStandingsDataset(datasetId) {
   return request(`/api/csl-standings/datasets/${encodeURIComponent(datasetId)}`, { method: "DELETE" });
-}
-
-export function importMatchProjectExcel(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return requestForm("/api/match-project-mapping/import-excel", {
-    method: "POST",
-    body: form
-  });
-}
-
-export function importNameExcel(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return requestForm("/api/name-mapping/import-excel", {
-    method: "POST",
-    body: form
-  });
-}
-
-export function importProjectExcel(file) {
-  const form = new FormData();
-  form.append("file", file);
-  return requestForm("/api/project-mapping/import-excel", {
-    method: "POST",
-    body: form
-  });
 }

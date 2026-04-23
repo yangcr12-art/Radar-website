@@ -20,6 +20,7 @@ import { type AppPageKey } from "./pageRegistry";
 type RenderActivePageArgs = {
   activePage: AppPageKey;
   setActivePage: (page: AppPageKey) => void;
+  mappingRevision: number;
   radarPage: React.ReactNode;
   playerDataPageProps: any;
   scatterPageProps: any;
@@ -29,6 +30,7 @@ type RenderActivePageArgs = {
 export function renderActivePage({
   activePage,
   setActivePage,
+  mappingRevision,
   radarPage,
   playerDataPageProps,
   scatterPageProps,
@@ -50,19 +52,19 @@ export function renderActivePage({
     case "team_mapping":
       return <TeamMappingPage />;
     case "match_team_data":
-      return <MatchTeamDataPage />;
+      return <MatchTeamDataPage mappingRevision={mappingRevision} />;
     case "match_radar":
-      return <MatchRadarPage />;
+      return <MatchRadarPage mappingRevision={mappingRevision} />;
     case "fitness_team_radar":
-      return <FitnessTeamRadarPage />;
+      return <FitnessTeamRadarPage mappingRevision={mappingRevision} />;
     case "fitness_player_overlay":
-      return <FitnessPlayerOverlayPage />;
+      return <FitnessPlayerOverlayPage mappingRevision={mappingRevision} />;
     case "fitness_per90":
-      return <FitnessPer90Page />;
+      return <FitnessPer90Page mappingRevision={mappingRevision} />;
     case "opta_analysis":
       return <OptaAnalysisPage />;
     case "csl_standings_trend":
-      return <CslStandingsTrendPage />;
+      return <CslStandingsTrendPage mappingRevision={mappingRevision} />;
     case "player_data":
       return <PlayerDataPage {...playerDataPageProps} />;
     case "scatter_plot":

@@ -1,3 +1,5 @@
+import { emitMappingStoreChanged } from "./mappingSync";
+
 const NAME_MAPPING_STORAGE_KEY = "player_web_name_mapping_rows_v1";
 
 function normalizeRow(item) {
@@ -53,6 +55,7 @@ export function saveNameMappingRows(rows) {
   try {
     const normalized = normalizeRows(rows);
     localStorage.setItem(NAME_MAPPING_STORAGE_KEY, JSON.stringify(normalized));
+    emitMappingStoreChanged("name");
     return true;
   } catch {
     return false;

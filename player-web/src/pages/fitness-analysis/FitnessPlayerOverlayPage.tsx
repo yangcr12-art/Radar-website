@@ -1,8 +1,8 @@
 import React from "react";
 import FitnessAnalysisPage from "./FitnessAnalysisPage";
 
-function FitnessPlayerOverlayPage() {
-  return <FitnessAnalysisPage view="player" />;
+function FitnessPlayerOverlayPage({ mappingRevision }: { mappingRevision: number }) {
+  return <FitnessAnalysisPage view="player" mappingRevision={mappingRevision} />;
 }
 
 export default FitnessPlayerOverlayPage;

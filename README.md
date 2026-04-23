@@ -52,6 +52,33 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 访问：`http://127.0.0.1:5173`
 
+### 2.3 Web（生产部署到云服务器）
+
+面向 Ubuntu 24.04 云服务器的生产部署资产已新增到：
+
+```text
+deploy/player-web-prod/
+```
+
+默认生产方案：
+
+- 前端静态构建，由 `Nginx` 提供
+- 后端使用 `gunicorn` 单进程绑定 `127.0.0.1:8787`
+- `Nginx` 反代 `/api/*`
+- 保持当前共享数据工作台行为，不新增登录和用户隔离
+
+服务器执行入口：
+
+```bash
+sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
+```
+
+更新入口：
+
+```bash
+sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
+```
+
 ---
 
 ## 3. 当前能力（摘要）

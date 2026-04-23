@@ -1,6 +1,7 @@
-import React, { useRef, useState } from "react";
-import { importProjectExcel } from "../../api/storageClient";
+import React, { useEffect, useRef, useState } from "react";
+import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getProjectMappingRows, hasProjectMappingColumn, saveProjectMappingRows } from "../../utils/projectMappingStore";
+import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
 
 const FITNESS_ZH_BY_EN = {
   "Total Distance per 90": "每90分钟总距离",
@@ -59,6 +60,12 @@ function ProjectMappingPage() {
     saveProjectMappingRows(normalized);
     setRows(getProjectMappingRows());
   };
+
+  useEffect(() => {
+    return subscribeMappingStoreChanged(() => {
+      setRows(getProjectMappingRows());
+    });
+  }, []);
 
   const hasDuplicateInRows = (targetValue, skipIndex) => {
     const targetKey = normalizeColumnKey(targetValue);
@@ -128,18 +135,18 @@ function ProjectMappingPage() {
     setMessage(row.isBuiltin ? "已隐藏该已有项目。" : "已删除新增项目。");
   };
 
-  const handleImportExcelClick = () => {
+  const handleImportCsvClick = () => {
     setError("");
     setMessage("");
     fileInputRef.current?.click();
   };
 
-  const handleImportExcelChange = async (event) => {
+  const handleImportCsvChange = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (!String(file.name || "").toLowerCase().endsWith(".xlsx")) {
-      setError("仅支持 .xlsx 文件。");
+    if (!String(file.name || "").toLowerCase().endsWith(".csv")) {
+      setError("仅支持 .csv 文件。");
       return;
     }
 
@@ -148,40 +155,47 @@ function ProjectMappingPage() {
     setMessage("");
 
     try {
-      const res = await importProjectExcel(file);
-      const columns = Array.isArray(res?.columns) ? res.columns : [];
-      if (columns.length === 0) {
-        setError("未在 Excel 中识别到有效表头。");
+      const csvText = await readTextFile(file);
+      const parsed = parseMappingCsv(csvText, {
+        requiredHeaders: ["English", "中文翻译", "group"]
+      });
+      if (parsed.error) {
+        setError(parsed.error);
         return;
       }
 
       const seen = new Set();
-      const addedRows = [];
-      let skipped = 0;
-      columns.forEach((col) => {
-        const en = String(col || "").trim();
+      const importedRows = [];
+      for (const item of parsed.rows) {
+        const en = String(item?.English || "").trim();
         const key = normalizeColumnKey(en);
-        if (!en || !key) return;
-        if (seen.has(key) || hasProjectMappingColumn(en) || rows.some((row) => normalizeColumnKey(row.en) === key)) {
-          skipped += 1;
+        const zh = String(item?.中文翻译 || "").trim();
+        const group = String(item?.group || "").trim();
+        if (!en && !zh && !group) continue;
+        if (!en || !key) {
+          setError("CSV 中每一行都必须填写 English。");
+          return;
+        }
+        if (seen.has(key)) {
+          setError(`CSV 中存在重复 English：${en}`);
           return;
         }
         seen.add(key);
-        addedRows.push({
+        importedRows.push({
           en,
-          zh: String(FITNESS_ZH_BY_EN[en] || "").trim(),
-          group: "体能",
-          isBuiltin: false
+          zh: zh || String(FITNESS_ZH_BY_EN[en] || "").trim(),
+          group,
+          isBuiltin: !hasProjectMappingColumn(en)
         });
-      });
+      }
 
-      if (addedRows.length === 0) {
-        setMessage(`导入完成：新增 0 条，跳过 ${skipped} 条（来源 ${res?.sheet || "Sheet1"}）。`);
+      if (importedRows.length === 0) {
+        setError("CSV 中没有可导入的项目行。");
         return;
       }
 
-      persistRows([...rows, ...addedRows]);
-      setMessage(`导入完成：新增 ${addedRows.length} 条，跳过 ${skipped} 条（来源 ${res?.sheet || "Sheet1"}）。`);
+      persistRows(importedRows);
+      setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
     } finally {
@@ -197,15 +211,15 @@ function ProjectMappingPage() {
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>项目对应表</h1>
-        <p>维护字段中英映射与分组，支持新增、删除与从 Excel 首行表头增量导入。</p>
+        <p>维护字段中英映射与分组，支持新增、删除，以及按同一份 CSV 模板导入导出。</p>
         <div className="mapping-actions btn-row">
-          <button onClick={handleImportExcelClick} disabled={importing}>
-            {importing ? "导入中..." : "从 Excel 增量导入项目"}
+          <button onClick={handleImportCsvClick} disabled={importing}>
+            {importing ? "导入中..." : "从 CSV 导入项目"}
           </button>
           <button onClick={handleAddRow}>新增项目</button>
           <button onClick={handleDownloadCsv}>下载对应表 CSV</button>
         </div>
-        <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden-file" onChange={handleImportExcelChange} />
+        <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden-file" onChange={handleImportCsvChange} />
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
         <div className="mapping-table-wrap">

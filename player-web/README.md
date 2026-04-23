@@ -30,6 +30,12 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 打开：`http://127.0.0.1:5173`
 
+生产部署说明见仓库根目录：
+
+```text
+deploy/player-web-prod/README.md
+```
+
 ---
 
 ## 2) 页面导航

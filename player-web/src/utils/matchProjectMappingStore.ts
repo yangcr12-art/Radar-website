@@ -1,3 +1,5 @@
+import { emitMappingStoreChanged } from "./mappingSync";
+
 const MATCH_PROJECT_MAPPING_STORAGE_KEY = "player_web_match_project_mapping_rows_v1";
 
 type MatchProjectRow = {
@@ -41,6 +43,7 @@ export function getMatchProjectMappingRows(): MatchProjectRow[] {
 export function saveMatchProjectMappingRows(rows: MatchProjectRow[]): boolean {
   try {
     localStorage.setItem(MATCH_PROJECT_MAPPING_STORAGE_KEY, JSON.stringify(normalizeRows(rows)));
+    emitMappingStoreChanged("match_project");
     return true;
   } catch {
     return false;

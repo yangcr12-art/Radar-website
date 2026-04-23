@@ -132,7 +132,8 @@ function ScatterPlotPage(props) {
     scatterDoc,
     scatterConfig,
     onScatterConfigChange,
-    formatPlayerDataColumnLabel
+    formatPlayerDataColumnLabel,
+    mappingRevision
   } = props;
 
   const [hoverInfo, setHoverInfo] = useState(null);
@@ -177,8 +178,8 @@ function ScatterPlotPage(props) {
   const xMax = toFiniteNumber(scatterConfig?.xMax);
   const yMin = toFiniteNumber(scatterConfig?.yMin);
   const yMax = toFiniteNumber(scatterConfig?.yMax);
-  const teamMappingByEnglish = useMemo(() => getTeamMappingRowsByEnglish(), [selectedDatasetId]);
-  const nameMappingByEnglish = useMemo(() => getNameMappingRowsByEnglish(), []);
+  const teamMappingByEnglish = useMemo(() => getTeamMappingRowsByEnglish(), [selectedDatasetId, mappingRevision]);
+  const nameMappingByEnglish = useMemo(() => getNameMappingRowsByEnglish(), [mappingRevision]);
   const teamColumn = useMemo(() => {
     const fromSchema = pickTeamColumn(allColumns);
     if (fromSchema) return fromSchema;
