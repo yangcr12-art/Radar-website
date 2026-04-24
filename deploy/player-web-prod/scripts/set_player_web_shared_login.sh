@@ -35,6 +35,22 @@ if isinstance(secret, str) and secret.strip():
 PY
 }
 
+resolve_auth_group() {
+  local group_name=""
+  group_name="$(systemctl show -p Group --value "$SERVICE_NAME" 2>/dev/null | tr -d '\n' || true)"
+  if [[ -z "$group_name" ]]; then
+    group_name="$(id -gn "${SUDO_USER:-$(id -un)}")"
+  fi
+  printf '%s' "$group_name"
+}
+
+set_auth_file_permissions() {
+  local auth_group
+  auth_group="$(resolve_auth_group)"
+  chown root:"$auth_group" "$AUTH_FILE"
+  chmod 640 "$AUTH_FILE"
+}
+
 write_auth_file() {
   install -d -m 0750 "$AUTH_DIR"
   python3 - "$AUTH_FILE" "$AUTH_USER" "$AUTH_PASS" "$SESSION_SECRET" <<'PY'
@@ -54,8 +70,7 @@ payload = {
 }
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
-  chown root:root "$AUTH_FILE"
-  chmod 600 "$AUTH_FILE"
+  set_auth_file_permissions
 }
 
 require_root

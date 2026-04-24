@@ -45,6 +45,11 @@ wait_for_health() {
   return 1
 }
 
+set_auth_file_permissions() {
+  chown root:"$RUN_GROUP" "$AUTH_FILE"
+  chmod 640 "$AUTH_FILE"
+}
+
 write_auth_file() {
   install -d -m 0750 "$AUTH_DIR"
 
@@ -72,8 +77,7 @@ payload = {
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 
-  chown root:root "$AUTH_FILE"
-  chmod 600 "$AUTH_FILE"
+  set_auth_file_permissions
 }
 
 require_root

@@ -120,6 +120,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 登录态使用浏览器会话 cookie；关闭浏览器后重新打开，需要再次登录
 - 顶部导航提供“退出登录”按钮；点击后当前浏览器会话立即回到登录页
 - 生产环境支持多个共享账号；账号列表写入 `/etc/player-web/auth.json`
+- `/etc/player-web/auth.json` 由 `root:<后端运行组>` 持有并使用 `640` 权限，保证 `gunicorn` 进程可读
 - 为避免当前 JSON 落盘在多进程下出现并发写风险，生产默认只启 `1` 个 Python worker
 
 服务器安装命令：
@@ -131,7 +132,7 @@ sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 若不使用 `80/443`，可改为自定义端口：
 
 ```bash
-sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 ```
 
@@ -144,7 +145,7 @@ sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 如需显式变更对外端口：
 
 ```bash
-sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 

@@ -16,6 +16,22 @@ require_root() {
 
 require_root
 
+resolve_auth_group() {
+  local group_name=""
+  group_name="$(systemctl show -p Group --value "$SERVICE_NAME" 2>/dev/null | tr -d '\n' || true)"
+  if [[ -z "$group_name" ]]; then
+    group_name="$(id -gn "${SUDO_USER:-$(id -un)}")"
+  fi
+  printf '%s' "$group_name"
+}
+
+set_auth_file_permissions() {
+  local auth_group
+  auth_group="$(resolve_auth_group)"
+  chown root:"$auth_group" "$AUTH_FILE"
+  chmod 640 "$AUTH_FILE"
+}
+
 if [[ -z "$AUTH_USER" ]]; then
   read -r -p "请输入要追加的账号: " AUTH_USER
 fi
@@ -93,8 +109,7 @@ if not isinstance(payload.get("sessionSecret"), str) or not payload.get("session
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 
-chown root:root "$AUTH_FILE"
-chmod 600 "$AUTH_FILE"
+set_auth_file_permissions
 systemctl restart "$SERVICE_NAME"
 
 echo "[login] 已追加共享登录账号。"

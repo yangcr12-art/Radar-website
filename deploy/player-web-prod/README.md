@@ -42,7 +42,7 @@ sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 如需避免使用 `80/443`，可直接指定自定义端口：
 
 ```bash
-sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 ```
 
@@ -54,6 +54,7 @@ sudo PLAYER_WEB_PUBLIC_PORT=8080 \
 - API 反代：`127.0.0.1:8787`
 - 共享账号：默认用户名 `player`；若未显式传入密码，安装脚本会自动生成一组初始密码并打印到终端
 - 默认安装脚本会先写入 1 个共享账号；后续可继续追加更多账号
+- 共享登录配置文件 `/etc/player-web/auth.json` 使用 `root:<后端运行组>` 与 `640` 权限，保证后端进程可读
 
 ## 3. 安装脚本会做什么
 
@@ -88,7 +89,7 @@ sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 若要显式改端口：
 
 ```bash
-sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 
