@@ -17,7 +17,7 @@
 - 反向代理：`Nginx` 将 `/api/*` 转发到 `127.0.0.1:8787`
 - 数据目录：沿用 `player-web/server/data/`
 - 数据语义：保持当前共享工作台行为，所有访问者共享导入数据、映射表、预设
-- 登录语义：共享一个账号密码；登录成功后使用浏览器会话 cookie，关闭浏览器后重新打开需要再次登录
+- 登录语义：支持多个共享账号；登录成功后使用浏览器会话 cookie，关闭浏览器后重新打开需要再次登录
 
 为什么强制 `1 worker`：
 
@@ -46,6 +46,7 @@ sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 - 对外端口：`80`
 - API 反代：`127.0.0.1:8787`
 - 共享账号：默认用户名 `player`；若未显式传入密码，安装脚本会自动生成一组初始密码并打印到终端
+- 默认安装脚本会先写入 1 个共享账号；后续可继续追加更多账号
 
 ## 3. 安装脚本会做什么
 
@@ -101,6 +102,12 @@ sudo bash deploy/player-web-prod/scripts/set_player_web_shared_login.sh
 sudo PLAYER_WEB_LOGIN_USERNAME=player \
   PLAYER_WEB_LOGIN_PASSWORD='your-strong-password' \
   bash deploy/player-web-prod/scripts/set_player_web_shared_login.sh
+```
+
+追加一个共享账号：
+
+```bash
+sudo bash deploy/player-web-prod/scripts/add_player_web_shared_login_account.sh
 ```
 
 修改完成后执行：

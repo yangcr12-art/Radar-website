@@ -40,12 +40,53 @@ def _read_value(file_key: str, env_key: str, default: str) -> str:
     return default
 
 
-def get_login_username() -> str:
-    return _read_value("username", "PLAYER_WEB_LOGIN_USERNAME", DEFAULT_LOGIN_USERNAME)
+def _normalize_accounts(payload: dict[str, Any]) -> list[dict[str, str]]:
+    raw_accounts = payload.get("accounts")
+    normalized: list[dict[str, str]] = []
+    if isinstance(raw_accounts, list):
+        for item in raw_accounts:
+            if not isinstance(item, dict):
+                continue
+            username = str(item.get("username", "")).strip()
+            password = str(item.get("password", ""))
+            if username and password:
+                normalized.append({"username": username, "password": password})
+    if normalized:
+        return normalized
+
+    legacy_username = str(payload.get("username", "")).strip()
+    legacy_password = str(payload.get("password", ""))
+    if legacy_username and legacy_password:
+        return [{"username": legacy_username, "password": legacy_password}]
+    return []
 
 
-def get_login_password() -> str:
-    return _read_value("password", "PLAYER_WEB_LOGIN_PASSWORD", DEFAULT_LOGIN_PASSWORD)
+def get_login_accounts() -> list[dict[str, str]]:
+    payload = _load_auth_file()
+    accounts = _normalize_accounts(payload)
+    if accounts:
+        return accounts
+
+    env_username = os.environ.get("PLAYER_WEB_LOGIN_USERNAME", "").strip()
+    env_password = os.environ.get("PLAYER_WEB_LOGIN_PASSWORD", "")
+    if env_username and env_password:
+        return [{"username": env_username, "password": env_password}]
+
+    return [{"username": DEFAULT_LOGIN_USERNAME, "password": DEFAULT_LOGIN_PASSWORD}]
+
+
+def get_primary_login_username() -> str:
+    accounts = get_login_accounts()
+    if accounts:
+        return accounts[0]["username"]
+    return DEFAULT_LOGIN_USERNAME
+
+
+def is_valid_login(username: str, password: str) -> bool:
+    for account in get_login_accounts():
+        if username == account["username"] and password == account["password"]:
+            return True
+    return False
 
 
 def get_session_secret() -> str:

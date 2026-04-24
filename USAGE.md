@@ -118,6 +118,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 生产默认启用站内共享账号登录页；登录成功后才可进入工作台
 - 登录态使用浏览器会话 cookie；关闭浏览器后重新打开，需要再次登录
 - 顶部导航提供“退出登录”按钮；点击后当前浏览器会话立即回到登录页
+- 生产环境支持多个共享账号；账号列表写入 `/etc/player-web/auth.json`
 - 为避免当前 JSON 落盘在多进程下出现并发写风险，生产默认只启 `1` 个 Python worker
 
 服务器安装命令：
@@ -136,6 +137,12 @@ sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 
 ```bash
 sudo bash deploy/player-web-prod/scripts/set_player_web_shared_login.sh
+```
+
+追加一个共享账号：
+
+```bash
+sudo bash deploy/player-web-prod/scripts/add_player_web_shared_login_account.sh
 ```
 
 服务器数据备份命令：

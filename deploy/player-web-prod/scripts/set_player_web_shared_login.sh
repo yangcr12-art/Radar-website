@@ -44,8 +44,12 @@ from pathlib import Path
 
 path = Path(sys.argv[1])
 payload = {
-    "username": sys.argv[2],
-    "password": sys.argv[3],
+    "accounts": [
+        {
+            "username": sys.argv[2],
+            "password": sys.argv[3],
+        }
+    ],
     "sessionSecret": sys.argv[4],
 }
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -83,6 +87,6 @@ fi
 write_auth_file
 systemctl restart "$SERVICE_NAME"
 
-echo "[login] 已更新共享登录账号。"
+echo "[login] 已更新共享登录账号列表（当前仅保留 1 个账号）。"
 echo "[login] username: $AUTH_USER"
 echo "[login] config: $AUTH_FILE"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, session
 
-from server_core.services.auth_config import get_login_password, get_login_username
+from server_core.services.auth_config import get_primary_login_username, is_valid_login
 
 
 auth_bp = Blueprint("auth_api", __name__)
@@ -18,7 +18,7 @@ def auth_status():
         {
             "ok": True,
             "authenticated": is_authenticated(),
-            "usernameHint": get_login_username(),
+            "usernameHint": get_primary_login_username(),
         }
     )
 
@@ -28,17 +28,15 @@ def auth_login():
     payload = request.get_json(silent=True) or {}
     username = str(payload.get("username", "")).strip()
     password = str(payload.get("password", ""))
-    expected_username = get_login_username()
-    expected_password = get_login_password()
 
-    if username != expected_username or password != expected_password:
+    if not is_valid_login(username, password):
         return jsonify({"ok": False, "error": "账号或密码错误。"}), 401
 
     session.clear()
     session["player_web_authenticated"] = True
-    session["player_web_username"] = expected_username
+    session["player_web_username"] = username
     session.permanent = False
-    return jsonify({"ok": True, "authenticated": True, "username": expected_username})
+    return jsonify({"ok": True, "authenticated": True, "username": username})
 
 
 @auth_bp.route("/api/auth/logout", methods=["POST"])
