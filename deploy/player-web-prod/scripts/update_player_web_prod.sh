@@ -6,6 +6,9 @@ BACKEND_DIR="$ROOT_DIR/player-web/server"
 FRONTEND_DIR="$ROOT_DIR/player-web"
 VENV_DIR="$BACKEND_DIR/.venv"
 SERVICE_NAME="player-web-backend"
+AUTH_FILE="/etc/nginx/.htpasswd-player-web"
+AUTH_USER="${PLAYER_WEB_BASIC_AUTH_USER:-player}"
+AUTH_PASS="${PLAYER_WEB_BASIC_AUTH_PASSWORD:-}"
 
 require_root() {
   if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
@@ -23,6 +26,29 @@ wait_for_health() {
     sleep 1
   done
   return 1
+}
+
+ensure_auth_file() {
+  if ! command -v htpasswd >/dev/null 2>&1; then
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y apache2-utils
+  fi
+
+  if [[ -f "$AUTH_FILE" ]]; then
+    chown root:www-data "$AUTH_FILE"
+    chmod 640 "$AUTH_FILE"
+    return 0
+  fi
+
+  if [[ -z "$AUTH_PASS" ]]; then
+    AUTH_PASS="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)"
+    echo "[update] generated initial web password for user '$AUTH_USER'"
+    echo "[update] password: $AUTH_PASS"
+  fi
+
+  htpasswd -bcB "$AUTH_FILE" "$AUTH_USER" "$AUTH_PASS"
+  chown root:www-data "$AUTH_FILE"
+  chmod 640 "$AUTH_FILE"
 }
 
 require_root
@@ -45,6 +71,8 @@ RUN_GROUP="$(id -gn "$RUN_USER")"
 mkdir -p "$BACKEND_DIR/data"
 chown -R "$RUN_USER:$RUN_GROUP" "$BACKEND_DIR/data" "$FRONTEND_DIR/dist"
 
+ensure_auth_file
+
 systemctl restart "$SERVICE_NAME"
 nginx -t
 systemctl reload nginx
@@ -60,3 +88,4 @@ if ! wait_for_health "http://127.0.0.1/api/health"; then
 fi
 
 echo "[update] deployment refreshed successfully"
+echo "[update] web auth file: $AUTH_FILE"

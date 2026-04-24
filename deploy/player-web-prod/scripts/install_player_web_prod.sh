@@ -13,6 +13,9 @@ BACKEND_DIR="$ROOT_DIR/player-web/server"
 FRONTEND_DIR="$ROOT_DIR/player-web"
 VENV_DIR="$BACKEND_DIR/.venv"
 TMP_DIR="$(mktemp -d)"
+AUTH_FILE="/etc/nginx/.htpasswd-player-web"
+AUTH_USER="${PLAYER_WEB_BASIC_AUTH_USER:-player}"
+AUTH_PASS="${PLAYER_WEB_BASIC_AUTH_PASSWORD:-}"
 
 cleanup() {
   rm -rf "$TMP_DIR"
@@ -38,13 +41,37 @@ wait_for_health() {
   return 1
 }
 
+ensure_auth_file() {
+  if ! command -v htpasswd >/dev/null 2>&1; then
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y apache2-utils
+  fi
+
+  if [[ -f "$AUTH_FILE" ]]; then
+    chown root:www-data "$AUTH_FILE"
+    chmod 640 "$AUTH_FILE"
+    echo "[install] auth file exists: $AUTH_FILE"
+    return 0
+  fi
+
+  if [[ -z "$AUTH_PASS" ]]; then
+    AUTH_PASS="$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)"
+    echo "[install] generated initial web password for user '$AUTH_USER'"
+    echo "[install] password: $AUTH_PASS"
+  fi
+
+  htpasswd -bcB "$AUTH_FILE" "$AUTH_USER" "$AUTH_PASS"
+  chown root:www-data "$AUTH_FILE"
+  chmod 640 "$AUTH_FILE"
+}
+
 require_root
 
 echo "[install] repo root: $ROOT_DIR"
 echo "[install] run user: $RUN_USER"
 
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv python3-pip nodejs npm nginx curl ufw
+DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv python3-pip nodejs npm nginx curl ufw apache2-utils
 
 python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --upgrade pip
@@ -74,6 +101,8 @@ install -m 0644 "$TMP_DIR/${SITE_NAME}" "$NGINX_AVAILABLE"
 ln -sfn "$NGINX_AVAILABLE" "$NGINX_ENABLED"
 rm -f /etc/nginx/sites-enabled/default
 
+ensure_auth_file
+
 systemctl daemon-reload
 systemctl enable --now "$SERVICE_NAME"
 
@@ -98,3 +127,4 @@ fi
 echo "[install] backend healthy at http://127.0.0.1:8787/api/health"
 echo "[install] site healthy at http://127.0.0.1/api/health"
 echo "[install] public entry: http://$(hostname -I | awk '{print $1}')/"
+echo "[install] web auth file: $AUTH_FILE"

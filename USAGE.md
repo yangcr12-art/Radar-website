@@ -115,6 +115,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 前端构建时使用 `VITE_STORAGE_API_BASE=/`，通过同源 `/api/*` 访问后端
 - 后端生产运行使用 `gunicorn` 单进程绑定 `127.0.0.1:8787`
 - `Nginx` 对外提供静态页面，并将 `/api/*` 反代到 `127.0.0.1:8787`
+- 生产默认启用 `Nginx Basic Auth`；浏览器访问站点前会先弹出共享用户名/密码框
 - 为避免当前 JSON 落盘在多进程下出现并发写风险，生产默认只启 `1` 个 Python worker
 
 服务器安装命令：
@@ -127,6 +128,12 @@ sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 
 ```bash
 sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
+```
+
+修改线上访问用户名/密码：
+
+```bash
+sudo bash deploy/player-web-prod/scripts/set_player_web_basic_auth.sh
 ```
 
 服务器数据备份命令：
