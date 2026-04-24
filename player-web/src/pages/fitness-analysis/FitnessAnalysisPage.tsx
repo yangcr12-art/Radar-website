@@ -600,18 +600,25 @@ function FitnessAnalysisPage({ view = "team", mappingRevision = 0 }: FitnessAnal
     const ds = String(selectedDatasetId || "");
     if (!ds || !homeTeam || !awayTeam) return;
     const current = teamRadarConfigByDataset[ds];
-    if (current && typeof current === "object") return;
     const inheritedSubtitle = Object.values(teamRadarConfigByDataset || {}).find((item: any) => String(item?.subtitle || "").trim()) as any;
     const latestTeamMapping = getTeamMappingRowsByName();
     const resolvedColors = resolveTeamRadarColors(String(homeTeam.team || ""), String(awayTeam.team || ""), latestTeamMapping);
+    const currentConfig = current && typeof current === "object" ? current : null;
+    const nextConfig = {
+      ...(currentConfig || DEFAULT_TEAM_RADAR_CONFIG),
+      subtitle: currentConfig ? String(currentConfig.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle) : String(inheritedSubtitle?.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle),
+      homeColor: resolvedColors.homeColor,
+      awayColor: resolvedColors.awayColor
+    };
+    const shouldUpdate =
+      !currentConfig ||
+      String(currentConfig.homeColor || "") !== nextConfig.homeColor ||
+      String(currentConfig.awayColor || "") !== nextConfig.awayColor ||
+      String(currentConfig.subtitle || "") !== nextConfig.subtitle;
+    if (!shouldUpdate) return;
     setTeamRadarConfigByDataset((prev: any) => ({
       ...prev,
-      [ds]: {
-        ...DEFAULT_TEAM_RADAR_CONFIG,
-        subtitle: String(inheritedSubtitle?.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle),
-        homeColor: resolvedColors.homeColor,
-        awayColor: resolvedColors.awayColor
-      }
+      [ds]: nextConfig
     }));
   }, [selectedDatasetId, homeTeam, awayTeam, teamRadarConfigByDataset, teamMapping]);
 
