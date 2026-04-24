@@ -4,9 +4,11 @@ import { NAV_ITEMS, type NavItem } from "../app/constants";
 type TopNavProps = {
   activePage: string;
   onChangePage: (pageKey: string) => void;
+  authUsername: string;
+  onLogout: () => void;
 };
 
-function TopNav({ activePage, onChangePage }: TopNavProps) {
+function TopNav({ activePage, onChangePage, authUsername, onLogout }: TopNavProps) {
   const [pinnedDropdownKey, setPinnedDropdownKey] = useState("");
   const [hoveredDropdownKey, setHoveredDropdownKey] = useState("");
   const navRef = useRef<HTMLElement | null>(null);
@@ -34,69 +36,77 @@ function TopNav({ activePage, onChangePage }: TopNavProps) {
   return (
     <header className="top-nav">
       <div className="brand">生成器V3.3</div>
-      <nav className="nav-list" aria-label="Primary Navigation" ref={navRef}>
-        {NAV_ITEMS.map((item: NavItem) => {
-          const childItems = Array.isArray(item.children) ? item.children : [];
-          const hasChildren = childItems.length > 0;
-          const isActive = hasChildren ? childItems.some((child) => child.key === activePage) : activePage === item.key;
+      <div className="top-nav-main">
+        <nav className="nav-list" aria-label="Primary Navigation" ref={navRef}>
+          {NAV_ITEMS.map((item: NavItem) => {
+            const childItems = Array.isArray(item.children) ? item.children : [];
+            const hasChildren = childItems.length > 0;
+            const isActive = hasChildren ? childItems.some((child) => child.key === activePage) : activePage === item.key;
 
-          if (!hasChildren) {
+            if (!hasChildren) {
+              return (
+                <button
+                  key={item.key}
+                  className={`nav-item${isActive ? " active" : ""}`}
+                  onClick={() => {
+                    onChangePage(item.key);
+                    setPinnedDropdownKey("");
+                    setHoveredDropdownKey("");
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            }
+
+            const menuId = `nav-dropdown-${item.key}`;
+            const isOpen = pinnedDropdownKey === item.key || hoveredDropdownKey === item.key;
             return (
-              <button
+              <div
                 key={item.key}
-                className={`nav-item${isActive ? " active" : ""}`}
-                onClick={() => {
-                  onChangePage(item.key);
-                  setPinnedDropdownKey("");
-                  setHoveredDropdownKey("");
-                }}
+                className={`nav-dropdown${isOpen ? " open" : ""}`}
+                onMouseEnter={() => setHoveredDropdownKey(item.key)}
+                onMouseLeave={() => setHoveredDropdownKey("")}
               >
-                {item.label}
-              </button>
-            );
-          }
-
-          const menuId = `nav-dropdown-${item.key}`;
-          const isOpen = pinnedDropdownKey === item.key || hoveredDropdownKey === item.key;
-          return (
-            <div
-              key={item.key}
-              className={`nav-dropdown${isOpen ? " open" : ""}`}
-              onMouseEnter={() => setHoveredDropdownKey(item.key)}
-              onMouseLeave={() => setHoveredDropdownKey("")}
-            >
-              <button
-                className={`nav-item nav-dropdown-trigger${isActive ? " active" : ""}`}
-                aria-haspopup="menu"
-                aria-expanded={isOpen}
-                aria-controls={menuId}
-                onClick={() => {
-                  if (childItems[0]?.key) onChangePage(childItems[0].key);
-                  setPinnedDropdownKey((prev) => (prev === item.key ? "" : item.key));
-                }}
-              >
-                {item.label}
-              </button>
-              <div id={menuId} role="menu" className="nav-dropdown-menu">
-                {childItems.map((child) => (
-                  <button
-                    key={child.key}
-                    className={`nav-dropdown-item${activePage === child.key ? " active" : ""}`}
-                    role="menuitem"
-                    onClick={() => {
-                      onChangePage(child.key);
-                      setPinnedDropdownKey("");
-                      setHoveredDropdownKey("");
-                    }}
-                  >
-                    {child.label}
-                  </button>
-                ))}
+                <button
+                  className={`nav-item nav-dropdown-trigger${isActive ? " active" : ""}`}
+                  aria-haspopup="menu"
+                  aria-expanded={isOpen}
+                  aria-controls={menuId}
+                  onClick={() => {
+                    if (childItems[0]?.key) onChangePage(childItems[0].key);
+                    setPinnedDropdownKey((prev) => (prev === item.key ? "" : item.key));
+                  }}
+                >
+                  {item.label}
+                </button>
+                <div id={menuId} role="menu" className="nav-dropdown-menu">
+                  {childItems.map((child) => (
+                    <button
+                      key={child.key}
+                      className={`nav-dropdown-item${activePage === child.key ? " active" : ""}`}
+                      role="menuitem"
+                      onClick={() => {
+                        onChangePage(child.key);
+                        setPinnedDropdownKey("");
+                        setHoveredDropdownKey("");
+                      }}
+                    >
+                      {child.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </nav>
+            );
+          })}
+        </nav>
+        <div className="nav-session">
+          <span className="nav-session-user">{authUsername}</span>
+          <button className="nav-logout" onClick={onLogout}>
+            退出登录
+          </button>
+        </div>
+      </div>
     </header>
   );
 }

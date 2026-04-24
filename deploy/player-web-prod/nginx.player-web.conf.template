@@ -4,10 +4,7 @@ server {
     server_name _;
 
     client_max_body_size 128m;
-    auth_basic "player-web";
-    auth_basic_user_file /etc/nginx/.htpasswd-player-web;
-
-    root __ROOT_DIR__/player-web/dist;
+    root /var/www/player-web;
     index index.html;
 
     location /api/ {

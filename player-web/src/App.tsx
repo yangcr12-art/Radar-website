@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deletePlayerDataset, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, getApiBaseLabel, importPlayerExcel, migrateFromLocal, saveState } from "./api/storageClient";
+import { checkHealth, deletePlayerDataset, fetchAuthStatus, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, getApiBaseLabel, importPlayerExcel, loginSharedSession, logoutSharedSession, migrateFromLocal, saveState } from "./api/storageClient";
 import RadarEditorPage from "./components/RadarEditorPage";
+import SharedLoginPage from "./components/SharedLoginPage";
 import TopNav from "./components/TopNav";
 import useScatterPlotState from "./hooks/useScatterPlotState";
 import {
@@ -75,6 +76,12 @@ function App() {
   const [imagePanelOpen, setImagePanelOpen] = useState(true);
   const [dataTablePanelOpen, setDataTablePanelOpen] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [authStatus, setAuthStatus] = useState<"checking" | "anonymous" | "authenticated">("checking");
+  const [authUsername, setAuthUsername] = useState("player");
+  const [loginUsername, setLoginUsername] = useState("player");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [playerDataMeta, setPlayerDataMeta] = useState({ playerCount: 0, updatedAt: "", numericColumns: [] });
   const [datasetOptions, setDatasetOptions] = useState([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState("");
@@ -868,6 +875,28 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    const loadAuthStatus = async () => {
+      try {
+        const status = await fetchAuthStatus();
+        if (cancelled) return;
+        const usernameHint = String(status?.usernameHint || "player").trim() || "player";
+        setAuthUsername(usernameHint);
+        setLoginUsername(usernameHint);
+        setAuthStatus(status?.authenticated ? "authenticated" : "anonymous");
+      } catch {
+        if (cancelled) return;
+        setAuthStatus("anonymous");
+      }
+    };
+    loadAuthStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || isHydrated) return;
+    let cancelled = false;
     const hydrate = async () => {
       const localRawDraft = readStorage(STORAGE_KEYS.draft, null);
       const localRawPresets = readStorage(STORAGE_KEYS.presets, []);
@@ -974,7 +1003,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authStatus, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1469,6 +1498,70 @@ function App() {
       groupLabelLayouts={groupLabelLayouts}
     />
   );
+
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const username = loginUsername.trim();
+    if (!username || !loginPassword) {
+      setLoginError("请输入共享账号和密码。");
+      return;
+    }
+
+    setLoginSubmitting(true);
+    setLoginError("");
+    try {
+      const result = await loginSharedSession(username, loginPassword);
+      const nextUsername = String(result?.username || username).trim() || username;
+      setAuthUsername(nextUsername);
+      setLoginUsername(nextUsername);
+      setLoginPassword("");
+      setIsHydrated(false);
+      setAuthStatus("authenticated");
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "登录失败。");
+    } finally {
+      setLoginSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutSharedSession();
+    } catch {
+      // Ignore logout errors and still force the client back to the login screen.
+    }
+    setAuthStatus("anonymous");
+    setIsHydrated(false);
+    setLoginPassword("");
+    setLoginError("");
+  };
+
+  if (authStatus === "checking" || (authStatus === "authenticated" && !isHydrated)) {
+    return (
+      <div className="login-shell">
+        <div className="login-card login-card-loading">
+          <div className="login-eyebrow">共享工作台登录</div>
+          <h1>正在准备工作台</h1>
+          <p className="login-copy">正在校验登录状态并同步服务器数据。</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus !== "authenticated") {
+    return (
+      <SharedLoginPage
+        username={loginUsername}
+        password={loginPassword}
+        onUsernameChange={(value) => setLoginUsername(value)}
+        onPasswordChange={(value) => setLoginPassword(value)}
+        onSubmit={handleLogin}
+        submitting={loginSubmitting}
+        error={loginError}
+      />
+    );
+  }
+
   return (
     <div className="app-shell">
       <TopNav
@@ -1477,6 +1570,8 @@ function App() {
           if (!isAppPageKey(pageKey)) return;
           setActivePage(pageKey);
         }}
+        authUsername={authUsername}
+        onLogout={handleLogout}
       />
       <main className="content-shell">
         {renderActivePage({

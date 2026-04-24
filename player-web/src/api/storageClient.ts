@@ -2,12 +2,20 @@ const DEFAULT_API_BASE = "http://127.0.0.1:8787";
 const API_BASE = (import.meta.env.VITE_STORAGE_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
 const REQ_TIMEOUT_MS = 8000;
 
+export class AuthRequiredError extends Error {
+  constructor(message = "请先登录。") {
+    super(message);
+    this.name = "AuthRequiredError";
+  }
+}
+
 async function request(path, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT_MS);
   try {
     const resp = await fetch(`${API_BASE}${path}`, {
       ...options,
+      credentials: "include",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
@@ -20,6 +28,10 @@ async function request(path, options = {}) {
       body = await resp.json();
     } catch {
       body = null;
+    }
+
+    if (resp.status === 401 || body?.authRequired) {
+      throw new AuthRequiredError(body?.error || "请先登录。");
     }
 
     if (!resp.ok || (body && body.ok === false)) {
@@ -38,6 +50,7 @@ async function requestForm(path, options = {}) {
   try {
     const resp = await fetch(`${API_BASE}${path}`, {
       ...options,
+      credentials: "include",
       signal: controller.signal
     });
 
@@ -46,6 +59,10 @@ async function requestForm(path, options = {}) {
       body = await resp.json();
     } catch {
       body = null;
+    }
+
+    if (resp.status === 401 || body?.authRequired) {
+      throw new AuthRequiredError(body?.error || "请先登录。");
     }
 
     if (!resp.ok || (body && body.ok === false)) {
@@ -64,12 +81,17 @@ async function requestBlob(path, options = {}) {
   try {
     const resp = await fetch(`${API_BASE}${path}`, {
       ...options,
+      credentials: "include",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(options.headers || {})
       }
     });
+
+    if (resp.status === 401) {
+      throw new AuthRequiredError("请先登录。");
+    }
 
     if (!resp.ok) {
       let body = null;
@@ -98,6 +120,21 @@ export function getApiBaseLabel() {
 
 export function fetchState() {
   return request("/api/state", { method: "GET" });
+}
+
+export function fetchAuthStatus() {
+  return request("/api/auth/status", { method: "GET" });
+}
+
+export function loginSharedSession(username, password) {
+  return request("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ username, password })
+  });
+}
+
+export function logoutSharedSession() {
+  return request("/api/auth/logout", { method: "POST" });
 }
 
 export function saveState(data) {
