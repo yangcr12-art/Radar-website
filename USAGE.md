@@ -115,6 +115,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 前端构建时使用 `VITE_STORAGE_API_BASE=/`，通过同源 `/api/*` 访问后端
 - 后端生产运行使用 `gunicorn` 单进程绑定 `127.0.0.1:8787`
 - `Nginx` 对外提供静态页面，并将 `/api/*` 反代到 `127.0.0.1:8787`
+- 生产默认对外端口为 `80`；可通过环境变量 `PLAYER_WEB_PUBLIC_PORT` 改为其他端口（如 `8080`）
 - 生产默认启用站内共享账号登录页；登录成功后才可进入工作台
 - 登录态使用浏览器会话 cookie；关闭浏览器后重新打开，需要再次登录
 - 顶部导航提供“退出登录”按钮；点击后当前浏览器会话立即回到登录页
@@ -127,10 +128,24 @@ npm run dev -- --host 127.0.0.1 --port 5173
 sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 ```
 
+若不使用 `80/443`，可改为自定义端口：
+
+```bash
+sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+  bash deploy/player-web-prod/scripts/install_player_web_prod.sh
+```
+
 服务器更新命令：
 
 ```bash
 sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
+```
+
+如需显式变更对外端口：
+
+```bash
+sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+  bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 
 修改线上共享账号/密码：

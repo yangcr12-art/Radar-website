@@ -19,6 +19,7 @@ AUTH_FILE="${AUTH_DIR}/auth.json"
 AUTH_USER="${PLAYER_WEB_LOGIN_USERNAME:-player}"
 AUTH_PASS="${PLAYER_WEB_LOGIN_PASSWORD:-}"
 SESSION_SECRET="${PLAYER_WEB_SESSION_SECRET:-}"
+PUBLIC_PORT="${PLAYER_WEB_PUBLIC_PORT:-80}"
 
 cleanup() {
   rm -rf "$TMP_DIR"
@@ -106,7 +107,9 @@ sed \
 
 install -m 0644 "$TMP_DIR/${SERVICE_NAME}.service" "$SYSTEMD_TARGET"
 
-cat "$ROOT_DIR/deploy/player-web-prod/nginx.player-web.conf.template" >"$TMP_DIR/${SITE_NAME}"
+sed \
+  -e "s|__PUBLIC_PORT__|$PUBLIC_PORT|g" \
+  "$ROOT_DIR/deploy/player-web-prod/nginx.player-web.conf.template" >"$TMP_DIR/${SITE_NAME}"
 
 install -m 0644 "$TMP_DIR/${SITE_NAME}" "$NGINX_AVAILABLE"
 ln -sfn "$NGINX_AVAILABLE" "$NGINX_ENABLED"
@@ -122,7 +125,7 @@ systemctl enable nginx
 systemctl restart nginx
 
 ufw allow OpenSSH || true
-ufw allow 'Nginx Full' || true
+ufw allow "${PUBLIC_PORT}/tcp" || true
 ufw --force enable || true
 
 if ! wait_for_health "http://127.0.0.1:8787/api/health"; then
@@ -130,12 +133,16 @@ if ! wait_for_health "http://127.0.0.1:8787/api/health"; then
   exit 1
 fi
 
-if ! wait_for_health "http://127.0.0.1/api/health"; then
-  echo "[install] nginx health check failed: http://127.0.0.1/api/health" >&2
+if ! wait_for_health "http://127.0.0.1:${PUBLIC_PORT}/api/health"; then
+  echo "[install] nginx health check failed: http://127.0.0.1:${PUBLIC_PORT}/api/health" >&2
   exit 1
 fi
 
 echo "[install] backend healthy at http://127.0.0.1:8787/api/health"
-echo "[install] site healthy at http://127.0.0.1/api/health"
-echo "[install] public entry: http://$(hostname -I | awk '{print $1}')/"
+echo "[install] site healthy at http://127.0.0.1:${PUBLIC_PORT}/api/health"
+if [[ "$PUBLIC_PORT" == "80" ]]; then
+  echo "[install] public entry: http://$(hostname -I | awk '{print $1}')/"
+else
+  echo "[install] public entry: http://$(hostname -I | awk '{print $1}'):${PUBLIC_PORT}/"
+fi
 echo "[install] shared login config: $AUTH_FILE"

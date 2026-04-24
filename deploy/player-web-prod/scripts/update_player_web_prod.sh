@@ -16,6 +16,7 @@ AUTH_FILE="${AUTH_DIR}/auth.json"
 AUTH_USER="${PLAYER_WEB_LOGIN_USERNAME:-player}"
 AUTH_PASS="${PLAYER_WEB_LOGIN_PASSWORD:-}"
 SESSION_SECRET="${PLAYER_WEB_SESSION_SECRET:-}"
+PUBLIC_PORT="${PLAYER_WEB_PUBLIC_PORT:-}"
 TMP_DIR="$(mktemp -d)"
 
 cleanup() {
@@ -28,6 +29,18 @@ require_root() {
   if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
     echo "请使用 sudo 运行本脚本。" >&2
     exit 1
+  fi
+}
+
+resolve_public_port() {
+  if [[ -n "$PUBLIC_PORT" ]]; then
+    return 0
+  fi
+  if [[ -f "$NGINX_AVAILABLE" ]]; then
+    PUBLIC_PORT="$(awk '/listen [0-9]+;/{gsub(/;/, "", $2); print $2; exit}' "$NGINX_AVAILABLE")"
+  fi
+  if [[ -z "$PUBLIC_PORT" ]]; then
+    PUBLIC_PORT="80"
   fi
 }
 
@@ -80,6 +93,7 @@ PY
 }
 
 require_root
+resolve_public_port
 
 if [[ ! -x "$VENV_DIR/bin/pip" ]]; then
   echo "未找到后端虚拟环境：$VENV_DIR，请先运行安装脚本。" >&2
@@ -110,7 +124,10 @@ sed \
 
 install -m 0644 "$TMP_DIR/${SERVICE_NAME}.service" "$SYSTEMD_TARGET"
 
-install -m 0644 "$ROOT_DIR/deploy/player-web-prod/nginx.player-web.conf.template" "$NGINX_AVAILABLE"
+sed \
+  -e "s|__PUBLIC_PORT__|$PUBLIC_PORT|g" \
+  "$ROOT_DIR/deploy/player-web-prod/nginx.player-web.conf.template" >"$TMP_DIR/${SITE_NAME}"
+install -m 0644 "$TMP_DIR/${SITE_NAME}" "$NGINX_AVAILABLE"
 ln -sfn "$NGINX_AVAILABLE" "$NGINX_ENABLED"
 rm -f /etc/nginx/sites-enabled/default
 
@@ -126,10 +143,11 @@ if ! wait_for_health "http://127.0.0.1:8787/api/health"; then
   exit 1
 fi
 
-if ! wait_for_health "http://127.0.0.1/api/health"; then
+if ! wait_for_health "http://127.0.0.1:${PUBLIC_PORT}/api/health"; then
   echo "[update] nginx health check failed" >&2
   exit 1
 fi
 
 echo "[update] deployment refreshed successfully"
+echo "[update] public port: $PUBLIC_PORT"
 echo "[update] shared login config: $AUTH_FILE"

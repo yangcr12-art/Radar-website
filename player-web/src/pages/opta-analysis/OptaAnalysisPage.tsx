@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deleteOptaDataset, fetchOptaDataset, fetchOptaDatasets, importOptaPdf } from "../../api/storageClient";
+import { checkHealth, deleteOptaDataset, fetchOptaDataset, fetchOptaDatasets, getApiBaseLabel, importOptaPdf } from "../../api/storageClient";
 import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { formatDateTime } from "../../utils/timeFormat";
@@ -83,6 +83,7 @@ function OptaTableCard({ title, columns, rows, footnote, sortColumn, onSort }: O
 }
 
 function OptaAnalysisPage() {
+  const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
   const [datasetOptions, setDatasetOptions] = useState([] as any[]);
   const [selectedDatasetId, setSelectedDatasetId] = useState(() => String(readLocalStore(STORAGE_KEYS.optaSelectedDatasetId, "") || ""));
@@ -276,7 +277,7 @@ function OptaAnalysisPage() {
           <p>{`更新时间：${formatDateTime(datasetDoc?.updatedAt) || "-"}`}</p>
         </div>
 
-        {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+        {!backendOnline ? <p className="msg err">{`导入已禁用：后端未连接（当前 API：${apiBaseLabel}）`}</p> : null}
         {loading ? <p className="fitness-empty">数据加载中...</p> : null}
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}

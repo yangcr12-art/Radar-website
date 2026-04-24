@@ -1,6 +1,6 @@
 server {
-    listen 80;
-    listen [::]:80;
+    listen __PUBLIC_PORT__;
+    listen [::]:__PUBLIC_PORT__;
     server_name _;
 
     client_max_body_size 128m;

@@ -1,4 +1,5 @@
 import React from "react";
+import { getApiBaseLabel } from "../../api/storageClient";
 import { getProjectGroupByColumn } from "../../utils/projectMappingStore";
 
 function PlayerDataPage(props) {
@@ -40,6 +41,7 @@ function PlayerDataPage(props) {
     formatPlayerDataColumnLabel
   } = props;
   const backendOnline = backendHealth === "online";
+  const apiBaseLabel = getApiBaseLabel();
 
   return (
     <section className="info-page">
@@ -97,7 +99,7 @@ function PlayerDataPage(props) {
             </select>
           </div>
           <p className="player-data-side-note">在下方同一张表里勾选指标并导出到雷达图生成器，已保存预设可跨数据集复用</p>
-          {!backendOnline ? <p className="msg err">导入已禁用：后端未连接（默认 http://127.0.0.1:8787）</p> : null}
+          {!backendOnline ? <p className="msg err">{`导入已禁用：后端未连接（当前 API：${apiBaseLabel}）`}</p> : null}
           {playerDataMessage ? <p className="msg ok">{playerDataMessage}</p> : null}
           {playerDataError ? <p className="msg err">{playerDataError}</p> : null}
         </div>

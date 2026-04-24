@@ -10,7 +10,7 @@
 
 ## 1. 方案边界
 
-- 对外入口：`http://<服务器公网 IP>/`
+- 对外入口：默认 `http://<服务器公网 IP>/`；若自定义端口，则为 `http://<服务器公网 IP>:<端口>/`
 - 浏览器打开站点后先进入登录页
 - 前端：静态构建产物，由 `Nginx` 提供
 - 后端：`gunicorn` 单进程绑定 `127.0.0.1:8787`
@@ -39,11 +39,18 @@ cd /srv/player-web-repo
 sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
 ```
 
+如需避免使用 `80/443`，可直接指定自定义端口：
+
+```bash
+sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+  bash deploy/player-web-prod/scripts/install_player_web_prod.sh
+```
+
 脚本默认：
 
 - 运行用户：当前执行者
 - 站点根目录：当前仓库目录
-- 对外端口：`80`
+- 对外端口：默认 `80`；可通过环境变量 `PLAYER_WEB_PUBLIC_PORT` 改成其他端口（如 `8080`）
 - API 反代：`127.0.0.1:8787`
 - 共享账号：默认用户名 `player`；若未显式传入密码，安装脚本会自动生成一组初始密码并打印到终端
 - 默认安装脚本会先写入 1 个共享账号；后续可继续追加更多账号
@@ -61,13 +68,13 @@ sudo bash deploy/player-web-prod/scripts/install_player_web_prod.sh
   - 共享登录配置：`/etc/player-web/auth.json`
 - 启用防火墙规则：
   - 允许 `OpenSSH`
-  - 允许 `Nginx Full`
+  - 允许自定义对外端口（默认 `80/tcp`）
   - 不暴露 `8787`
 - 执行健康检查：
 
 ```bash
 curl -s http://127.0.0.1:8787/api/health
-curl -s http://127.0.0.1/api/health
+curl -s http://127.0.0.1:<端口>/api/health
 ```
 
 ## 4. 日常更新
@@ -76,6 +83,13 @@ curl -s http://127.0.0.1/api/health
 
 ```bash
 sudo bash deploy/player-web-prod/scripts/update_player_web_prod.sh
+```
+
+若要显式改端口：
+
+```bash
+sudo PLAYER_WEB_PUBLIC_PORT=8080 \
+  bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 
 脚本会：
@@ -169,8 +183,8 @@ sudo systemctl reload nginx
 ```bash
 curl -s http://127.0.0.1:8787/api/health
 curl -s http://127.0.0.1:8787/api/auth/status
-curl -I http://127.0.0.1/
-curl -I http://<服务器公网IP>/
+curl -I http://127.0.0.1:<端口>/
+curl -I http://<服务器公网IP>:<端口>/
 ```
 
 浏览器验收：
