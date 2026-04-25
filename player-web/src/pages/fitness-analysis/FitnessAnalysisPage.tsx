@@ -45,6 +45,8 @@ const DEFAULT_TEAM_RADAR_CONFIG = {
   subtitle: "数据来源：体能数据分析 / 第1个Sheet",
   homeColor: "#2f7fc4",
   awayColor: "#c62828",
+  homeColorAutoLocked: "0",
+  awayColorAutoLocked: "0",
   chartBackgroundColor: "#f8f5ef",
   pointRadius: "4",
   titleFontSize: "34"
@@ -68,6 +70,11 @@ const PER90_EXCEPTION_KEYWORDS = ["高速跑次数", "冲刺次数", "high speed
 function normalizeHexColor(value: unknown) {
   const text = String(value || "").trim();
   return /^#[0-9a-fA-F]{6}$/.test(text) ? text : "";
+}
+
+function isColorAutoLocked(value: unknown) {
+  const text = String(value || "").trim().toLowerCase();
+  return text === "1" || text === "true";
 }
 
 function parseNumericValue(value: unknown) {
@@ -604,17 +611,25 @@ function FitnessAnalysisPage({ view = "team", mappingRevision = 0 }: FitnessAnal
     const latestTeamMapping = getTeamMappingRowsByName();
     const resolvedColors = resolveTeamRadarColors(String(homeTeam.team || ""), String(awayTeam.team || ""), latestTeamMapping);
     const currentConfig = current && typeof current === "object" ? current : null;
+    const homeLocked = isColorAutoLocked(currentConfig?.homeColorAutoLocked);
+    const awayLocked = isColorAutoLocked(currentConfig?.awayColorAutoLocked);
+    const lockedHomeColor = normalizeHexColor(currentConfig?.homeColor);
+    const lockedAwayColor = normalizeHexColor(currentConfig?.awayColor);
     const nextConfig = {
       ...(currentConfig || DEFAULT_TEAM_RADAR_CONFIG),
       subtitle: currentConfig ? String(currentConfig.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle) : String(inheritedSubtitle?.subtitle || DEFAULT_TEAM_RADAR_CONFIG.subtitle),
-      homeColor: resolvedColors.homeColor,
-      awayColor: resolvedColors.awayColor
+      homeColor: homeLocked ? (lockedHomeColor || resolvedColors.homeColor) : resolvedColors.homeColor,
+      awayColor: awayLocked ? (lockedAwayColor || resolvedColors.awayColor) : resolvedColors.awayColor,
+      homeColorAutoLocked: homeLocked ? "1" : "0",
+      awayColorAutoLocked: awayLocked ? "1" : "0"
     };
     const shouldUpdate =
       !currentConfig ||
       String(currentConfig.homeColor || "") !== nextConfig.homeColor ||
       String(currentConfig.awayColor || "") !== nextConfig.awayColor ||
-      String(currentConfig.subtitle || "") !== nextConfig.subtitle;
+      String(currentConfig.subtitle || "") !== nextConfig.subtitle ||
+      String(currentConfig.homeColorAutoLocked || "0") !== nextConfig.homeColorAutoLocked ||
+      String(currentConfig.awayColorAutoLocked || "0") !== nextConfig.awayColorAutoLocked;
     if (!shouldUpdate) return;
     setTeamRadarConfigByDataset((prev: any) => ({
       ...prev,
@@ -989,7 +1004,9 @@ function FitnessAnalysisPage({ view = "team", mappingRevision = 0 }: FitnessAnal
           [nextDatasetId]: {
             ...(prev[nextDatasetId] && typeof prev[nextDatasetId] === "object" ? prev[nextDatasetId] : DEFAULT_TEAM_RADAR_CONFIG),
             homeColor: resolvedColors.homeColor,
-            awayColor: resolvedColors.awayColor
+            awayColor: resolvedColors.awayColor,
+            homeColorAutoLocked: "0",
+            awayColorAutoLocked: "0"
           }
         }));
       }
@@ -1286,11 +1303,21 @@ function FitnessAnalysisPage({ view = "team", mappingRevision = 0 }: FitnessAnal
               <div className="match-radar-grid-2">
                 <div className="title-row">
                   <label>主队颜色</label>
-                  <input className="square-color-picker" type="color" value={homeColor} onChange={(e) => updateTeamRadarConfig({ homeColor: e.target.value })} />
+                  <input
+                    className="square-color-picker"
+                    type="color"
+                    value={homeColor}
+                    onChange={(e) => updateTeamRadarConfig({ homeColor: e.target.value, homeColorAutoLocked: "1" })}
+                  />
                 </div>
                 <div className="title-row">
                   <label>客队颜色</label>
-                  <input className="square-color-picker" type="color" value={awayColor} onChange={(e) => updateTeamRadarConfig({ awayColor: e.target.value })} />
+                  <input
+                    className="square-color-picker"
+                    type="color"
+                    value={awayColor}
+                    onChange={(e) => updateTeamRadarConfig({ awayColor: e.target.value, awayColorAutoLocked: "1" })}
+                  />
                 </div>
               </div>
 
