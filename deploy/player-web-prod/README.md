@@ -93,6 +93,28 @@ sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 
+若服务器按“SSH 拉代码 + 对外固定 `8080` + 保留运行数据”的日常模式维护，推荐直接使用仓库内的一键脚本：
+
+```bash
+bash deploy/player-web-prod/scripts/update_player_web_server_local.sh
+```
+
+该脚本会：
+
+- 备份 `player-web/server/data/*.json*`
+- 自动 `git stash` 当前服务器本地改动
+- `git pull origin main`
+- 恢复备份的数据文件
+- 以 `PLAYER_WEB_PUBLIC_PORT=8080` 调用正式更新脚本
+- 输出最新提交与本机健康检查结果
+
+当前已验证的服务器运维约定：
+
+- Git 远端使用 SSH：`git@github.com:yangcr12-art/Radar-website.git`
+- 对外访问端口固定：`8080`
+- 访问地址示例：`http://<服务器公网IP>:8080`
+- 后端仍只监听：`127.0.0.1:8787`
+
 脚本会：
 
 - 更新 Python 依赖

@@ -149,6 +149,14 @@ sudo env PLAYER_WEB_PUBLIC_PORT=8080 \
   bash deploy/player-web-prod/scripts/update_player_web_prod.sh
 ```
 
+服务器若已固定使用 SSH 拉代码，并希望每次更新都保留线上运行数据、且默认发布到 `8080`，可在仓库根目录直接执行：
+
+```bash
+bash deploy/player-web-prod/scripts/update_player_web_server_local.sh
+```
+
+该脚本会自动备份 `player-web/server/data/*.json*`、执行 `git stash`、`git pull origin main`、恢复数据并以 `PLAYER_WEB_PUBLIC_PORT=8080` 重新部署。
+
 修改线上共享账号/密码：
 
 ```bash
