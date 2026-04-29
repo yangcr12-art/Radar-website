@@ -1,88 +1,56 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { checkHealth, deletePlayerDataset, fetchAuthStatus, fetchPlayerById, fetchPlayerDatasets, fetchPlayerList, fetchState, getApiBaseLabel, importPlayerExcel, loginSharedSession, logoutSharedSession, migrateFromLocal, saveState } from "./api/storageClient";
-import RadarEditorPage from "./components/RadarEditorPage";
-import SharedLoginPage from "./components/SharedLoginPage";
-import TopNav from "./components/TopNav";
-import useScatterPlotState from "./hooks/useScatterPlotState";
+import {
+  checkHealth,
+  deletePlayerDataset,
+  fetchPlayerById,
+  fetchPlayerDatasets,
+  fetchPlayerList,
+  fetchState,
+  getApiBaseLabel,
+  importPlayerExcel,
+  migrateFromLocal,
+  saveState
+} from "./api/storageClient";
+import { DEFAULT_CORNER_IMAGE, STORAGE_KEYS } from "./app/constants";
+import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
+import { renderActivePage } from "./app/renderActivePage";
 import {
   computeTierFromValue,
   formatPlayerDataColumnLabel,
   formatRadarTitlePlayerName,
   getMetricDisplayNameFromColumn,
   inferMetricGroupAndOrder,
-  normalizeExportSequenceMap,
-  normalizePersistedState,
   normalizeMatchMetricPresets,
+  normalizePersistedState,
   normalizePlayerMetricPresets,
   normalizeSelectionMap,
-  normalizeSnapshot,
-  parseCsv,
   readStorage,
-  recomputeRowsTier,
-  resequenceSubOrder,
   resolveImportedAge,
   resolveImportedMinutes,
   resolveImportedPosition,
-  sanitizeExportFilenamePart,
   toCsv,
   writeStorage,
   writeStorageWithResult
 } from "./app/radar/radarState";
+import AppLoadingScreen from "./components/AppLoadingScreen";
+import RadarEditorPage from "./components/RadarEditorPage";
+import SharedLoginPage from "./components/SharedLoginPage";
+import TopNav from "./components/TopNav";
+import useRadarEditorController from "./hooks/useRadarEditorController";
+import useScatterPlotState from "./hooks/useScatterPlotState";
+import { useSharedAuth } from "./hooks/useSharedAuth";
 import { buildImportedGroupOrderMap, normalizeImportedGroupName } from "./utils/importGroupOrder";
+import { subscribeMappingStoreChanged } from "./utils/mappingSync";
 import { getMatchProjectMappingRows, saveMatchProjectMappingRows } from "./utils/matchProjectMappingStore";
 import { getNameMappingRows, getNameMappingRowsByEnglish, normalizePlayerName, saveNameMappingRows } from "./utils/nameMappingStore";
-import { subscribeMappingStoreChanged } from "./utils/mappingSync";
 import { getProjectGroupByColumn, getProjectMappingRows, saveProjectMappingRows } from "./utils/projectMappingStore";
-import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 import { getTeamMappingRows, saveTeamMappingRows } from "./utils/teamMappingStore";
 import { formatDateTime } from "./utils/timeFormat";
-import { compactPresetsForLocalStorage, compactSnapshotForLocalStorage, isQuotaExceededResult } from "./utils/localStorageQuota";
-import { setStorageScope } from "./utils/storageScope";
-import {
-  DEFAULT_CENTER_IMAGE,
-  DEFAULT_CHART_STYLE,
-  DEFAULT_CORNER_IMAGE,
-  DEFAULT_META,
-  DEFAULT_TEXT_STYLE,
-  INITIAL_ROWS,
-  REORDER_MODE_ORDER,
-  STORAGE_KEYS,
-  CENTER_X,
-  CENTER_Y,
-  INNER_RING,
-  MAX_RADIAL_LENGTH,
-  METRIC_LABEL_RADIUS
-} from "./app/constants";
-import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
-import { renderActivePage } from "./app/renderActivePage";
+
 function App() {
   const apiBaseLabel = getApiBaseLabel();
   const [activePage, setActivePage] = useState<AppPageKey>("radar");
-  const [title, setTitle] = useState("Player Radar (Template Mode)");
-  const [subtitle, setSubtitle] = useState("Input metric CSV and export image");
-  const [rows, setRows] = useState(() => recomputeRowsTier(INITIAL_ROWS));
-  const [rowReorderMode, setRowReorderMode] = useState(REORDER_MODE_ORDER);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [meta, setMeta] = useState(DEFAULT_META);
-  const [textStyle, setTextStyle] = useState(DEFAULT_TEXT_STYLE);
-  const [chartStyle, setChartStyle] = useState(DEFAULT_CHART_STYLE);
-  const [centerImage, setCenterImage] = useState(DEFAULT_CENTER_IMAGE);
-  const [cornerImage, setCornerImage] = useState(DEFAULT_CORNER_IMAGE);
-  const [presets, setPresets] = useState([]);
-  const [selectedPresetId, setSelectedPresetId] = useState("draft");
-  const [saveName, setSaveName] = useState("");
-  const [titlePanelOpen, setTitlePanelOpen] = useState(true);
-  const [fontPanelOpen, setFontPanelOpen] = useState(true);
-  const [imagePanelOpen, setImagePanelOpen] = useState(true);
-  const [dataTablePanelOpen, setDataTablePanelOpen] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [authStatus, setAuthStatus] = useState<"checking" | "anonymous" | "authenticated">("checking");
-  const [authUsername, setAuthUsername] = useState("player");
-  const [loginUsername, setLoginUsername] = useState("player");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginSubmitting, setLoginSubmitting] = useState(false);
-  const [loginError, setLoginError] = useState("");
   const [playerDataMeta, setPlayerDataMeta] = useState({ playerCount: 0, updatedAt: "", numericColumns: [] });
   const [datasetOptions, setDatasetOptions] = useState([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState("");
@@ -124,10 +92,6 @@ function App() {
     const raw = readStorage(STORAGE_KEYS.selectedPlayerByDataset, {});
     return raw && typeof raw === "object" ? raw : {};
   });
-  const [radarPngExportSequenceByVersion, setRadarPngExportSequenceByVersion] = useState(() => {
-    const raw = readStorage(STORAGE_KEYS.radarPngExportSequenceByVersion, {});
-    return normalizeExportSequenceMap(raw);
-  });
   const [projectMappingRows, setProjectMappingRows] = useState(() => getProjectMappingRows());
   const [matchProjectMappingRows, setMatchProjectMappingRows] = useState(() => getMatchProjectMappingRows());
   const [nameMappingRows, setNameMappingRows] = useState(() => getNameMappingRows());
@@ -135,28 +99,24 @@ function App() {
   const [latestMatchRadarImportPayload, setLatestMatchRadarImportPayload] = useState<any>(null);
   const [mappingRevision, setMappingRevision] = useState(0);
   const [, setStorageStatus] = useState("connecting");
-  const fileInputRef = useRef(null);
-  const playerExcelInputRef = useRef(null);
-  const centerImageInputRef = useRef(null);
-  const cornerImageInputRef = useRef(null);
-  const saveTimerRef = useRef(null);
+  const playerExcelInputRef = useRef<any>(null);
+  const saveTimerRef = useRef<any>(null);
   const saveSeqRef = useRef(0);
   const playerDetailReqSeqRef = useRef(0);
 
-  const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) => {
-      if (Number(a.order) !== Number(b.order)) return Number(a.order) - Number(b.order);
-      if (a.group !== b.group) return a.group.localeCompare(b.group, "en-US");
-      if (Number(a.subOrder) !== Number(b.subOrder)) return Number(a.subOrder) - Number(b.subOrder);
-      return a.metric.localeCompare(b.metric, "en-US");
-    });
-  }, [rows]);
-
-  const filteredPlayerOptions = useMemo(() => {
-    const keyword = playerSearchQuery.trim().toLowerCase();
-    if (!keyword) return playerOptions;
-    return playerOptions.filter((item) => String(item.player || "").toLowerCase().includes(keyword));
-  }, [playerOptions, playerSearchQuery]);
+  const {
+    authStatus,
+    authUsername,
+    loginUsername,
+    setLoginUsername,
+    loginPassword,
+    setLoginPassword,
+    loginSubmitting,
+    loginError,
+    handleLogin,
+    handleLogout,
+    authHydrationVersion
+  } = useSharedAuth();
 
   const selectedMetricColumns = useMemo(() => {
     if (!selectedDatasetId) return [];
@@ -165,9 +125,7 @@ function App() {
     return selected.filter((col) => numericColumns.includes(col));
   }, [selectedDatasetId, metricSelectionsByDataset, playerDataMeta.numericColumns]);
 
-  const playerMetricPresetOptions = useMemo(() => {
-    return playerMetricPresets;
-  }, [playerMetricPresets]);
+  const playerMetricPresetOptions = useMemo(() => playerMetricPresets, [playerMetricPresets]);
 
   const selectedPlayerMetricPresetId = useMemo(() => {
     if (!selectedDatasetId) return "";
@@ -182,156 +140,16 @@ function App() {
     return found?.player || "";
   }, [selectedPlayerDetail, playerOptions, selectedPlayerId]);
 
-  const stats = useMemo(() => {
-    const total = sortedRows.length || 1;
-    const step = (Math.PI * 2) / total;
-    const barWidth = step * 0.92;
-    const startAngle = -Math.PI / 2;
-
-    const groupStarts = [];
-    let lastGroup = "";
-    sortedRows.forEach((row, i) => {
-      if (row.group !== lastGroup) {
-        groupStarts.push({ index: i, group: row.group });
-        lastGroup = row.group;
-      }
-    });
-
-    return { total, step, barWidth, startAngle, groupStarts };
-  }, [sortedRows]);
-
-  const groupLabelLayouts = useMemo(() => {
-    return computeGroupLabelLayouts({
-      sortedRows,
-      stats,
-      textStyle,
-      chartStyle,
-      centerX: CENTER_X,
-      centerY: CENTER_Y,
-      innerRing: INNER_RING,
-      maxRadialLength: MAX_RADIAL_LENGTH,
-      metricLabelRadius: METRIC_LABEL_RADIUS
-    });
-  }, [
-    sortedRows,
-    stats,
-    textStyle.metricSize,
-    textStyle.groupSize,
-    textStyle.fontFamily,
-    chartStyle.groupSeparatorLength,
-    chartStyle.groupSeparatorOffset,
-    chartStyle.groupLabelRadius,
-    chartStyle.groupLabelOffsetX,
-    chartStyle.groupLabelOffsetY
-  ]);
-
-  const updateCell = (index, field, value) => {
-    setRows((prev) => {
-      const next = [...prev];
-      const cloned = { ...next[index] };
-      if (field === "value") {
-        const num = Number(value);
-        cloned[field] = Number.isNaN(num) ? 0 : Math.min(100, num);
-        cloned.tier = computeTierFromValue(cloned[field]);
-      } else if (field === "order") {
-        const num = Number(value);
-        cloned[field] = Number.isNaN(num) ? 1 : Math.floor(num);
-      } else if (field === "subOrder") {
-        const num = Number(value);
-        cloned[field] = Number.isNaN(num) ? 1 : Math.max(1, Math.floor(num));
-      } else {
-        cloned[field] = value;
-      }
-      next[index] = cloned;
-      return next;
-    });
-    setError("");
-  };
-
-  const addRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        metric: "new_metric",
-        group: "new_group",
-        value: 50,
-        per90: "",
-        tier: computeTierFromValue(50),
-        order: 1,
-        subOrder: 1,
-        color: ""
-      }
-    ]);
-  };
-
-  const removeRow = (index) => {
-    setRows((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const moveRow = (index, direction) => {
-    setRows((prev) => {
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= prev.length) return prev;
-      let next = rowReorderMode === REORDER_MODE_ORDER ? prev.map((row) => ({ ...row })) : [...prev];
-
-      if (rowReorderMode === REORDER_MODE_ORDER) {
-        const sourceOrder = Number(next[index].order);
-        const targetOrder = Number(next[target].order);
-        const hasInvalidOrder = !Number.isFinite(sourceOrder) || !Number.isFinite(targetOrder);
-        if (hasInvalidOrder) {
-          next = next.map((row, i) => ({ ...row, order: i + 1 }));
-        }
-        const normalizedSourceOrder = Math.floor(Number(next[index].order));
-        const normalizedTargetOrder = Math.floor(Number(next[target].order));
-        next[index].order = normalizedTargetOrder;
-        next[target].order = normalizedSourceOrder;
-      }
-
-      [next[index], next[target]] = [next[target], next[index]];
-      return resequenceSubOrder(next);
-    });
-    setError("");
-  };
-
-  const downloadFile = (filename, content, type) => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadCsv = () => {
-    downloadFile("player_chart_data.csv", toCsv(rows), "text/csv;charset=utf-8");
-    setMessage("已下载当前数据 CSV");
-    setError("");
-  };
-
-  const importCsvText = (csvText) => {
-    const parsed = parseCsv(csvText);
-    if (parsed.error) {
-      setError(parsed.error);
-      setMessage("");
-      return;
-    }
-    setRows(recomputeRowsTier(parsed.rows));
-    setMessage(`CSV 导入成功，共 ${parsed.rows.length} 行`);
-    setError("");
-  };
-
-  const onUploadClick = () => fileInputRef.current?.click();
+  const radarEditor = useRadarEditorController({
+    readStorage,
+    writeStorage,
+    writeStorageWithResult,
+    toCsv,
+    isHydrated,
+    resolveSelectedPlayerName: () => selectedPlayerName
+  });
 
   const onPlayerExcelUploadClick = () => playerExcelInputRef.current?.click();
-
-  const onCsvFileChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    importCsvText(text);
-    event.target.value = "";
-  };
 
   const loadDatasets = async (preferredDatasetId = "") => {
     setPlayerDataError("");
@@ -350,7 +168,7 @@ function App() {
       const nextId = matchedPreferred ? preferredDatasetId : fallbackId;
       setSelectedDatasetId(nextId);
       return nextId;
-    } catch (err) {
+    } catch (err: any) {
       setPlayerDataError(`数据集读取失败：${err.message}`);
       setDatasetOptions([]);
       setSelectedDatasetId("");
@@ -385,7 +203,7 @@ function App() {
     storageKey: STORAGE_KEYS.scatterConfigByDataset
   });
 
-  const loadPlayerList = async (datasetId, preferredPlayerId = "") => {
+  const loadPlayerList = async (datasetId: string, preferredPlayerId = "") => {
     setPlayerDataLoading(true);
     setPlayerDataError("");
     try {
@@ -417,7 +235,7 @@ function App() {
       } else {
         setPlayerDetailReloadTick((n) => n + 1);
       }
-    } catch (err) {
+    } catch (err: any) {
       setPlayerDataError(`球员数据读取失败：${err.message}`);
       setPlayerOptions([]);
       setSelectedPlayerId("");
@@ -427,7 +245,7 @@ function App() {
     }
   };
 
-  const onPlayerExcelChange = async (event) => {
+  const onPlayerExcelChange = async (event: any) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setPlayerDataImporting(true);
@@ -442,7 +260,7 @@ function App() {
       setPlayerDataMessage(`导入成功：${res.playerCount} 名球员，${res.numericColumnCount} 个数值列`);
       const nextDatasetId = await loadDatasets(String(res.datasetId || ""));
       await loadPlayerList(nextDatasetId, "");
-    } catch (err) {
+    } catch (err: any) {
       setPlayerDataError(`导入失败：${err.message}`);
     } finally {
       setPlayerDataImporting(false);
@@ -482,12 +300,12 @@ function App() {
       await loadDatasets(next);
       await loadPlayerList(next, "");
       setPlayerDataMessage("已删除当前数据集。");
-    } catch (err) {
+    } catch (err: any) {
       setPlayerDataError(`删除数据集失败：${err.message}`);
     }
   };
 
-  const handleToggleMetricColumn = (column) => {
+  const handleToggleMetricColumn = (column: string) => {
     if (!selectedDatasetId) return;
     const numericColumns = Array.isArray(playerDataMeta.numericColumns) ? playerDataMeta.numericColumns : [];
     if (!numericColumns.includes(column)) return;
@@ -524,15 +342,12 @@ function App() {
     setMetricSelectionsByDataset((prev) => ({ ...prev, [selectedDatasetId]: [] }));
   };
 
-  const applyPlayerMetricPreset = (presetId) => {
+  const applyPlayerMetricPreset = (presetId: string) => {
     if (!selectedDatasetId) return;
     setSelectedPlayerMetricPresetByDataset((prev) => {
       const next = { ...prev };
-      if (presetId) {
-        next[selectedDatasetId] = presetId;
-      } else {
-        delete next[selectedDatasetId];
-      }
+      if (presetId) next[selectedDatasetId] = presetId;
+      else delete next[selectedDatasetId];
       return next;
     });
 
@@ -582,7 +397,6 @@ function App() {
       setPlayerDataMessage("");
       return;
     }
-
     const now = new Date().toISOString();
     const newPreset = {
       id: `player_metric_preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -617,7 +431,6 @@ function App() {
       setPlayerDataMessage("");
       return;
     }
-
     setPlayerMetricPresets((prev) =>
       prev
         .map((item) => (item.id === found.id ? { ...item, name: nextName, updatedAt: new Date().toISOString() } : item))
@@ -640,7 +453,6 @@ function App() {
       return;
     }
     if (!window.confirm(`确认删除指标预设「${found.name}」吗？此操作不可撤销。`)) return;
-
     setPlayerMetricPresets((prev) => prev.filter((item) => item.id !== found.id));
     setSelectedPlayerMetricPresetByDataset((prev) =>
       Object.entries(prev).reduce((acc, [datasetId, presetId]) => {
@@ -662,7 +474,7 @@ function App() {
       return;
     }
 
-    const detailMap = new Map(selectedPlayerDetail.columns.map((item) => [String(item.column || ""), item]));
+    const detailMap = new Map(selectedPlayerDetail.columns.map((item: any) => [String(item.column || ""), item]));
     const importedRows = selectedMetricColumns
       .map((column, index) => {
         const detail = detailMap.get(column);
@@ -686,7 +498,7 @@ function App() {
           _index: index
         };
       })
-      .filter(Boolean);
+      .filter(Boolean) as any[];
 
     if (importedRows.length === 0) {
       setPlayerDataError("当前勾选列没有可用百分比数据，请更换球员或勾选项。");
@@ -708,28 +520,29 @@ function App() {
       return { ...item, subOrder: nextSubOrder };
     });
 
-    const importedPlayerName = String(selectedPlayerDetail?.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
+    const importedPlayerName =
+      String(selectedPlayerDetail?.player || "").trim() ||
+      String(selectedPlayerName || "").trim() ||
+      String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
     const importedMinutes = resolveImportedMinutes(selectedPlayerDetail.columns);
     const importedAge = resolveImportedAge(selectedPlayerDetail.columns);
     const importedPosition = resolveImportedPosition(selectedPlayerDetail.columns);
-    const effectiveImportedName = importedPlayerName || String(meta.player || "").trim();
+    const effectiveImportedName = importedPlayerName || String(radarEditor.meta.player || "").trim();
     const importedPlayerZh = String(getNameMappingRowsByEnglish().get(normalizePlayerName(effectiveImportedName).toLowerCase())?.zh || "").trim();
     const nextMeta = {
-      ...meta,
+      ...radarEditor.meta,
       player: effectiveImportedName,
       playerZh: importedPlayerZh,
-      age: importedAge || meta.age,
-      position: importedPosition || meta.position,
-      minutes: importedMinutes || meta.minutes
+      age: importedAge || radarEditor.meta.age,
+      position: importedPosition || radarEditor.meta.position,
+      minutes: importedMinutes || radarEditor.meta.minutes
     };
     const titlePlayerName = formatRadarTitlePlayerName(nextMeta.player, nextMeta.playerZh);
     const nextTitle = `${titlePlayerName} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
     const nextSubtitle = `${nextMeta.season} ${nextMeta.league} Percentile Rankings & Per 90 Values`;
 
-    // Import updates data/title/meta, and resets corner image to avoid stale player photos.
-    const currentSnapshot = getSnapshot();
-    applySnapshot({
-      ...currentSnapshot,
+    radarEditor.applySnapshot({
+      ...radarEditor.getSnapshot(),
       rows: finalRows,
       meta: nextMeta,
       title: nextTitle,
@@ -739,65 +552,14 @@ function App() {
     setActivePage("radar");
     setPlayerDataError("");
     setPlayerDataMessage("");
-    setError("");
-    setMessage(`已导入 ${finalRows.length} 个指标并同步更新标题。`);
-  };
-
-  const updateMeta = (field, value) => {
-    setMeta((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateTextStyle = (field, value) => {
-    if (field === "fontFamily") {
-      setTextStyle((prev) => ({ ...prev, fontFamily: value }));
-      return;
-    }
-
-    const num = Number(value);
-    const safe = Number.isFinite(num) ? Math.min(48, Math.floor(num)) : 12;
-    setTextStyle((prev) => ({ ...prev, [field]: safe }));
-  };
-
-  const updateChartStyle = (field, value) => {
-    if (field === "ringLineStyle" || field === "ringDasharray" || field === "backgroundColor") {
-      setChartStyle((prev) => ({ ...prev, [field]: value }));
-      return;
-    }
-    const num = Number(value);
-    if (!Number.isFinite(num)) return;
-    const safe = field === "ringStrokeWidth" || field === "innerRingStrokeWidth" || field === "groupSeparatorWidth" ? Math.min(8, Number(num.toFixed(1))) : Number(num.toFixed(1));
-    setChartStyle((prev) => ({ ...prev, [field]: safe }));
-  };
-
-  const getSnapshot = () => ({
-    title,
-    subtitle,
-    rows,
-    rowReorderMode,
-    meta,
-    textStyle,
-    chartStyle,
-    centerImage,
-    cornerImage
-  });
-
-  const applySnapshot = (snapshot) => {
-    const normalized = normalizeSnapshot(snapshot);
-    setTitle(normalized.title);
-    setSubtitle(normalized.subtitle);
-    setRows(normalized.rows);
-    setRowReorderMode(normalized.rowReorderMode);
-    setMeta(normalized.meta);
-    setTextStyle(normalized.textStyle);
-    setChartStyle(normalized.chartStyle);
-    setCenterImage(normalized.centerImage);
-    setCornerImage(normalized.cornerImage);
+    radarEditor.setError("");
+    radarEditor.setMessage(`已导入 ${finalRows.length} 个指标并同步更新标题。`);
   };
 
   const getPersistedState = (
-    snapshot = getSnapshot(),
-    presetList = presets,
-    selectedId = selectedPresetId,
+    snapshot = radarEditor.getSnapshot(),
+    presetList = radarEditor.presets,
+    selectedId = radarEditor.selectedPresetId,
     playerMetricPresetList = playerMetricPresets,
     matchMetricPresetList = matchMetricPresets,
     selectedMatchMetricPresetMap = selectedMatchMetricPresetByDataset,
@@ -818,16 +580,16 @@ function App() {
     teamMappingRows: teamMappingRowList
   });
 
-  const applyPersistedState = (persisted) => {
+  const applyPersistedState = (persisted: any) => {
     const normalized = normalizePersistedState(persisted);
-    const found = normalized.presets.find((item) => item.id === normalized.selectedPresetId);
+    const found = normalized.presets.find((item: any) => item.id === normalized.selectedPresetId);
     if (normalized.selectedPresetId !== "draft" && found?.payload) {
-      applySnapshot(found.payload);
+      radarEditor.applySnapshot(found.payload);
     } else {
-      applySnapshot(normalized.draft);
+      radarEditor.applySnapshot(normalized.draft);
     }
-    setPresets(normalized.presets);
-    setSelectedPresetId(normalized.selectedPresetId);
+    radarEditor.setPresets(normalized.presets);
+    radarEditor.setSelectedPresetId(normalized.selectedPresetId);
     setPlayerMetricPresets(normalized.playerMetricPresets);
     setMatchMetricPresets(normalized.matchMetricPresets);
     setSelectedMatchMetricPresetByDataset(normalized.selectedMatchMetricPresetByDataset);
@@ -848,7 +610,7 @@ function App() {
     teamMappingRows: getTeamMappingRows()
   });
 
-  const applyRemoteMappingState = (payload) => {
+  const applyRemoteMappingState = (payload: any) => {
     let applied = false;
     if (Array.isArray(payload?.projectMappingRows)) {
       saveProjectMappingRows(payload.projectMappingRows);
@@ -869,39 +631,11 @@ function App() {
     return applied;
   };
 
-  useEffect(() => {
-    return subscribeMappingStoreChanged(() => {
-      refreshMappingState();
-    });
-  }, []);
+  useEffect(() => subscribeMappingStoreChanged(() => refreshMappingState()), []);
 
   useEffect(() => {
-    let cancelled = false;
-    const loadAuthStatus = async () => {
-      try {
-        const status = await fetchAuthStatus();
-        if (cancelled) return;
-        const usernameHint = String(status?.usernameHint || "player").trim() || "player";
-        const currentUsername = String(status?.username || "").trim();
-        if (status?.authenticated && currentUsername) {
-          setStorageScope(currentUsername);
-        } else {
-          setStorageScope("anonymous");
-        }
-        setAuthUsername(currentUsername || usernameHint);
-        setLoginUsername(usernameHint);
-        setAuthStatus(status?.authenticated ? "authenticated" : "anonymous");
-      } catch {
-        if (cancelled) return;
-        setStorageScope("anonymous");
-        setAuthStatus("anonymous");
-      }
-    };
-    loadAuthStatus();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setIsHydrated(false);
+  }, [authHydrationVersion]);
 
   useEffect(() => {
     if (authStatus !== "authenticated" || isHydrated) return;
@@ -941,7 +675,6 @@ function App() {
       try {
         const remote = await fetchState();
         if (cancelled) return;
-
         if (remote?.data) {
           applyPersistedState(remote.data);
           applyRemoteMappingState(remote.data);
@@ -966,10 +699,7 @@ function App() {
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else if (shouldMigrateLocal) {
-          const migrated = await migrateFromLocal({
-            ...localPersisted,
-            ...localMappingState
-          });
+          const migrated = await migrateFromLocal({ ...localPersisted, ...localMappingState });
           if (cancelled) return;
           if (migrated?.migrated) {
             writeStorage(STORAGE_KEYS.localMigrated, true);
@@ -982,7 +712,7 @@ function App() {
               applyPersistedState(localPersisted);
               applyRemoteMappingState(localMappingState);
             }
-            setMessage("已将本地历史数据迁移到后端。");
+            radarEditor.setMessage("已将本地历史数据迁移到后端。");
           } else {
             applyPersistedState(localPersisted);
             applyRemoteMappingState(localMappingState);
@@ -1007,38 +737,11 @@ function App() {
         setIsHydrated(true);
       }
     };
-
     hydrate();
     return () => {
       cancelled = true;
     };
-  }, [authStatus, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    const snapshot = getSnapshot();
-    const writes = [{ label: "draft", key: STORAGE_KEYS.draft, value: snapshot }, { label: "selectedPresetId", key: STORAGE_KEYS.selectedPresetId, value: selectedPresetId }, { label: "presets", key: STORAGE_KEYS.presets, value: presets }];
-    const failed = [];
-    for (const item of writes) {
-      let result = writeStorageWithResult(item.key, item.value);
-      if (!result.ok && isQuotaExceededResult(result)) {
-        if (item.label === "draft") {
-          result = writeStorageWithResult(item.key, compactSnapshotForLocalStorage(snapshot));
-        } else if (item.label === "presets") {
-          result = writeStorageWithResult(item.key, compactPresetsForLocalStorage(presets));
-        }
-      }
-      if (!result.ok) {
-        failed.push({ ...item, result });
-      }
-    }
-    if (failed.length > 0) {
-      const detail = failed.map((item) => `${item.label}(${item.result.error})`).join("; ");
-      setError(`本地缓存写入失败：${detail}`);
-    } else {
-      setError((prev) => (prev.startsWith("本地缓存写入失败：") ? "" : prev));
-    }
-  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, presets, isHydrated]);
+  }, [authStatus, isHydrated, authHydrationVersion]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1077,26 +780,7 @@ function App() {
 
   useEffect(() => {
     if (!isHydrated) return;
-    writeStorage(STORAGE_KEYS.radarPngExportSequenceByVersion, radarPngExportSequenceByVersion);
-  }, [radarPngExportSequenceByVersion, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    if (selectedPresetId === "draft") return;
-    setPresets((prev) =>
-      prev.map((item) =>
-        item.id === selectedPresetId
-          ? { ...item, payload: getSnapshot(), updatedAt: new Date().toISOString() }
-          : item
-      )
-    );
-  }, [title, subtitle, rows, rowReorderMode, meta, textStyle, chartStyle, centerImage, cornerImage, selectedPresetId, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
     const payload = getPersistedState();
     saveTimerRef.current = setTimeout(async () => {
@@ -1104,33 +788,27 @@ function App() {
       saveSeqRef.current = seq;
       try {
         await saveState(payload);
-        if (saveSeqRef.current === seq) {
-          setStorageStatus("online");
-        }
+        if (saveSeqRef.current === seq) setStorageStatus("online");
       } catch {
-        if (saveSeqRef.current === seq) {
-          setStorageStatus("offline");
-        }
+        if (saveSeqRef.current === seq) setStorageStatus("offline");
       }
     }, 500);
 
     return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [
-    title,
-    subtitle,
-    rows,
-    rowReorderMode,
-    meta,
-    textStyle,
-    chartStyle,
-    centerImage,
-    cornerImage,
-    presets,
-    selectedPresetId,
+    radarEditor.title,
+    radarEditor.subtitle,
+    radarEditor.rows,
+    radarEditor.rowReorderMode,
+    radarEditor.meta,
+    radarEditor.textStyle,
+    radarEditor.chartStyle,
+    radarEditor.centerImage,
+    radarEditor.cornerImage,
+    radarEditor.presets,
+    radarEditor.selectedPresetId,
     playerMetricPresets,
     matchMetricPresets,
     selectedMatchMetricPresetByDataset,
@@ -1156,33 +834,26 @@ function App() {
       cancelled = true;
       clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePage, playerDataImporting]);
+  }, [activePage, playerDataImporting, apiBaseLabel]);
 
   useEffect(() => {
     const hydratePlayerDataPage = async () => {
       if (activePage !== "player_data") return;
       const cachedQuery = selectedDatasetId ? String(playerSearchByDataset[selectedDatasetId] || "") : "";
-      if (cachedQuery !== playerSearchQuery) {
-        setPlayerSearchQuery(cachedQuery);
-      }
+      if (cachedQuery !== playerSearchQuery) setPlayerSearchQuery(cachedQuery);
       const preferredPlayerId = selectedDatasetId ? String(selectedPlayerByDataset[selectedDatasetId] || selectedPlayerId || "") : selectedPlayerId;
       const datasetId = await loadDatasets(selectedDatasetId);
       await loadPlayerList(datasetId, preferredPlayerId);
     };
     hydratePlayerDataPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePage]);
 
   useEffect(() => {
     if (activePage !== "player_data") return;
     const cachedQuery = selectedDatasetId ? String(playerSearchByDataset[selectedDatasetId] || "") : "";
-    if (cachedQuery !== playerSearchQuery) {
-      setPlayerSearchQuery(cachedQuery);
-    }
+    if (cachedQuery !== playerSearchQuery) setPlayerSearchQuery(cachedQuery);
     const preferredPlayerId = selectedDatasetId ? String(selectedPlayerByDataset[selectedDatasetId] || selectedPlayerId || "") : selectedPlayerId;
     loadPlayerList(selectedDatasetId, preferredPlayerId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDatasetId]);
 
   useEffect(() => {
@@ -1197,9 +868,12 @@ function App() {
 
   useEffect(() => {
     if (activePage !== "player_data") return;
+    const filteredPlayerOptions = playerOptions.filter((item) => String(item.player || "").toLowerCase().includes(playerSearchQuery.trim().toLowerCase()));
     if (filteredPlayerOptions.length === 0) return;
-    if (!filteredPlayerOptions.some((item) => String(item.id) === String(selectedPlayerId))) setSelectedPlayerId(String(filteredPlayerOptions[0].id || ""));
-  }, [activePage, filteredPlayerOptions, selectedPlayerId]);
+    if (!filteredPlayerOptions.some((item) => String(item.id) === String(selectedPlayerId))) {
+      setSelectedPlayerId(String(filteredPlayerOptions[0].id || ""));
+    }
+  }, [activePage, playerOptions, playerSearchQuery, selectedPlayerId]);
 
   useEffect(() => {
     if (!selectedDatasetId) return;
@@ -1208,9 +882,7 @@ function App() {
       const current = Array.isArray(prev[selectedDatasetId]) ? prev[selectedDatasetId] : [];
       const valid = current.filter((col) => numericColumns.includes(col));
       const next = valid.length > 0 ? valid : numericColumns;
-      if (current.length === next.length && current.every((col, idx) => col === next[idx])) {
-        return prev;
-      }
+      if (current.length === next.length && current.every((col, idx) => col === next[idx])) return prev;
       return { ...prev, [selectedDatasetId]: next };
     });
   }, [selectedDatasetId, playerDataMeta.numericColumns]);
@@ -1229,334 +901,84 @@ function App() {
         const res = await fetchPlayerById(selectedPlayerId, selectedDatasetId);
         if (playerDetailReqSeqRef.current !== seq) return;
         setSelectedPlayerDetail(res.player || null);
-      } catch (err) {
+      } catch (err: any) {
         if (playerDetailReqSeqRef.current !== seq) return;
         setPlayerDataError(`球员详情读取失败：${err.message}`);
         setSelectedPlayerDetail(null);
       } finally {
-        if (playerDetailReqSeqRef.current === seq) {
-          setPlayerDataLoading(false);
-        }
+        if (playerDetailReqSeqRef.current === seq) setPlayerDataLoading(false);
       }
     };
     loadPlayerDetail();
   }, [activePage, selectedPlayerId, selectedDatasetId, playerDetailReloadTick]);
 
-  const handleSavePreset = () => {
-    const name = saveName.trim();
-    if (!name) {
-      setError("请输入版本名称。");
-      setMessage("");
-      return;
-    }
-
-    const newPreset = {
-      id: `preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      name,
-      updatedAt: new Date().toISOString(),
-      payload: getSnapshot()
-    };
-    setPresets((prev) => [newPreset, ...prev]);
-    setSelectedPresetId(newPreset.id);
-    setSaveName("");
-    setMessage(`已保存版本：${name}（含数据+图表样式）`);
-    setError("");
-  };
-
-  const handleSwitchPreset = (targetId) => {
-    writeStorage(STORAGE_KEYS.draft, getSnapshot());
-
-    if (targetId === "draft") {
-      const draft = readStorage(STORAGE_KEYS.draft, null);
-      if (draft) {
-        applySnapshot(draft);
-      }
-      setSelectedPresetId("draft");
-      setMessage("已切换到当前草稿");
-      setError("");
-      return;
-    }
-
-    const found = presets.find((item) => item.id === targetId);
-    if (!found) {
-      setError("未找到该版本。");
-      setMessage("");
-      return;
-    }
-
-    applySnapshot(found.payload);
-    setSelectedPresetId(targetId);
-    setMessage(`已切换到版本：${found.name}（已载入数据+图表样式）`);
-    setError("");
-  };
-
-  const handleDeletePreset = () => {
-    if (selectedPresetId === "draft") {
-      setError("当前草稿不能删除。");
-      setMessage("");
-      return;
-    }
-
-    const found = presets.find((item) => item.id === selectedPresetId);
-    setPresets((prev) => prev.filter((item) => item.id !== selectedPresetId));
-    setSelectedPresetId("draft");
-    setMessage(found ? `已删除版本：${found.name}` : "已删除版本");
-    setError("");
-  };
-
-  const applyTitleTemplate = () => {
-    const effectivePlayerName = String(meta.player || "").trim() || String(selectedPlayerName || "").trim() || String(playerOptions.find((item) => item.id === selectedPlayerId)?.player || "").trim();
-    const titlePlayerName = formatRadarTitlePlayerName(effectivePlayerName, meta.playerZh);
-    const titleText = `${titlePlayerName} (${meta.age}, ${meta.position}, ${meta.minutes} mins.), ${meta.club}`;
-    const subtitleText = `${meta.season} ${meta.league} Percentile Rankings & Per 90 Values`;
-    setTitle(titleText);
-    setSubtitle(subtitleText);
-    setMessage("已应用标题模板");
-    setError("");
-  };
-
-  const onCenterImageClick = () => centerImageInputRef.current?.click();
-
-  const onCenterImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowed = ["image/png", "image/jpeg", "image/webp"];
-    if (!allowed.includes(file.type)) {
-      setError("仅支持 PNG / JPG / WEBP 图片。");
-      setMessage("");
-      event.target.value = "";
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError("图片请控制在 2MB 以内。");
-      setMessage("");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = typeof reader.result === "string" ? reader.result : "";
-      setCenterImage((prev) => ({ ...prev, src, scale: prev.scale || 1 }));
-      setMessage("中心图片已更新。");
-      setError("");
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
-
-  const updateCenterImageScale = (value) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return;
-    const scale = Math.max(0.5, Math.min(2.5, Number(num.toFixed(2))));
-    setCenterImage((prev) => ({ ...prev, scale }));
-  };
-
-  const clearCenterImage = () => {
-    setCenterImage(DEFAULT_CENTER_IMAGE);
-    setMessage("已清除中心图片。");
-    setError("");
-  };
-
-  const onCornerImageClick = () => cornerImageInputRef.current?.click();
-
-  const onCornerImageChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const allowed = ["image/png", "image/jpeg", "image/webp"];
-    if (!allowed.includes(file.type)) {
-      setError("仅支持 PNG / JPG / WEBP 图片。");
-      setMessage("");
-      event.target.value = "";
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError("图片请控制在 2MB 以内。");
-      setMessage("");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = typeof reader.result === "string" ? reader.result : "";
-      setCornerImage({ ...DEFAULT_CORNER_IMAGE, src });
-      setMessage("左上角图片已更新。");
-      setError("");
-    };
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  };
-
-  const updateCornerImage = (field, value) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return;
-    if (field === "size") {
-      setCornerImage((prev) => ({ ...prev, size: Number(num.toFixed(1)) }));
-      return;
-    }
-    setCornerImage((prev) => ({ ...prev, [field]: Number(num.toFixed(1)) }));
-  };
-
-  const clearCornerImage = () => {
-    setCornerImage(DEFAULT_CORNER_IMAGE);
-    setMessage("已清除左上角图片。");
-    setError("");
-  };
-
-  const exportSvg = () => {
-    const svg = document.getElementById("radar-svg");
-    if (!svg) return;
-    const serializer = new XMLSerializer();
-    const text = serializer.serializeToString(svg);
-    downloadFile("player_radar.svg", text, "image/svg+xml;charset=utf-8");
-  };
-
-  const exportPng = () => {
-    const svg = document.getElementById("radar-svg");
-    if (!svg) return;
-    const currentPreset = selectedPresetId === "draft" ? null : presets.find((item) => item.id === selectedPresetId);
-    const versionLabel = sanitizeExportFilenamePart(currentPreset?.name || saveName || "当前草稿");
-    const sequenceKey = currentPreset?.id || `draft:${versionLabel}`;
-    const nextSequence = (radarPngExportSequenceByVersion[sequenceKey] || 0) + 1;
-    const exportFilename = `${versionLabel}${String(nextSequence).padStart(2, "0")}.png`;
-    const serializer = new XMLSerializer();
-    const text = serializer.serializeToString(svg);
-    const blob = new Blob([text], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1600;
-      canvas.height = 1600;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.fillStyle = chartStyle.backgroundColor || "#f8f5ef";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      const pngUrl = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = pngUrl;
-      a.download = exportFilename;
-      a.click();
-      setRadarPngExportSequenceByVersion((prev) => ({ ...prev, [sequenceKey]: nextSequence }));
-      setMessage(`已导出 PNG：${exportFilename}`);
-      setError("");
-    };
-    image.src = url;
-  };
+  const filteredPlayerOptions = useMemo(() => {
+    const keyword = playerSearchQuery.trim().toLowerCase();
+    if (!keyword) return playerOptions;
+    return playerOptions.filter((item) => String(item.player || "").toLowerCase().includes(keyword));
+  }, [playerOptions, playerSearchQuery]);
 
   const radarPage = (
     <RadarEditorPage
-      title={title}
-      setTitle={setTitle}
-      subtitle={subtitle}
-      setSubtitle={setSubtitle}
-      saveName={saveName}
-      setSaveName={setSaveName}
-      handleSavePreset={handleSavePreset}
-      selectedPresetId={selectedPresetId}
-      handleSwitchPreset={handleSwitchPreset}
-      presets={presets}
-      handleDeletePreset={handleDeletePreset}
-      titlePanelOpen={titlePanelOpen}
-      setTitlePanelOpen={setTitlePanelOpen}
-      meta={meta}
-      updateMeta={updateMeta}
-      applyTitleTemplate={applyTitleTemplate}
-      fontPanelOpen={fontPanelOpen}
-      setFontPanelOpen={setFontPanelOpen}
-      textStyle={textStyle}
-      updateTextStyle={updateTextStyle}
-      chartStyle={chartStyle}
-      updateChartStyle={updateChartStyle}
-      imagePanelOpen={imagePanelOpen}
-      setImagePanelOpen={setImagePanelOpen}
-      onCenterImageClick={onCenterImageClick}
-      clearCenterImage={clearCenterImage}
-      centerImage={centerImage}
-      updateCenterImageScale={updateCenterImageScale}
-      centerImageInputRef={centerImageInputRef}
-      onCenterImageChange={onCenterImageChange}
-      onCornerImageClick={onCornerImageClick}
-      clearCornerImage={clearCornerImage}
-      cornerImage={cornerImage}
-      updateCornerImage={updateCornerImage}
-      cornerImageInputRef={cornerImageInputRef}
-      onCornerImageChange={onCornerImageChange}
-      addRow={addRow}
-      downloadCsv={downloadCsv}
-      onUploadClick={onUploadClick}
-      exportSvg={exportSvg}
-      exportPng={exportPng}
-      fileInputRef={fileInputRef}
-      onCsvFileChange={onCsvFileChange}
-      message={message}
-      error={error}
-      dataTablePanelOpen={dataTablePanelOpen}
-      setDataTablePanelOpen={setDataTablePanelOpen}
-      rows={rows}
-      updateCell={updateCell}
-      moveRow={moveRow}
-      removeRow={removeRow}
-      sortedRows={sortedRows}
-      stats={stats}
-      groupLabelLayouts={groupLabelLayouts}
+      title={radarEditor.title}
+      setTitle={radarEditor.setTitle}
+      subtitle={radarEditor.subtitle}
+      setSubtitle={radarEditor.setSubtitle}
+      saveName={radarEditor.saveName}
+      setSaveName={radarEditor.setSaveName}
+      handleSavePreset={radarEditor.handleSavePreset}
+      selectedPresetId={radarEditor.selectedPresetId}
+      handleSwitchPreset={radarEditor.handleSwitchPreset}
+      presets={radarEditor.presets}
+      handleDeletePreset={radarEditor.handleDeletePreset}
+      titlePanelOpen={radarEditor.titlePanelOpen}
+      setTitlePanelOpen={radarEditor.setTitlePanelOpen}
+      meta={radarEditor.meta}
+      updateMeta={radarEditor.updateMeta}
+      applyTitleTemplate={radarEditor.applyTitleTemplate}
+      fontPanelOpen={radarEditor.fontPanelOpen}
+      setFontPanelOpen={radarEditor.setFontPanelOpen}
+      textStyle={radarEditor.textStyle}
+      updateTextStyle={radarEditor.updateTextStyle}
+      chartStyle={radarEditor.chartStyle}
+      updateChartStyle={radarEditor.updateChartStyle}
+      imagePanelOpen={radarEditor.imagePanelOpen}
+      setImagePanelOpen={radarEditor.setImagePanelOpen}
+      onCenterImageClick={radarEditor.onCenterImageClick}
+      clearCenterImage={radarEditor.clearCenterImage}
+      centerImage={radarEditor.centerImage}
+      updateCenterImageScale={radarEditor.updateCenterImageScale}
+      centerImageInputRef={radarEditor.centerImageInputRef}
+      onCenterImageChange={radarEditor.onCenterImageChange}
+      onCornerImageClick={radarEditor.onCornerImageClick}
+      clearCornerImage={radarEditor.clearCornerImage}
+      cornerImage={radarEditor.cornerImage}
+      updateCornerImage={radarEditor.updateCornerImage}
+      cornerImageInputRef={radarEditor.cornerImageInputRef}
+      onCornerImageChange={radarEditor.onCornerImageChange}
+      addRow={radarEditor.addRow}
+      downloadCsv={radarEditor.downloadCsv}
+      onUploadClick={radarEditor.onUploadClick}
+      exportSvg={radarEditor.exportSvg}
+      exportPng={radarEditor.exportPng}
+      fileInputRef={radarEditor.fileInputRef}
+      onCsvFileChange={radarEditor.onCsvFileChange}
+      message={radarEditor.message}
+      error={radarEditor.error}
+      dataTablePanelOpen={radarEditor.dataTablePanelOpen}
+      setDataTablePanelOpen={radarEditor.setDataTablePanelOpen}
+      rows={radarEditor.rows}
+      updateCell={radarEditor.updateCell}
+      moveRow={radarEditor.moveRow}
+      removeRow={radarEditor.removeRow}
+      sortedRows={radarEditor.sortedRows}
+      stats={radarEditor.stats}
+      groupLabelLayouts={radarEditor.groupLabelLayouts}
     />
   );
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const username = loginUsername.trim();
-    if (!username || !loginPassword) {
-      setLoginError("请输入共享账号和密码。");
-      return;
-    }
-
-    setLoginSubmitting(true);
-    setLoginError("");
-    try {
-      const result = await loginSharedSession(username, loginPassword);
-      const nextUsername = String(result?.username || username).trim() || username;
-      setStorageScope(nextUsername);
-      setAuthUsername(nextUsername);
-      setLoginUsername(nextUsername);
-      setLoginPassword("");
-      setIsHydrated(false);
-      setAuthStatus("authenticated");
-    } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "登录失败。");
-    } finally {
-      setLoginSubmitting(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logoutSharedSession();
-    } catch {
-      // Ignore logout errors and still force the client back to the login screen.
-    }
-    setStorageScope("anonymous");
-    setAuthStatus("anonymous");
-    setIsHydrated(false);
-    setLoginPassword("");
-    setLoginError("");
-  };
-
   if (authStatus === "checking" || (authStatus === "authenticated" && !isHydrated)) {
-    return (
-      <div className="login-shell">
-        <div className="login-card login-card-loading">
-          <div className="login-eyebrow">共享工作台登录</div>
-          <h1>正在准备工作台</h1>
-          <p className="login-copy">正在校验登录状态并同步服务器数据。</p>
-        </div>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   if (authStatus !== "authenticated") {
@@ -1665,4 +1087,5 @@ function App() {
     </div>
   );
 }
+
 export default App;

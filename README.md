@@ -119,6 +119,8 @@ player/
 
 当前重构后的关键落点：
 - `player-web/src/App.tsx`：应用壳层与跨页面桥接
+- `player-web/src/hooks/useSharedAuth.ts`：共享登录态与账号级 storage scope 同步
+- `player-web/src/hooks/useRadarEditorController.ts`：雷达图生成器编辑状态、导出与本地草稿控制
 - `player-web/src/app/radar/*`：雷达图生成器专用规则、归一化和本地持久化工具
 - `player-web/src/components/RadarEditorPage.tsx`：雷达图生成器视图层
 - `player-web/server/app.py`：仅保留 Flask 入口、CORS 与蓝图注册
