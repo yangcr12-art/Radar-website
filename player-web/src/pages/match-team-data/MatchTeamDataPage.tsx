@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { checkHealth, deleteMatchDataset, fetchMatchDatasets, fetchMatchTeamById, fetchMatchTeamList, getApiBaseLabel, importMatchExcel } from "../../api/storageClient";
 import { METRIC_GROUP_RULES, STORAGE_KEYS } from "../../app/constants";
-import { readLocalStore, writeLocalStore } from "../../utils/localStore";
+import { readLocalStore, writeLocalStore, writeLocalStoreWithResult } from "../../utils/localStore";
 import { getMatchProjectGroupByColumn, getMatchProjectZhByColumn } from "../../utils/matchProjectMappingStore";
 import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
 import { formatDateTime } from "../../utils/timeFormat";
@@ -139,7 +139,8 @@ function MatchTeamDataPage({
   matchMetricPresets = [],
   setMatchMetricPresets,
   selectedMatchMetricPresetByDataset = {},
-  setSelectedMatchMetricPresetByDataset
+  setSelectedMatchMetricPresetByDataset,
+  onImportToMatchRadar
 }) {
   const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
@@ -667,10 +668,18 @@ function MatchTeamDataPage({
       rows
     };
 
-    writeLocalStore(STORAGE_KEYS.matchRadarImportPayload, payload);
-    window.dispatchEvent(new Event("match-radar-imported"));
-    setMatchDataMessage(`已导入 ${rows.length} 项到比赛雷达图。`);
-    setMatchDataError("");
+    const persistResult = writeLocalStoreWithResult(STORAGE_KEYS.matchRadarImportPayload, payload);
+    window.dispatchEvent(new CustomEvent("match-radar-imported", { detail: payload }));
+    if (typeof onImportToMatchRadar === "function") {
+      onImportToMatchRadar();
+    }
+    if (persistResult.ok) {
+      setMatchDataMessage(`已导入 ${rows.length} 项到比赛雷达图。`);
+      setMatchDataError("");
+    } else {
+      setMatchDataMessage(`已导入 ${rows.length} 项到比赛雷达图。`);
+      setMatchDataError(`浏览器本地存储写入失败：${persistResult.error || persistResult.name || "未知错误"}。当前导入已生效，但刷新页面后可能不会保留。`);
+    }
   };
 
   const backendOnline = backendHealth === "online";

@@ -246,8 +246,10 @@ function MatchRadarPage({ mappingRevision = 0 }) {
     setConfig((prev: any) => ({ ...prev, ...patch }));
   };
 
-  const applyImportPayload = () => {
-    const payload = readLocalStore(STORAGE_KEYS.matchRadarImportPayload, null);
+  const applyImportPayload = (incomingPayload?: any) => {
+    const payload = incomingPayload && typeof incomingPayload === "object"
+      ? incomingPayload
+      : readLocalStore(STORAGE_KEYS.matchRadarImportPayload, null);
     if (!payload || !Array.isArray(payload.rows)) {
       setRows([]);
       return;
@@ -311,7 +313,10 @@ function MatchRadarPage({ mappingRevision = 0 }) {
 
   useEffect(() => {
     applyImportPayload();
-    const handler = () => applyImportPayload();
+    const handler = (event: Event) => {
+      const detail = event instanceof CustomEvent ? event.detail : undefined;
+      applyImportPayload(detail);
+    };
     window.addEventListener("match-radar-imported", handler as EventListener);
     return () => window.removeEventListener("match-radar-imported", handler as EventListener);
   }, [mappingRevision]);

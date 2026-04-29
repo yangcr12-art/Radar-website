@@ -4,6 +4,10 @@ export function readLocalStore(key, fallbackValue) {
   return readScopedStore(key, fallbackValue);
 }
 
+export function writeLocalStoreWithResult(key, value) {
+  return writeScopedStore(key, value);
+}
+
 export function writeLocalStore(key, value) {
-  return writeScopedStore(key, value).ok;
+  return writeLocalStoreWithResult(key, value).ok;
 }

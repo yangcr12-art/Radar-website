@@ -54,7 +54,7 @@ export function renderActivePage({
     case "team_mapping":
       return <TeamMappingPage />;
     case "match_team_data":
-      return <MatchTeamDataPage mappingRevision={mappingRevision} {...matchTeamDataPageProps} />;
+      return <MatchTeamDataPage mappingRevision={mappingRevision} onImportToMatchRadar={() => setActivePage("match_radar")} {...matchTeamDataPageProps} />;
     case "match_radar":
       return <MatchRadarPage mappingRevision={mappingRevision} />;
     case "fitness_team_radar":
