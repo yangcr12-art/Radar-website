@@ -140,7 +140,8 @@ function MatchTeamDataPage({
   setMatchMetricPresets,
   selectedMatchMetricPresetByDataset = {},
   setSelectedMatchMetricPresetByDataset,
-  onImportToMatchRadar
+  onImportToMatchRadar,
+  onMatchRadarImportPayload
 }) {
   const apiBaseLabel = getApiBaseLabel();
   const [backendHealth, setBackendHealth] = useState("checking");
@@ -669,6 +670,9 @@ function MatchTeamDataPage({
     };
 
     const persistResult = writeLocalStoreWithResult(STORAGE_KEYS.matchRadarImportPayload, payload);
+    if (typeof onMatchRadarImportPayload === "function") {
+      onMatchRadarImportPayload(payload);
+    }
     window.dispatchEvent(new CustomEvent("match-radar-imported", { detail: payload }));
     if (typeof onImportToMatchRadar === "function") {
       onImportToMatchRadar();

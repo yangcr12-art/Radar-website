@@ -132,6 +132,7 @@ function App() {
   const [matchProjectMappingRows, setMatchProjectMappingRows] = useState(() => getMatchProjectMappingRows());
   const [nameMappingRows, setNameMappingRows] = useState(() => getNameMappingRows());
   const [teamMappingRows, setTeamMappingRows] = useState(() => getTeamMappingRows());
+  const [latestMatchRadarImportPayload, setLatestMatchRadarImportPayload] = useState<any>(null);
   const [mappingRevision, setMappingRevision] = useState(0);
   const [, setStorageStatus] = useState("connecting");
   const fileInputRef = useRef(null);
@@ -1652,7 +1653,11 @@ function App() {
             matchMetricPresets,
             setMatchMetricPresets,
             selectedMatchMetricPresetByDataset,
-            setSelectedMatchMetricPresetByDataset
+            setSelectedMatchMetricPresetByDataset,
+            onMatchRadarImportPayload: (payload: any) => setLatestMatchRadarImportPayload(payload)
+          },
+          matchRadarPageProps: {
+            latestImportPayload: latestMatchRadarImportPayload
           },
           mappingRevision
         })}

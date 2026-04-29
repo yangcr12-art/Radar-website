@@ -24,6 +24,7 @@ type RenderActivePageArgs = {
   radarPage: React.ReactNode;
   playerDataPageProps: any;
   matchTeamDataPageProps: any;
+  matchRadarPageProps: any;
   scatterPageProps: any;
   playerPersonalRadarProps: any;
 };
@@ -35,6 +36,7 @@ export function renderActivePage({
   radarPage,
   playerDataPageProps,
   matchTeamDataPageProps,
+  matchRadarPageProps,
   scatterPageProps,
   playerPersonalRadarProps
 }: RenderActivePageArgs) {
@@ -56,7 +58,7 @@ export function renderActivePage({
     case "match_team_data":
       return <MatchTeamDataPage mappingRevision={mappingRevision} onImportToMatchRadar={() => setActivePage("match_radar")} {...matchTeamDataPageProps} />;
     case "match_radar":
-      return <MatchRadarPage mappingRevision={mappingRevision} />;
+      return <MatchRadarPage mappingRevision={mappingRevision} {...matchRadarPageProps} />;
     case "fitness_team_radar":
       return <FitnessTeamRadarPage mappingRevision={mappingRevision} />;
     case "fitness_player_overlay":

@@ -219,7 +219,7 @@ function renderLogoBlock({
   );
 }
 
-function MatchRadarPage({ mappingRevision = 0 }) {
+function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const [config, setConfig] = useState(() => {
     const saved = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
     return { ...DEFAULT_CONFIG, ...(saved && typeof saved === "object" ? saved : {}) };
@@ -320,6 +320,11 @@ function MatchRadarPage({ mappingRevision = 0 }) {
     window.addEventListener("match-radar-imported", handler as EventListener);
     return () => window.removeEventListener("match-radar-imported", handler as EventListener);
   }, [mappingRevision]);
+
+  useEffect(() => {
+    if (!latestImportPayload || !Array.isArray(latestImportPayload.rows)) return;
+    applyImportPayload(latestImportPayload);
+  }, [latestImportPayload]);
 
   const logoOptions = useMemo(() => {
     const list = getTeamMappingRows();
