@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from flask import Flask, jsonify, request
 
-from server_core.routes.auth_api import auth_bp, is_authenticated
+from server_core.routes.auth_api import auth_bp
 from server_core.routes.csl_standings_api import csl_standings_bp
 from server_core.routes.fitness_data_api import fitness_data_bp
 from server_core.routes.mapping_import_api import mapping_import_bp
@@ -15,13 +15,14 @@ from server_core.routes.opta_data_api import opta_data_bp
 from server_core.routes.player_data_api import player_data_bp
 from server_core.routes.state_api import state_bp
 from server_core.services.auth_config import get_session_secret
-from server_core.services.player_dataset_store import ensure_player_data_dir
 from server_core.services.ranking_service import is_lower_better_column as _ranking_service_marker
-from server_core.services.state_store import ensure_data_dir, iso_now
+from server_core.services.session_auth import is_authenticated
+from server_core.services.state_store import iso_now
+from server_core.services.user_storage import ensure_data_dir, initialize_user_storage
 
 
 ensure_data_dir()
-ensure_player_data_dir()
+initialize_user_storage()
 
 app = Flask(__name__)
 app.secret_key = get_session_secret()

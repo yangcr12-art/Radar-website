@@ -14,21 +14,42 @@ from server_core.services.ranking_service import (
     is_lower_better_column as _svc_is_lower_better_column,
     normalize_player_dataset_doc as _svc_normalize_player_dataset_doc,
 )
+from server_core.services.auth_config import get_primary_login_username
+from server_core.services.session_auth import get_authenticated_username
 from server_core.services.state_store import VERSION, atomic_write_json, ensure_data_dir, iso_now
+from server_core.services.user_storage import ensure_user_data_dir, user_data_file, user_data_subdir
 
 
-APP_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = APP_DIR / "data"
-PLAYER_DATA_PATH = DATA_DIR / "player_dataset.json"
-PLAYER_DATA_BAK_PATH = DATA_DIR / "player_dataset.json.bak"
-PLAYER_DATASETS_DIR = DATA_DIR / "player_datasets"
-PLAYER_DATA_INDEX_PATH = DATA_DIR / "player_datasets_index.json"
-PLAYER_DATA_INDEX_BAK_PATH = DATA_DIR / "player_datasets_index.json.bak"
+def _resolve_username(username: str | None = None) -> str:
+    if username:
+        return username
+    return get_authenticated_username(get_primary_login_username())
 
 
-def ensure_player_data_dir() -> None:
+def ensure_player_data_dir(username: str | None = None) -> None:
     ensure_data_dir()
-    PLAYER_DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_user_data_dir(_resolve_username(username))
+    user_data_subdir(_resolve_username(username), "player_datasets")
+
+
+def _player_data_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "player_dataset.json")
+
+
+def _player_data_bak_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "player_dataset.json.bak")
+
+
+def _player_datasets_dir(username: str | None = None) -> Path:
+    return user_data_subdir(_resolve_username(username), "player_datasets")
+
+
+def _player_data_index_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "player_datasets_index.json")
+
+
+def _player_data_index_bak_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "player_datasets_index.json.bak")
 
 
 def to_float(value: Any) -> float | None:
@@ -146,13 +167,14 @@ def default_player_index() -> dict[str, Any]:
 
 
 def dataset_file_path(dataset_id: str) -> Path:
-    return PLAYER_DATASETS_DIR / f"{dataset_id}.json"
+    return _player_datasets_dir() / f"{dataset_id}.json"
 
 
 def load_player_doc() -> dict[str, Any] | None:
-    if not PLAYER_DATA_PATH.exists():
+    player_data_path = _player_data_path()
+    if not player_data_path.exists():
         return None
-    with PLAYER_DATA_PATH.open("r", encoding="utf-8") as f:
+    with player_data_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -167,23 +189,24 @@ def load_dataset_doc(dataset_id: str) -> dict[str, Any] | None:
 def write_dataset_doc(dataset_id: str, doc: dict[str, Any]) -> None:
     ensure_player_data_dir()
     path = dataset_file_path(dataset_id)
-    bak_path = PLAYER_DATASETS_DIR / f"{dataset_id}.bak.json"
+    bak_path = _player_datasets_dir() / f"{dataset_id}.bak.json"
     atomic_write_json(path, bak_path, f"dataset_{dataset_id}_", doc)
 
 
 def write_player_doc(doc: dict[str, Any]) -> None:
     ensure_player_data_dir()
-    atomic_write_json(PLAYER_DATA_PATH, PLAYER_DATA_BAK_PATH, "player_data_", doc)
+    atomic_write_json(_player_data_path(), _player_data_bak_path(), "player_data_", doc)
 
 
 def write_player_index(doc: dict[str, Any]) -> None:
     ensure_player_data_dir()
-    atomic_write_json(PLAYER_DATA_INDEX_PATH, PLAYER_DATA_INDEX_BAK_PATH, "player_datasets_index_", doc)
+    atomic_write_json(_player_data_index_path(), _player_data_index_bak_path(), "player_datasets_index_", doc)
 
 
 def load_player_index() -> dict[str, Any]:
-    if PLAYER_DATA_INDEX_PATH.exists():
-        with PLAYER_DATA_INDEX_PATH.open("r", encoding="utf-8") as f:
+    player_data_index_path = _player_data_index_path()
+    if player_data_index_path.exists():
+        with player_data_index_path.open("r", encoding="utf-8") as f:
             idx = json.load(f)
             if isinstance(idx, dict):
                 return {

@@ -6,8 +6,11 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_LOGIN_USERNAME = "player"
-DEFAULT_LOGIN_PASSWORD = "player"
+DEFAULT_LOGIN_ACCOUNTS = [
+    {"username": "player", "password": "player"},
+    {"username": "jishubu", "password": "123456"},
+    {"username": "guest", "password": "guest"},
+]
 DEFAULT_SESSION_SECRET = "player-web-dev-session-secret"
 
 
@@ -72,14 +75,14 @@ def get_login_accounts() -> list[dict[str, str]]:
     if env_username and env_password:
         return [{"username": env_username, "password": env_password}]
 
-    return [{"username": DEFAULT_LOGIN_USERNAME, "password": DEFAULT_LOGIN_PASSWORD}]
+    return list(DEFAULT_LOGIN_ACCOUNTS)
 
 
 def get_primary_login_username() -> str:
     accounts = get_login_accounts()
     if accounts:
         return accounts[0]["username"]
-    return DEFAULT_LOGIN_USERNAME
+    return DEFAULT_LOGIN_ACCOUNTS[0]["username"]
 
 
 def is_valid_login(username: str, password: str) -> bool:

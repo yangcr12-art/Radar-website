@@ -3,14 +3,10 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, session
 
 from server_core.services.auth_config import get_primary_login_username, is_valid_login
+from server_core.services.session_auth import AUTH_FLAG_KEY, AUTH_USERNAME_KEY, get_authenticated_username, is_authenticated
 
 
 auth_bp = Blueprint("auth_api", __name__)
-
-
-def is_authenticated() -> bool:
-    return bool(session.get("player_web_authenticated"))
-
 
 @auth_bp.route("/api/auth/status", methods=["GET"])
 def auth_status():
@@ -18,6 +14,7 @@ def auth_status():
         {
             "ok": True,
             "authenticated": is_authenticated(),
+            "username": get_authenticated_username(),
             "usernameHint": get_primary_login_username(),
         }
     )
@@ -33,8 +30,8 @@ def auth_login():
         return jsonify({"ok": False, "error": "账号或密码错误。"}), 401
 
     session.clear()
-    session["player_web_authenticated"] = True
-    session["player_web_username"] = username
+    session[AUTH_FLAG_KEY] = True
+    session[AUTH_USERNAME_KEY] = username
     session.permanent = False
     return jsonify({"ok": True, "authenticated": True, "username": username})
 

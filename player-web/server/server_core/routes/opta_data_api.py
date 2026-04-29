@@ -11,6 +11,9 @@ from typing import Any
 from uuid import uuid4
 
 from flask import Blueprint, jsonify, request
+from server_core.services.auth_config import get_primary_login_username
+from server_core.services.session_auth import get_authenticated_username
+from server_core.services.user_storage import ensure_user_data_dir, user_data_file, user_data_subdir
 
 try:
     import fitz  # type: ignore
@@ -20,13 +23,11 @@ except Exception:
 
 VERSION = 1
 WRITE_LOCK = Lock()
-APP_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = APP_DIR / "data"
-OPTA_DATASETS_DIR = DATA_DIR / "opta_datasets"
-OPTA_DATA_INDEX_PATH = DATA_DIR / "opta_datasets_index.json"
-OPTA_DATA_INDEX_BAK_PATH = DATA_DIR / "opta_datasets_index.json.bak"
-
 opta_data_bp = Blueprint("opta_data_api", __name__)
+
+
+def _resolve_username() -> str:
+    return get_authenticated_username(get_primary_login_username())
 
 OPTA_ATTACK_COLUMNS = [
     "#",
@@ -72,8 +73,20 @@ def _iso_now() -> str:
 
 
 def _ensure_data_dir() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    OPTA_DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_user_data_dir(_resolve_username())
+    user_data_subdir(_resolve_username(), "opta_datasets")
+
+
+def _opta_datasets_dir() -> Path:
+    return user_data_subdir(_resolve_username(), "opta_datasets")
+
+
+def _opta_data_index_path() -> Path:
+    return user_data_file(_resolve_username(), "opta_datasets_index.json")
+
+
+def _opta_data_index_bak_path() -> Path:
+    return user_data_file(_resolve_username(), "opta_datasets_index.json.bak")
 
 
 def _normalize_side(value: Any) -> str:
@@ -91,7 +104,7 @@ def _default_index() -> dict[str, Any]:
 
 
 def _dataset_file_path(dataset_id: str) -> Path:
-    return OPTA_DATASETS_DIR / f"{dataset_id}.json"
+    return _opta_datasets_dir() / f"{dataset_id}.json"
 
 
 def _atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, Any]) -> None:
@@ -107,8 +120,9 @@ def _atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, A
 
 
 def _load_index() -> dict[str, Any]:
-    if OPTA_DATA_INDEX_PATH.exists():
-        with OPTA_DATA_INDEX_PATH.open("r", encoding="utf-8") as f:
+    opta_data_index_path = _opta_data_index_path()
+    if opta_data_index_path.exists():
+        with opta_data_index_path.open("r", encoding="utf-8") as f:
             idx = json.load(f)
             if isinstance(idx, dict):
                 return {
@@ -130,12 +144,12 @@ def _load_dataset_doc(dataset_id: str) -> dict[str, Any] | None:
 
 def _write_dataset_doc(dataset_id: str, doc: dict[str, Any]) -> None:
     path = _dataset_file_path(dataset_id)
-    bak_path = OPTA_DATASETS_DIR / f"{dataset_id}.bak.json"
+    bak_path = _opta_datasets_dir() / f"{dataset_id}.bak.json"
     _atomic_write_json(path, bak_path, f"opta_dataset_{dataset_id}_", doc)
 
 
 def _write_index(doc: dict[str, Any]) -> None:
-    _atomic_write_json(OPTA_DATA_INDEX_PATH, OPTA_DATA_INDEX_BAK_PATH, "opta_datasets_index_", doc)
+    _atomic_write_json(_opta_data_index_path(), _opta_data_index_bak_path(), "opta_datasets_index_", doc)
 
 
 def _resolve_dataset(index: dict[str, Any], requested_dataset_id: str) -> tuple[str, dict[str, Any] | None]:

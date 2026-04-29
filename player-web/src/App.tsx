@@ -37,6 +37,7 @@ import { computeGroupLabelLayouts } from "./utils/radarLabelLayout";
 import { getTeamMappingRows, saveTeamMappingRows } from "./utils/teamMappingStore";
 import { formatDateTime } from "./utils/timeFormat";
 import { compactPresetsForLocalStorage, compactSnapshotForLocalStorage, isQuotaExceededResult } from "./utils/localStorageQuota";
+import { setStorageScope } from "./utils/storageScope";
 import {
   DEFAULT_CENTER_IMAGE,
   DEFAULT_CHART_STYLE,
@@ -880,11 +881,18 @@ function App() {
         const status = await fetchAuthStatus();
         if (cancelled) return;
         const usernameHint = String(status?.usernameHint || "player").trim() || "player";
-        setAuthUsername(usernameHint);
+        const currentUsername = String(status?.username || "").trim();
+        if (status?.authenticated && currentUsername) {
+          setStorageScope(currentUsername);
+        } else {
+          setStorageScope("anonymous");
+        }
+        setAuthUsername(currentUsername || usernameHint);
         setLoginUsername(usernameHint);
         setAuthStatus(status?.authenticated ? "authenticated" : "anonymous");
       } catch {
         if (cancelled) return;
+        setStorageScope("anonymous");
         setAuthStatus("anonymous");
       }
     };
@@ -1512,6 +1520,7 @@ function App() {
     try {
       const result = await loginSharedSession(username, loginPassword);
       const nextUsername = String(result?.username || username).trim() || username;
+      setStorageScope(nextUsername);
       setAuthUsername(nextUsername);
       setLoginUsername(nextUsername);
       setLoginPassword("");
@@ -1530,6 +1539,7 @@ function App() {
     } catch {
       // Ignore logout errors and still force the client back to the login screen.
     }
+    setStorageScope("anonymous");
     setAuthStatus("anonymous");
     setIsHydrated(false);
     setLoginPassword("");

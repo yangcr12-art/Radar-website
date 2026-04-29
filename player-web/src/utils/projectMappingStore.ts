@@ -1,5 +1,6 @@
 import { PROJECT_MAPPING_COLUMNS } from "../data/projectMappingColumns";
 import { emitMappingStoreChanged } from "./mappingSync";
+import { buildScopedStorageKey } from "./storageScope";
 
 const PROJECT_GROUP_STORAGE_KEY = "player_web_project_mapping_groups_v1";
 const PROJECT_CUSTOM_ROWS_STORAGE_KEY = "player_web_project_mapping_custom_rows_v1";
@@ -76,7 +77,7 @@ function normalizeHiddenBuiltinKeys(input) {
 
 function readGroupOverrides() {
   try {
-    const raw = localStorage.getItem(PROJECT_GROUP_STORAGE_KEY);
+    const raw = localStorage.getItem(buildScopedStorageKey(PROJECT_GROUP_STORAGE_KEY));
     if (!raw) return {};
     return normalizeGroupMap(JSON.parse(raw));
   } catch {
@@ -86,7 +87,7 @@ function readGroupOverrides() {
 
 function readCustomRows() {
   try {
-    const raw = localStorage.getItem(PROJECT_CUSTOM_ROWS_STORAGE_KEY);
+    const raw = localStorage.getItem(buildScopedStorageKey(PROJECT_CUSTOM_ROWS_STORAGE_KEY));
     if (!raw) return [];
     return normalizeCustomRows(JSON.parse(raw));
   } catch {
@@ -96,7 +97,7 @@ function readCustomRows() {
 
 function readHiddenBuiltinKeys() {
   try {
-    const raw = localStorage.getItem(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY);
+    const raw = localStorage.getItem(buildScopedStorageKey(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY));
     if (!raw) return [];
     return normalizeHiddenBuiltinKeys(JSON.parse(raw));
   } catch {
@@ -107,7 +108,7 @@ function readHiddenBuiltinKeys() {
 function saveGroupOverrides(nextMap) {
   try {
     const normalized = normalizeGroupMap(nextMap);
-    localStorage.setItem(PROJECT_GROUP_STORAGE_KEY, JSON.stringify(normalized));
+    localStorage.setItem(buildScopedStorageKey(PROJECT_GROUP_STORAGE_KEY), JSON.stringify(normalized));
     return true;
   } catch {
     return false;
@@ -117,7 +118,7 @@ function saveGroupOverrides(nextMap) {
 function saveCustomRows(rows) {
   try {
     const normalized = normalizeCustomRows(rows);
-    localStorage.setItem(PROJECT_CUSTOM_ROWS_STORAGE_KEY, JSON.stringify(normalized));
+    localStorage.setItem(buildScopedStorageKey(PROJECT_CUSTOM_ROWS_STORAGE_KEY), JSON.stringify(normalized));
     return true;
   } catch {
     return false;
@@ -127,7 +128,7 @@ function saveCustomRows(rows) {
 function saveHiddenBuiltinKeys(keys) {
   try {
     const normalized = normalizeHiddenBuiltinKeys(keys);
-    localStorage.setItem(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY, JSON.stringify(normalized));
+    localStorage.setItem(buildScopedStorageKey(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY), JSON.stringify(normalized));
     return true;
   } catch {
     return false;

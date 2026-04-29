@@ -108,6 +108,7 @@ npm run dev -- --host 127.0.0.1 --port 5173
 可选环境变量：
 
 - `VITE_STORAGE_API_BASE`：后端地址，默认 `http://127.0.0.1:8787`
+- `PLAYER_WEB_AUTH_FILE`：登录账号配置文件；未配置时，本地开发默认启用 `player/player`、`jishubu/123456`、`guest/guest`
 
 生产部署（Ubuntu 24.04 / IP 直连）：
 
@@ -120,8 +121,14 @@ npm run dev -- --host 127.0.0.1 --port 5173
 - 登录态使用浏览器会话 cookie；关闭浏览器后重新打开，需要再次登录
 - 顶部导航提供“退出登录”按钮；点击后当前浏览器会话立即回到登录页
 - 生产环境支持多个共享账号；账号列表写入 `/etc/player-web/auth.json`
+- 登录后的后端数据空间按账号隔离：不同账号的工作台状态、各类导入数据集、映射表、预设互不影响
 - `/etc/player-web/auth.json` 由 `root:<后端运行组>` 持有并使用 `640` 权限，保证 `gunicorn` 进程可读
 - 为避免当前 JSON 落盘在多进程下出现并发写风险，生产默认只启 `1` 个 Python worker
+
+本地开发登录补充：
+
+- 若未显式提供 `PLAYER_WEB_AUTH_FILE` 或 `PLAYER_WEB_LOGIN_USERNAME/PLAYER_WEB_LOGIN_PASSWORD`，本地后端默认启用 3 个账号：`player/player`、`jishubu/123456`、`guest/guest`
+- 本地与生产一致，登录后读取的是“当前账号”对应的数据目录，不再共享同一份状态文件/数据集索引
 
 服务器安装命令：
 

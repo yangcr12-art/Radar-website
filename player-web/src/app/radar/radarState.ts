@@ -19,6 +19,7 @@ import {
 } from "../constants";
 import { getNameMappingRowsByEnglish, normalizePlayerName } from "../../utils/nameMappingStore";
 import { getProjectZhByColumn } from "../../utils/projectMappingStore";
+import { readScopedStore, writeScopedStore } from "../../utils/storageScope";
 
 export function polarPoint(radius, angle) {
   return {
@@ -226,24 +227,11 @@ export function resequenceSubOrder(rows) {
 }
 
 export function readStorage(key, fallbackValue) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallbackValue;
-    return JSON.parse(raw);
-  } catch {
-    return fallbackValue;
-  }
+  return readScopedStore(key, fallbackValue);
 }
 
 export function writeStorageWithResult(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return { ok: true, error: "", name: "" };
-  } catch (err) {
-    const name = err && typeof err === "object" && typeof err.name === "string" ? err.name : "UnknownError";
-    const message = err && typeof err === "object" && typeof err.message === "string" ? err.message : "";
-    return { ok: false, error: message ? `${name}: ${message}` : name, name };
-  }
+  return writeScopedStore(key, value);
 }
 
 export function writeStorage(key, value) {

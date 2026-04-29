@@ -1,17 +1,9 @@
+import { readScopedStore, writeScopedStore } from "./storageScope";
+
 export function readLocalStore(key, fallbackValue) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallbackValue;
-  } catch {
-    return fallbackValue;
-  }
+  return readScopedStore(key, fallbackValue);
 }
 
 export function writeLocalStore(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
+  return writeScopedStore(key, value).ok;
 }

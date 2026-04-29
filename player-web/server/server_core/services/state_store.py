@@ -9,25 +9,35 @@ from threading import Lock
 from typing import Any
 from uuid import uuid4
 
+from server_core.services.auth_config import get_primary_login_username
+from server_core.services.session_auth import get_authenticated_username
+from server_core.services.user_storage import ensure_data_dir, user_data_file
+
 
 VERSION = 1
 WRITE_LOCK = Lock()
-APP_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = APP_DIR / "data"
-STATE_PATH = DATA_DIR / "state.json"
-STATE_BAK_PATH = DATA_DIR / "state.json.bak"
 
 
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+def _resolve_username(username: str | None = None) -> str:
+    if username:
+        return username
+    return get_authenticated_username(get_primary_login_username())
 
-def ensure_data_dir() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+def _state_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "state.json")
+
+
+def _state_bak_path(username: str | None = None) -> Path:
+    return user_data_file(_resolve_username(username), "state.json.bak")
 
 
 def atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, Any]) -> None:
     ensure_data_dir()
+    path.parent.mkdir(parents=True, exist_ok=True)
     data = json.dumps(doc, ensure_ascii=False, indent=2)
     with WRITE_LOCK:
         if path.exists():
@@ -38,10 +48,11 @@ def atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, An
         os.replace(tmp_path, path)
 
 
-def load_state_doc() -> dict[str, Any] | None:
-    if not STATE_PATH.exists():
+def load_state_doc(username: str | None = None) -> dict[str, Any] | None:
+    state_path = _state_path(username)
+    if not state_path.exists():
         return None
-    with STATE_PATH.open("r", encoding="utf-8") as f:
+    with state_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -162,5 +173,5 @@ def build_state_doc(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def write_state_doc(doc: dict[str, Any]) -> None:
-    atomic_write_json(STATE_PATH, STATE_BAK_PATH, "state_", doc)
+def write_state_doc(doc: dict[str, Any], username: str | None = None) -> None:
+    atomic_write_json(_state_path(username), _state_bak_path(username), "state_", doc)

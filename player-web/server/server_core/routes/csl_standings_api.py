@@ -11,17 +11,18 @@ from uuid import uuid4
 
 from flask import Blueprint, jsonify, request
 from openpyxl import load_workbook
+from server_core.services.auth_config import get_primary_login_username
+from server_core.services.session_auth import get_authenticated_username
+from server_core.services.user_storage import ensure_user_data_dir, user_data_file, user_data_subdir
 
 
 VERSION = 1
 WRITE_LOCK = Lock()
-APP_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = APP_DIR / "data"
-CSL_STANDINGS_DATASETS_DIR = DATA_DIR / "csl_standings_datasets"
-CSL_STANDINGS_INDEX_PATH = DATA_DIR / "csl_standings_datasets_index.json"
-CSL_STANDINGS_INDEX_BAK_PATH = DATA_DIR / "csl_standings_datasets_index.json.bak"
-
 csl_standings_bp = Blueprint("csl_standings_api", __name__)
+
+
+def _resolve_username() -> str:
+    return get_authenticated_username(get_primary_login_username())
 
 LEAGUE_TOKEN_CSL = "中超"
 STATUS_FINISHED_TOKENS = {"比赛结束", "完场", "finished", "ft"}
@@ -62,8 +63,20 @@ def _iso_now() -> str:
 
 
 def _ensure_data_dir() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    CSL_STANDINGS_DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_user_data_dir(_resolve_username())
+    user_data_subdir(_resolve_username(), "csl_standings_datasets")
+
+
+def _csl_standings_datasets_dir() -> Path:
+    return user_data_subdir(_resolve_username(), "csl_standings_datasets")
+
+
+def _csl_standings_index_path() -> Path:
+    return user_data_file(_resolve_username(), "csl_standings_datasets_index.json")
+
+
+def _csl_standings_index_bak_path() -> Path:
+    return user_data_file(_resolve_username(), "csl_standings_datasets_index.json.bak")
 
 
 def _normalize_text(value: Any) -> str:
@@ -114,7 +127,7 @@ def _default_index() -> dict[str, Any]:
 
 
 def _dataset_file_path(dataset_id: str) -> Path:
-    return CSL_STANDINGS_DATASETS_DIR / f"{dataset_id}.json"
+    return _csl_standings_datasets_dir() / f"{dataset_id}.json"
 
 
 def _atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, Any]) -> None:
@@ -130,8 +143,9 @@ def _atomic_write_json(path: Path, bak_path: Path, prefix: str, doc: dict[str, A
 
 
 def _load_index() -> dict[str, Any]:
-    if CSL_STANDINGS_INDEX_PATH.exists():
-        with CSL_STANDINGS_INDEX_PATH.open("r", encoding="utf-8") as f:
+    csl_standings_index_path = _csl_standings_index_path()
+    if csl_standings_index_path.exists():
+        with csl_standings_index_path.open("r", encoding="utf-8") as f:
             idx = json.load(f)
             if isinstance(idx, dict):
                 return {
@@ -153,12 +167,12 @@ def _load_dataset_doc(dataset_id: str) -> dict[str, Any] | None:
 
 def _write_dataset_doc(dataset_id: str, doc: dict[str, Any]) -> None:
     path = _dataset_file_path(dataset_id)
-    bak_path = CSL_STANDINGS_DATASETS_DIR / f"{dataset_id}.bak.json"
+    bak_path = _csl_standings_datasets_dir() / f"{dataset_id}.bak.json"
     _atomic_write_json(path, bak_path, f"csl_standings_dataset_{dataset_id}_", doc)
 
 
 def _write_index(doc: dict[str, Any]) -> None:
-    _atomic_write_json(CSL_STANDINGS_INDEX_PATH, CSL_STANDINGS_INDEX_BAK_PATH, "csl_standings_index_", doc)
+    _atomic_write_json(_csl_standings_index_path(), _csl_standings_index_bak_path(), "csl_standings_index_", doc)
 
 
 def _resolve_dataset(index: dict[str, Any], requested_dataset_id: str) -> tuple[str, dict[str, Any] | None]:
