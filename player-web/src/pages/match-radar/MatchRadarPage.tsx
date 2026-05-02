@@ -182,6 +182,37 @@ function clampTeamNameFontSize(value: unknown) {
   return Math.max(14, Math.min(44, num));
 }
 
+function getConfigScopeId(datasetId: unknown) {
+  const text = String(datasetId || "").trim();
+  return text || "__default__";
+}
+
+function resolveTeamColors(homeTeamName: string, awayTeamName: string, mapping: Map<string, any>) {
+  const homeKey = normalizeTeamName(homeTeamName).toLowerCase();
+  const awayKey = normalizeTeamName(awayTeamName).toLowerCase();
+  const mappedHomeColor = normalizeHexColor(homeKey ? mapping.get(homeKey)?.color : "");
+  const mappedAwayColor = normalizeHexColor(awayKey ? mapping.get(awayKey)?.color : "");
+  return {
+    homeColor: mappedHomeColor || DEFAULT_CONFIG.homeColor,
+    awayColor: mappedAwayColor || DEFAULT_CONFIG.awayColor
+  };
+}
+
+function readInitialConfigByDataset() {
+  const saved = readLocalStore(STORAGE_KEYS.matchRadarConfigByDataset, null);
+  if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+    return saved;
+  }
+  const legacy = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
+  if (!legacy || typeof legacy !== "object" || Array.isArray(legacy)) {
+    return {};
+  }
+  const scopeId = getConfigScopeId((legacy as any).datasetId);
+  return {
+    [scopeId]: { ...DEFAULT_CONFIG, ...legacy }
+  };
+}
+
 function renderLogoBlock({
   side,
   logoSrc,
@@ -220,9 +251,10 @@ function renderLogoBlock({
 }
 
 function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
-  const [config, setConfig] = useState(() => {
-    const saved = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
-    return { ...DEFAULT_CONFIG, ...(saved && typeof saved === "object" ? saved : {}) };
+  const [configByDataset, setConfigByDataset] = useState(() => readInitialConfigByDataset());
+  const [activeDatasetId, setActiveDatasetId] = useState(() => {
+    const payload = readLocalStore(STORAGE_KEYS.matchRadarImportPayload, null);
+    return String(payload?.datasetId || "").trim();
   });
   const [rows, setRows] = useState<RadarImportRow[]>([]);
   const [metricMaxByDataset, setMetricMaxByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchRadarMetricMaxByDataset, {}));
@@ -231,8 +263,8 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    writeLocalStore(STORAGE_KEYS.matchRadarCompareConfig, config);
-  }, [config]);
+    writeLocalStore(STORAGE_KEYS.matchRadarConfigByDataset, configByDataset);
+  }, [configByDataset]);
 
   useEffect(() => {
     writeLocalStore(STORAGE_KEYS.matchRadarMetricMaxByDataset, metricMaxByDataset);
@@ -243,7 +275,16 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   }, [metricPositionShiftByDataset]);
 
   const updateConfig = (patch: any) => {
-    setConfig((prev: any) => ({ ...prev, ...patch }));
+    const scopeId = getConfigScopeId(activeDatasetId);
+    setConfigByDataset((prev: any) => ({
+      ...(prev && typeof prev === "object" ? prev : {}),
+      [scopeId]: {
+        ...DEFAULT_CONFIG,
+        ...((prev && typeof prev === "object" ? prev[scopeId] : null) || {}),
+        ...patch,
+        datasetId: String(activeDatasetId || "")
+      }
+    }));
   };
 
   const applyImportPayload = (incomingPayload?: any) => {
@@ -279,32 +320,38 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
     }
 
     setRows(parsedRows);
-    setConfig((prev: any) => {
-      const nextHomeTeamName = String(payload.homeTeamName || prev.homeTeamName || "主队");
-      const nextAwayTeamName = String(payload.awayTeamName || prev.awayTeamName || "客队");
+    const nextDatasetId = String(payload.datasetId || "").trim();
+    const scopeId = getConfigScopeId(nextDatasetId);
+    setActiveDatasetId(nextDatasetId);
+    setConfigByDataset((prev: any) => {
+      const base = prev && typeof prev === "object" ? prev : {};
+      const current = base[scopeId] && typeof base[scopeId] === "object" ? base[scopeId] : {};
+      const nextHomeTeamName = String(payload.homeTeamName || current.homeTeamName || "主队");
+      const nextAwayTeamName = String(payload.awayTeamName || current.awayTeamName || "客队");
       const nextMatchDateText = normalizeMatchDateText(payload.matchDateText);
-      const homeKey = normalizeTeamName(nextHomeTeamName).toLowerCase();
-      const awayKey = normalizeTeamName(nextAwayTeamName).toLowerCase();
-      const mappedHomeColor = normalizeHexColor(homeKey ? autoLogoMap.get(homeKey)?.color : "");
-      const mappedAwayColor = normalizeHexColor(awayKey ? autoLogoMap.get(awayKey)?.color : "");
-      const homeLocked = isColorAutoLocked(prev.homeColorAutoLocked);
-      const awayLocked = isColorAutoLocked(prev.awayColorAutoLocked);
+      const resolvedColors = resolveTeamColors(nextHomeTeamName, nextAwayTeamName, autoLogoMap);
+      const homeLocked = isColorAutoLocked(current.homeColorAutoLocked);
+      const awayLocked = isColorAutoLocked(current.awayColorAutoLocked);
       const nextHomeScore = String(payload.homeScore || "").trim();
       const nextAwayScore = String(payload.awayScore || "").trim();
       return {
-        ...prev,
-        datasetId: String(payload.datasetId || prev.datasetId || ""),
-        homeTeamId: String(payload.homeTeamId || prev.homeTeamId || ""),
-        awayTeamId: String(payload.awayTeamId || prev.awayTeamId || ""),
-        homeTeamName: nextHomeTeamName,
-        awayTeamName: nextAwayTeamName,
-        homeColor: !homeLocked && mappedHomeColor ? mappedHomeColor : String(prev.homeColor || DEFAULT_CONFIG.homeColor),
-        awayColor: !awayLocked && mappedAwayColor ? mappedAwayColor : String(prev.awayColor || DEFAULT_CONFIG.awayColor),
-        homeColorAutoLocked: homeLocked ? "1" : "0",
-        awayColorAutoLocked: awayLocked ? "1" : "0",
-        homeScore: nextHomeScore && nextAwayScore ? nextHomeScore : String(prev.homeScore || DEFAULT_CONFIG.homeScore),
-        awayScore: nextHomeScore && nextAwayScore ? nextAwayScore : String(prev.awayScore || DEFAULT_CONFIG.awayScore),
-        subtitle: nextMatchDateText || "数据来源：比赛总结 / 球队数据"
+        ...base,
+        [scopeId]: {
+          ...DEFAULT_CONFIG,
+          ...current,
+          datasetId: nextDatasetId,
+          homeTeamId: String(payload.homeTeamId || current.homeTeamId || ""),
+          awayTeamId: String(payload.awayTeamId || current.awayTeamId || ""),
+          homeTeamName: nextHomeTeamName,
+          awayTeamName: nextAwayTeamName,
+          homeColor: homeLocked ? normalizeHexColor(current.homeColor) || resolvedColors.homeColor : resolvedColors.homeColor,
+          awayColor: awayLocked ? normalizeHexColor(current.awayColor) || resolvedColors.awayColor : resolvedColors.awayColor,
+          homeColorAutoLocked: homeLocked ? "1" : "0",
+          awayColorAutoLocked: awayLocked ? "1" : "0",
+          homeScore: nextHomeScore && nextAwayScore ? nextHomeScore : String(current.homeScore || DEFAULT_CONFIG.homeScore),
+          awayScore: nextHomeScore && nextAwayScore ? nextAwayScore : String(current.awayScore || DEFAULT_CONFIG.awayScore),
+          subtitle: nextMatchDateText || String(current.subtitle || DEFAULT_CONFIG.subtitle)
+        }
       };
     });
     setError("");
@@ -339,6 +386,43 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
 
   const autoLogoMap = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
+  const config = useMemo(() => {
+    const scopeId = getConfigScopeId(activeDatasetId);
+    const base = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
+    return {
+      ...DEFAULT_CONFIG,
+      ...(base && typeof base === "object" ? base : {}),
+      datasetId: String(activeDatasetId || (base as any)?.datasetId || "")
+    };
+  }, [activeDatasetId, configByDataset]);
+
+  useEffect(() => {
+    const scopeId = getConfigScopeId(activeDatasetId);
+    const current = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
+    const currentConfig = current && typeof current === "object" ? current : null;
+    const nextHomeTeamName = String(currentConfig?.homeTeamName || "").trim();
+    const nextAwayTeamName = String(currentConfig?.awayTeamName || "").trim();
+    if (!nextHomeTeamName && !nextAwayTeamName) return;
+    const resolvedColors = resolveTeamColors(nextHomeTeamName, nextAwayTeamName, autoLogoMap);
+    const homeLocked = isColorAutoLocked(currentConfig?.homeColorAutoLocked);
+    const awayLocked = isColorAutoLocked(currentConfig?.awayColorAutoLocked);
+    const nextHomeColor = homeLocked ? normalizeHexColor(currentConfig?.homeColor) || resolvedColors.homeColor : resolvedColors.homeColor;
+    const nextAwayColor = awayLocked ? normalizeHexColor(currentConfig?.awayColor) || resolvedColors.awayColor : resolvedColors.awayColor;
+    if (String(currentConfig?.homeColor || "") === nextHomeColor && String(currentConfig?.awayColor || "") === nextAwayColor) return;
+    setConfigByDataset((prev: any) => ({
+      ...(prev && typeof prev === "object" ? prev : {}),
+      [scopeId]: {
+        ...DEFAULT_CONFIG,
+        ...(currentConfig || {}),
+        datasetId: String(activeDatasetId || ""),
+        homeColor: nextHomeColor,
+        awayColor: nextAwayColor,
+        homeColorAutoLocked: homeLocked ? "1" : "0",
+        awayColorAutoLocked: awayLocked ? "1" : "0"
+      }
+    }));
+  }, [activeDatasetId, autoLogoMap, configByDataset]);
+
   const pickLogoSrc = (teamName: string, logoKey: string) => {
     if (logoKey && logoKey !== "auto") {
       return String(logoOptions.find((item) => item.key === logoKey)?.logoDataUrl || "");
@@ -357,16 +441,16 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const chartBackgroundColor = normalizeHexColor(config.chartBackgroundColor) || "#f8f5ef";
 
   const datasetMaxMap = useMemo(() => {
-    const ds = String(config.datasetId || "");
+    const ds = String(activeDatasetId || "");
     const map = metricMaxByDataset && typeof metricMaxByDataset === "object" ? metricMaxByDataset[ds] : null;
     return map && typeof map === "object" ? map : {};
-  }, [metricMaxByDataset, config.datasetId]);
+  }, [metricMaxByDataset, activeDatasetId]);
 
   const datasetMetricShiftMap = useMemo(() => {
-    const ds = String(config.datasetId || "");
+    const ds = String(activeDatasetId || "");
     const map = metricPositionShiftByDataset && typeof metricPositionShiftByDataset === "object" ? metricPositionShiftByDataset[ds] : null;
     return map && typeof map === "object" ? map : {};
-  }, [metricPositionShiftByDataset, config.datasetId]);
+  }, [metricPositionShiftByDataset, activeDatasetId]);
 
   const enrichedRows = useMemo(() => {
     return rows.map((row) => {
@@ -404,7 +488,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   }, [enrichedRows, datasetMetricShiftMap]);
 
   const handleMetricMaxChange = (column: string, value: string) => {
-    const ds = String(config.datasetId || "");
+    const ds = String(activeDatasetId || "");
     if (!ds) return;
     const parsed = Number(value);
     setMetricMaxByDataset((prev: any) => {
@@ -420,7 +504,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   };
 
   const handleMetricPositionShiftChange = (column: string, value: string) => {
-    const ds = String(config.datasetId || "");
+    const ds = String(activeDatasetId || "");
     if (!ds) return;
     const nextShift = clampMetricPositionShift(value);
     setMetricPositionShiftByDataset((prev: any) => {
@@ -436,7 +520,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   };
 
   useEffect(() => {
-    const ds = String(config.datasetId || "");
+    const ds = String(activeDatasetId || "");
     if (!ds) return;
     const availableColumns = new Set(rows.map((row) => row.column));
     setMetricPositionShiftByDataset((prev: any) => {
@@ -454,7 +538,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
       if (!changed && Object.keys(next).length === Object.keys(current).length) return prev;
       return { ...base, [ds]: next };
     });
-  }, [rows, config.datasetId]);
+  }, [rows, activeDatasetId]);
 
   const axisPoints = useMemo(() => {
     const total = positionedRows.length || 1;

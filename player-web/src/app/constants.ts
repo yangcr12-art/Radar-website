@@ -103,6 +103,7 @@ export const STORAGE_KEYS = {
   matchRadarDraft: "player_web_match_radar_draft_v1",
   matchRadarImportPayload: "player_web_match_radar_import_payload_v1",
   matchRadarCompareConfig: "player_web_match_radar_compare_config_v1",
+  matchRadarConfigByDataset: "player_web_match_radar_config_by_dataset_v1",
   matchRadarMetricMaxByDataset: "player_web_match_radar_metric_max_by_dataset_v1",
   matchRadarMetricPositionShiftByDataset: "player_web_match_radar_metric_position_shift_by_dataset_v1",
   fitnessSelectedDatasetId: "player_web_fitness_selected_dataset_id_v1",
