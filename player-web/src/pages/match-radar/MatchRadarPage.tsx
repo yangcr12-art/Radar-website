@@ -198,18 +198,47 @@ function resolveTeamColors(homeTeamName: string, awayTeamName: string, mapping: 
   };
 }
 
+function buildLegacySharedConfig(legacy: any) {
+  if (!legacy || typeof legacy !== "object" || Array.isArray(legacy)) {
+    return null;
+  }
+  return {
+    datasetId: String(legacy.datasetId || "").trim(),
+    homeTeamId: String(legacy.homeTeamId || "").trim(),
+    awayTeamId: String(legacy.awayTeamId || "").trim(),
+    homeTeamName: String(legacy.homeTeamName || "").trim() || DEFAULT_CONFIG.homeTeamName,
+    awayTeamName: String(legacy.awayTeamName || "").trim() || DEFAULT_CONFIG.awayTeamName,
+    title: String(legacy.title || DEFAULT_CONFIG.title),
+    subtitle: String(legacy.subtitle || DEFAULT_CONFIG.subtitle),
+    homeScore: String(legacy.homeScore || DEFAULT_CONFIG.homeScore),
+    awayScore: String(legacy.awayScore || DEFAULT_CONFIG.awayScore),
+    titleFontSize: String(legacy.titleFontSize || DEFAULT_CONFIG.titleFontSize),
+    scoreFontSize: String(legacy.scoreFontSize || DEFAULT_CONFIG.scoreFontSize),
+    teamNameFontSize: String(legacy.teamNameFontSize || DEFAULT_CONFIG.teamNameFontSize),
+    pointRadius: String(legacy.pointRadius || DEFAULT_CONFIG.pointRadius),
+    chartBackgroundColor: String(legacy.chartBackgroundColor || DEFAULT_CONFIG.chartBackgroundColor),
+    homeLogoKey: String(legacy.homeLogoKey || DEFAULT_CONFIG.homeLogoKey),
+    awayLogoKey: String(legacy.awayLogoKey || DEFAULT_CONFIG.awayLogoKey),
+    homeColor: DEFAULT_CONFIG.homeColor,
+    awayColor: DEFAULT_CONFIG.awayColor,
+    homeColorAutoLocked: "0",
+    awayColorAutoLocked: "0"
+  };
+}
+
 function readInitialConfigByDataset() {
   const saved = readLocalStore(STORAGE_KEYS.matchRadarConfigByDataset, null);
   if (saved && typeof saved === "object" && !Array.isArray(saved)) {
     return saved;
   }
   const legacy = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
-  if (!legacy || typeof legacy !== "object" || Array.isArray(legacy)) {
+  const migrated = buildLegacySharedConfig(legacy);
+  if (!migrated) {
     return {};
   }
-  const scopeId = getConfigScopeId((legacy as any).datasetId);
+  const scopeId = getConfigScopeId(migrated.datasetId);
   return {
-    [scopeId]: { ...DEFAULT_CONFIG, ...legacy }
+    [scopeId]: { ...DEFAULT_CONFIG, ...migrated }
   };
 }
 
@@ -395,6 +424,41 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
       datasetId: String(activeDatasetId || (base as any)?.datasetId || "")
     };
   }, [activeDatasetId, configByDataset]);
+
+  useEffect(() => {
+    const legacy = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
+    const migratedLegacy = buildLegacySharedConfig(legacy);
+    if (!migratedLegacy?.datasetId) return;
+    const scopeId = getConfigScopeId(migratedLegacy.datasetId);
+    const current = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
+    if (!current || typeof current !== "object") return;
+    const currentHomeColor = normalizeHexColor((current as any).homeColor);
+    const currentAwayColor = normalizeHexColor((current as any).awayColor);
+    const legacyHomeColor = normalizeHexColor((legacy as any)?.homeColor);
+    const legacyAwayColor = normalizeHexColor((legacy as any)?.awayColor);
+    const homeLocked = isColorAutoLocked((current as any).homeColorAutoLocked);
+    const awayLocked = isColorAutoLocked((current as any).awayColorAutoLocked);
+    const looksLegacyMigrated =
+      String((current as any).datasetId || "") === migratedLegacy.datasetId &&
+      homeLocked &&
+      awayLocked &&
+      currentHomeColor !== "" &&
+      currentAwayColor !== "" &&
+      currentHomeColor === legacyHomeColor &&
+      currentAwayColor === legacyAwayColor;
+    if (!looksLegacyMigrated) return;
+    setConfigByDataset((prev: any) => ({
+      ...(prev && typeof prev === "object" ? prev : {}),
+      [scopeId]: {
+        ...DEFAULT_CONFIG,
+        ...(current as any),
+        homeColor: DEFAULT_CONFIG.homeColor,
+        awayColor: DEFAULT_CONFIG.awayColor,
+        homeColorAutoLocked: "0",
+        awayColorAutoLocked: "0"
+      }
+    }));
+  }, [configByDataset]);
 
   useEffect(() => {
     const scopeId = getConfigScopeId(activeDatasetId);
