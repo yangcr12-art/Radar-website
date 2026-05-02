@@ -182,9 +182,24 @@ function clampTeamNameFontSize(value: unknown) {
   return Math.max(14, Math.min(44, num));
 }
 
-function getConfigScopeId(datasetId: unknown) {
-  const text = String(datasetId || "").trim();
-  return text || "__default__";
+function buildComparisonToken(primary: unknown, fallback: unknown) {
+  const primaryText = String(primary || "").trim();
+  if (primaryText) return `id:${primaryText}`;
+  const fallbackText = normalizeTeamName(fallback).toLowerCase();
+  return fallbackText ? `name:${fallbackText}` : "unknown";
+}
+
+function getConfigScopeId(input: {
+  datasetId?: unknown;
+  homeTeamId?: unknown;
+  awayTeamId?: unknown;
+  homeTeamName?: unknown;
+  awayTeamName?: unknown;
+}) {
+  const datasetId = String(input?.datasetId || "").trim() || "__default__";
+  const homeToken = buildComparisonToken(input?.homeTeamId, input?.homeTeamName);
+  const awayToken = buildComparisonToken(input?.awayTeamId, input?.awayTeamName);
+  return `${datasetId}__${homeToken}__${awayToken}`;
 }
 
 function resolveTeamColors(homeTeamName: string, awayTeamName: string, mapping: Map<string, any>) {
@@ -236,7 +251,7 @@ function readInitialConfigByDataset() {
   if (!migrated) {
     return {};
   }
-  const scopeId = getConfigScopeId(migrated.datasetId);
+  const scopeId = getConfigScopeId(migrated);
   return {
     [scopeId]: { ...DEFAULT_CONFIG, ...migrated }
   };
@@ -281,9 +296,15 @@ function renderLogoBlock({
 
 function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const [configByDataset, setConfigByDataset] = useState(() => readInitialConfigByDataset());
-  const [activeDatasetId, setActiveDatasetId] = useState(() => {
+  const [activeImportMeta, setActiveImportMeta] = useState(() => {
     const payload = readLocalStore(STORAGE_KEYS.matchRadarImportPayload, null);
-    return String(payload?.datasetId || "").trim();
+    return {
+      datasetId: String(payload?.datasetId || "").trim(),
+      homeTeamId: String(payload?.homeTeamId || "").trim(),
+      awayTeamId: String(payload?.awayTeamId || "").trim(),
+      homeTeamName: String(payload?.homeTeamName || "").trim(),
+      awayTeamName: String(payload?.awayTeamName || "").trim()
+    };
   });
   const [rows, setRows] = useState<RadarImportRow[]>([]);
   const [metricMaxByDataset, setMetricMaxByDataset] = useState(() => readLocalStore(STORAGE_KEYS.matchRadarMetricMaxByDataset, {}));
@@ -304,14 +325,18 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   }, [metricPositionShiftByDataset]);
 
   const updateConfig = (patch: any) => {
-    const scopeId = getConfigScopeId(activeDatasetId);
+    const scopeId = getConfigScopeId(activeImportMeta);
     setConfigByDataset((prev: any) => ({
       ...(prev && typeof prev === "object" ? prev : {}),
       [scopeId]: {
         ...DEFAULT_CONFIG,
         ...((prev && typeof prev === "object" ? prev[scopeId] : null) || {}),
         ...patch,
-        datasetId: String(activeDatasetId || "")
+        datasetId: String(activeImportMeta.datasetId || ""),
+        homeTeamId: String(activeImportMeta.homeTeamId || ""),
+        awayTeamId: String(activeImportMeta.awayTeamId || ""),
+        homeTeamName: String(activeImportMeta.homeTeamName || ""),
+        awayTeamName: String(activeImportMeta.awayTeamName || "")
       }
     }));
   };
@@ -349,9 +374,15 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
     }
 
     setRows(parsedRows);
-    const nextDatasetId = String(payload.datasetId || "").trim();
-    const scopeId = getConfigScopeId(nextDatasetId);
-    setActiveDatasetId(nextDatasetId);
+    const nextImportMeta = {
+      datasetId: String(payload.datasetId || "").trim(),
+      homeTeamId: String(payload.homeTeamId || "").trim(),
+      awayTeamId: String(payload.awayTeamId || "").trim(),
+      homeTeamName: String(payload.homeTeamName || "").trim(),
+      awayTeamName: String(payload.awayTeamName || "").trim()
+    };
+    const scopeId = getConfigScopeId(nextImportMeta);
+    setActiveImportMeta(nextImportMeta);
     setConfigByDataset((prev: any) => {
       const base = prev && typeof prev === "object" ? prev : {};
       const current = base[scopeId] && typeof base[scopeId] === "object" ? base[scopeId] : {};
@@ -368,7 +399,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
         [scopeId]: {
           ...DEFAULT_CONFIG,
           ...current,
-          datasetId: nextDatasetId,
+          datasetId: nextImportMeta.datasetId,
           homeTeamId: String(payload.homeTeamId || current.homeTeamId || ""),
           awayTeamId: String(payload.awayTeamId || current.awayTeamId || ""),
           homeTeamName: nextHomeTeamName,
@@ -416,20 +447,24 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const autoLogoMap = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
 
   const config = useMemo(() => {
-    const scopeId = getConfigScopeId(activeDatasetId);
+    const scopeId = getConfigScopeId(activeImportMeta);
     const base = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
     return {
       ...DEFAULT_CONFIG,
       ...(base && typeof base === "object" ? base : {}),
-      datasetId: String(activeDatasetId || (base as any)?.datasetId || "")
+      datasetId: String(activeImportMeta.datasetId || (base as any)?.datasetId || ""),
+      homeTeamId: String(activeImportMeta.homeTeamId || (base as any)?.homeTeamId || ""),
+      awayTeamId: String(activeImportMeta.awayTeamId || (base as any)?.awayTeamId || ""),
+      homeTeamName: String(activeImportMeta.homeTeamName || (base as any)?.homeTeamName || ""),
+      awayTeamName: String(activeImportMeta.awayTeamName || (base as any)?.awayTeamName || "")
     };
-  }, [activeDatasetId, configByDataset]);
+  }, [activeImportMeta, configByDataset]);
 
   useEffect(() => {
     const legacy = readLocalStore(STORAGE_KEYS.matchRadarCompareConfig, null);
     const migratedLegacy = buildLegacySharedConfig(legacy);
     if (!migratedLegacy?.datasetId) return;
-    const scopeId = getConfigScopeId(migratedLegacy.datasetId);
+    const scopeId = getConfigScopeId(migratedLegacy);
     const current = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
     if (!current || typeof current !== "object") return;
     const currentHomeColor = normalizeHexColor((current as any).homeColor);
@@ -461,7 +496,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   }, [configByDataset]);
 
   useEffect(() => {
-    const scopeId = getConfigScopeId(activeDatasetId);
+    const scopeId = getConfigScopeId(activeImportMeta);
     const current = configByDataset && typeof configByDataset === "object" ? configByDataset[scopeId] : null;
     const currentConfig = current && typeof current === "object" ? current : null;
     const nextHomeTeamName = String(currentConfig?.homeTeamName || "").trim();
@@ -478,14 +513,18 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
       [scopeId]: {
         ...DEFAULT_CONFIG,
         ...(currentConfig || {}),
-        datasetId: String(activeDatasetId || ""),
+        datasetId: String(activeImportMeta.datasetId || ""),
+        homeTeamId: String(activeImportMeta.homeTeamId || ""),
+        awayTeamId: String(activeImportMeta.awayTeamId || ""),
+        homeTeamName: String(activeImportMeta.homeTeamName || ""),
+        awayTeamName: String(activeImportMeta.awayTeamName || ""),
         homeColor: nextHomeColor,
         awayColor: nextAwayColor,
         homeColorAutoLocked: homeLocked ? "1" : "0",
         awayColorAutoLocked: awayLocked ? "1" : "0"
       }
     }));
-  }, [activeDatasetId, autoLogoMap, configByDataset]);
+  }, [activeImportMeta, autoLogoMap, configByDataset]);
 
   const pickLogoSrc = (teamName: string, logoKey: string) => {
     if (logoKey && logoKey !== "auto") {
@@ -505,16 +544,16 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   const chartBackgroundColor = normalizeHexColor(config.chartBackgroundColor) || "#f8f5ef";
 
   const datasetMaxMap = useMemo(() => {
-    const ds = String(activeDatasetId || "");
+    const ds = getConfigScopeId(activeImportMeta);
     const map = metricMaxByDataset && typeof metricMaxByDataset === "object" ? metricMaxByDataset[ds] : null;
     return map && typeof map === "object" ? map : {};
-  }, [metricMaxByDataset, activeDatasetId]);
+  }, [metricMaxByDataset, activeImportMeta]);
 
   const datasetMetricShiftMap = useMemo(() => {
-    const ds = String(activeDatasetId || "");
+    const ds = getConfigScopeId(activeImportMeta);
     const map = metricPositionShiftByDataset && typeof metricPositionShiftByDataset === "object" ? metricPositionShiftByDataset[ds] : null;
     return map && typeof map === "object" ? map : {};
-  }, [metricPositionShiftByDataset, activeDatasetId]);
+  }, [metricPositionShiftByDataset, activeImportMeta]);
 
   const enrichedRows = useMemo(() => {
     return rows.map((row) => {
@@ -552,7 +591,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   }, [enrichedRows, datasetMetricShiftMap]);
 
   const handleMetricMaxChange = (column: string, value: string) => {
-    const ds = String(activeDatasetId || "");
+    const ds = getConfigScopeId(activeImportMeta);
     if (!ds) return;
     const parsed = Number(value);
     setMetricMaxByDataset((prev: any) => {
@@ -568,7 +607,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   };
 
   const handleMetricPositionShiftChange = (column: string, value: string) => {
-    const ds = String(activeDatasetId || "");
+    const ds = getConfigScopeId(activeImportMeta);
     if (!ds) return;
     const nextShift = clampMetricPositionShift(value);
     setMetricPositionShiftByDataset((prev: any) => {
@@ -584,7 +623,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
   };
 
   useEffect(() => {
-    const ds = String(activeDatasetId || "");
+    const ds = getConfigScopeId(activeImportMeta);
     if (!ds) return;
     const availableColumns = new Set(rows.map((row) => row.column));
     setMetricPositionShiftByDataset((prev: any) => {
@@ -602,7 +641,7 @@ function MatchRadarPage({ mappingRevision = 0, latestImportPayload = null }) {
       if (!changed && Object.keys(next).length === Object.keys(current).length) return prev;
       return { ...base, [ds]: next };
     });
-  }, [rows, activeDatasetId]);
+  }, [rows, activeImportMeta]);
 
   const axisPoints = useMemo(() => {
     const total = positionedRows.length || 1;
