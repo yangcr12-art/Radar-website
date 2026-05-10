@@ -1,5 +1,5 @@
 import { emitMappingStoreChanged } from "./mappingSync";
-import { buildScopedStorageKey } from "./storageScope";
+import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const MATCH_PROJECT_MAPPING_STORAGE_KEY = "player_web_match_project_mapping_rows_v1";
 
@@ -41,14 +41,12 @@ export function getMatchProjectMappingRows(): MatchProjectRow[] {
   }
 }
 
-export function saveMatchProjectMappingRows(rows: MatchProjectRow[]): boolean {
-  try {
-    localStorage.setItem(buildScopedStorageKey(MATCH_PROJECT_MAPPING_STORAGE_KEY), JSON.stringify(normalizeRows(rows)));
+export function saveMatchProjectMappingRows(rows: MatchProjectRow[]) {
+  const result = writeScopedStore(MATCH_PROJECT_MAPPING_STORAGE_KEY, normalizeRows(rows));
+  if (result.ok) {
     emitMappingStoreChanged("match_project");
-    return true;
-  } catch {
-    return false;
   }
+  return result;
 }
 
 export function hasMatchProjectMappingColumn(column: string): boolean {

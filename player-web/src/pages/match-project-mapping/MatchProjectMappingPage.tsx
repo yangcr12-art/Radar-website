@@ -3,6 +3,7 @@ import { exportMatchProjectMappingExcel, importMatchProjectMappingExcel } from "
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getMatchProjectMappingRows, hasMatchProjectMappingColumn, saveMatchProjectMappingRows } from "../../utils/matchProjectMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
+import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
 
 function normalizeKey(text) {
   return String(text || "").trim().toLowerCase();
@@ -51,13 +52,26 @@ function MatchProjectMappingPage() {
   const [error, setError] = useState("");
 
   const persistRows = (nextRows) => {
-    saveMatchProjectMappingRows(nextRows);
+    const result = saveMatchProjectMappingRows(nextRows);
+    if (!result.ok) {
+      setError(`本地缓存写入失败：${result.error}`);
+      return false;
+    }
     setRows(getMatchProjectMappingRows());
+    return true;
   };
 
   useEffect(() => {
     return subscribeMappingStoreChanged(() => {
       setRows(getMatchProjectMappingRows());
+    });
+  }, []);
+
+  useEffect(() => {
+    return subscribeMappingRemoteSyncStatus((detail) => {
+      if (!detail.ok) {
+        setError(`对应表后端同步失败：${detail.error}`);
+      }
     });
   }, []);
 
@@ -103,7 +117,7 @@ function MatchProjectMappingPage() {
     const zhInput = window.prompt("请输入中文翻译（可留空）：", "");
     const zh = String(zhInput || "").trim();
     const nextRows = [...rows, { en, zh, group: "" }];
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage("已新增比赛项目。");
   };
 
@@ -112,7 +126,7 @@ function MatchProjectMappingPage() {
     if (!row) return;
     if (!window.confirm(`确认删除 ${row.en} 吗？此操作不可撤销。`)) return;
     const nextRows = rows.filter((_, idx) => idx !== index);
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage("已删除项目。");
     setError("");
   };
@@ -180,7 +194,7 @@ function MatchProjectMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条比赛项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
@@ -231,7 +245,7 @@ function MatchProjectMappingPage() {
         setError("Excel 中没有可导入的比赛项目行。");
         return;
       }
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条比赛项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);

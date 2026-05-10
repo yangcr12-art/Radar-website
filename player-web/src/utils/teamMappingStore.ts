@@ -1,5 +1,5 @@
 import { emitMappingStoreChanged } from "./mappingSync";
-import { buildScopedStorageKey } from "./storageScope";
+import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const TEAM_MAPPING_STORAGE_KEY = "player_web_team_mapping_rows_v1";
 
@@ -72,14 +72,12 @@ export function getTeamMappingRowsByName() {
 }
 
 export function saveTeamMappingRows(rows) {
-  try {
-    const normalized = normalizeRows(rows);
-    localStorage.setItem(buildScopedStorageKey(TEAM_MAPPING_STORAGE_KEY), JSON.stringify(normalized));
+  const normalized = normalizeRows(rows);
+  const result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, normalized);
+  if (result.ok) {
     emitMappingStoreChanged("team");
-    return true;
-  } catch {
-    return false;
   }
+  return result;
 }
 
 export function mergeTeamMappingRows(existingRows, importedTeamNames) {

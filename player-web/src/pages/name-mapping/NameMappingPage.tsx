@@ -4,6 +4,7 @@ import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getTeamMappingRowsByEnglish, normalizeTeamName } from "../../utils/teamMappingStore";
 import { getNameMappingRows, mergeNameMappingRows, normalizePlayerName, saveNameMappingRows } from "../../utils/nameMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
+import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
 import { transliteratePlayerName } from "../../utils/nameTransliteration";
 
 function downloadFile(filename, content, type) {
@@ -72,11 +73,24 @@ function NameMappingPage() {
     });
   }, []);
 
+  useEffect(() => {
+    return subscribeMappingRemoteSyncStatus((detail) => {
+      if (!detail.ok) {
+        setError(`对应表后端同步失败：${detail.error}`);
+      }
+    });
+  }, []);
+
   const persistRows = (nextRows) => {
     const normalized = Array.isArray(nextRows) ? nextRows : [];
     const withFallback = normalized.length > 0 ? normalized : [{ en: "", zh: "", team: "" }];
+    const result = saveNameMappingRows(withFallback);
+    if (!result.ok) {
+      setError(`本地缓存写入失败：${result.error}`);
+      return false;
+    }
     setRows(withFallback);
-    saveNameMappingRows(withFallback);
+    return true;
   };
 
   const handleCellChange = (index, field, value) => {
@@ -114,7 +128,7 @@ function NameMappingPage() {
       if (byTeam !== 0) return byTeam;
       return String(a?.en || "").trim().localeCompare(String(b?.en || "").trim(), "en-US");
     });
-    persistRows(sorted);
+    if (!persistRows(sorted)) return;
     setMessage("已按球队排序（仅调整顺序，不修改内容）。");
   };
 
@@ -127,7 +141,7 @@ function NameMappingPage() {
     }
     const confirmed = window.confirm("确认删除当前姓名对应表里的所有姓名吗？此操作不可撤销。");
     if (!confirmed) return;
-    persistRows([{ en: "", zh: "", team: "" }]);
+    if (!persistRows([{ en: "", zh: "", team: "" }])) return;
     setMessage("已删除现有姓名。");
     setError("");
   };
@@ -191,7 +205,7 @@ function NameMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条姓名映射。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
@@ -239,7 +253,7 @@ function NameMappingPage() {
       const beforeCount = displayRows.filter((row) => String(row.en || "").trim()).length;
       const afterCount = merged.filter((row) => String(row.en || "").trim()).length;
       const addedCount = Math.max(0, afterCount - beforeCount);
-      persistRows(merged);
+      if (!persistRows(merged)) return;
       setMessage(
         `同步完成：新增 ${addedCount} 条姓名，当前共 ${afterCount} 条（读取数据集 ${inspectedCount} 个${skippedCount ? `，跳过 ${skippedCount} 个` : ""}）。`
       );
@@ -266,7 +280,7 @@ function NameMappingPage() {
       setMessage("未找到可自动补全的中文姓名。");
       return;
     }
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage(`已批量补全 ${filledCount} 条中文姓名。`);
   };
 
@@ -310,7 +324,7 @@ function NameMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条姓名映射。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);

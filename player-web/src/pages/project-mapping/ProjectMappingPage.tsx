@@ -3,6 +3,7 @@ import { exportProjectMappingExcel, importProjectMappingExcel } from "../../api/
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getProjectMappingRows, hasProjectMappingColumn, saveProjectMappingRows } from "../../utils/projectMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
+import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
 
 const FITNESS_ZH_BY_EN = {
   "Total Distance per 90": "每90分钟总距离",
@@ -69,13 +70,26 @@ function ProjectMappingPage() {
 
   const persistRows = (nextRows) => {
     const normalized = Array.isArray(nextRows) ? nextRows : [];
-    saveProjectMappingRows(normalized);
+    const result = saveProjectMappingRows(normalized);
+    if (!result.ok) {
+      setError(`本地缓存写入失败：${result.error}`);
+      return false;
+    }
     setRows(getProjectMappingRows());
+    return true;
   };
 
   useEffect(() => {
     return subscribeMappingStoreChanged(() => {
       setRows(getProjectMappingRows());
+    });
+  }, []);
+
+  useEffect(() => {
+    return subscribeMappingRemoteSyncStatus((detail) => {
+      if (!detail.ok) {
+        setError(`对应表后端同步失败：${detail.error}`);
+      }
     });
   }, []);
 
@@ -125,7 +139,7 @@ function ProjectMappingPage() {
     const zhInput = window.prompt("请输入中文翻译（可留空）：", "");
     const zh = String(zhInput || "").trim();
     const nextRows = [...rows, { en, zh, group: "", isBuiltin: false }];
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage("已新增项目。");
   };
 
@@ -143,7 +157,7 @@ function ProjectMappingPage() {
     if (!confirmed) return;
 
     const nextRows = rows.filter((_, idx) => idx !== index);
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage(row.isBuiltin ? "已隐藏该已有项目。" : "已删除新增项目。");
   };
 
@@ -212,7 +226,7 @@ function ProjectMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
@@ -289,7 +303,7 @@ function ProjectMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);

@@ -1,5 +1,5 @@
 import { emitMappingStoreChanged } from "./mappingSync";
-import { buildScopedStorageKey } from "./storageScope";
+import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const NAME_MAPPING_STORAGE_KEY = "player_web_name_mapping_rows_v1";
 
@@ -53,14 +53,12 @@ export function getPlayerZhByEnglish(name) {
 }
 
 export function saveNameMappingRows(rows) {
-  try {
-    const normalized = normalizeRows(rows);
-    localStorage.setItem(buildScopedStorageKey(NAME_MAPPING_STORAGE_KEY), JSON.stringify(normalized));
+  const normalized = normalizeRows(rows);
+  const result = writeScopedStore(NAME_MAPPING_STORAGE_KEY, normalized);
+  if (result.ok) {
     emitMappingStoreChanged("name");
-    return true;
-  } catch {
-    return false;
   }
+  return result;
 }
 
 export function mergeNameMappingRows(existingRows, importedPlayerNames) {

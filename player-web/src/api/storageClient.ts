@@ -144,6 +144,17 @@ export function saveState(data) {
   });
 }
 
+export function fetchMappings() {
+  return request("/api/mappings", { method: "GET" });
+}
+
+export function saveMappings(data) {
+  return request("/api/mappings", {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+}
+
 export function migrateFromLocal(data) {
   return request("/api/migrate-from-local", {
     method: "POST",

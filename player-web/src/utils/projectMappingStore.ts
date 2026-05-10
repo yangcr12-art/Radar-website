@@ -1,6 +1,6 @@
 import { PROJECT_MAPPING_COLUMNS } from "../data/projectMappingColumns";
 import { emitMappingStoreChanged } from "./mappingSync";
-import { buildScopedStorageKey } from "./storageScope";
+import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const PROJECT_GROUP_STORAGE_KEY = "player_web_project_mapping_groups_v1";
 const PROJECT_CUSTOM_ROWS_STORAGE_KEY = "player_web_project_mapping_custom_rows_v1";
@@ -106,33 +106,18 @@ function readHiddenBuiltinKeys() {
 }
 
 function saveGroupOverrides(nextMap) {
-  try {
-    const normalized = normalizeGroupMap(nextMap);
-    localStorage.setItem(buildScopedStorageKey(PROJECT_GROUP_STORAGE_KEY), JSON.stringify(normalized));
-    return true;
-  } catch {
-    return false;
-  }
+  const normalized = normalizeGroupMap(nextMap);
+  return writeScopedStore(PROJECT_GROUP_STORAGE_KEY, normalized);
 }
 
 function saveCustomRows(rows) {
-  try {
-    const normalized = normalizeCustomRows(rows);
-    localStorage.setItem(buildScopedStorageKey(PROJECT_CUSTOM_ROWS_STORAGE_KEY), JSON.stringify(normalized));
-    return true;
-  } catch {
-    return false;
-  }
+  const normalized = normalizeCustomRows(rows);
+  return writeScopedStore(PROJECT_CUSTOM_ROWS_STORAGE_KEY, normalized);
 }
 
 function saveHiddenBuiltinKeys(keys) {
-  try {
-    const normalized = normalizeHiddenBuiltinKeys(keys);
-    localStorage.setItem(buildScopedStorageKey(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY), JSON.stringify(normalized));
-    return true;
-  } catch {
-    return false;
-  }
+  const normalized = normalizeHiddenBuiltinKeys(keys);
+  return writeScopedStore(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY, normalized);
 }
 
 function buildRows() {
@@ -188,7 +173,7 @@ export function getProjectMappingRows() {
 }
 
 export function saveProjectMappingRows(rows) {
-  if (!Array.isArray(rows)) return false;
+  if (!Array.isArray(rows)) return { ok: false, error: "Invalid rows payload", name: "ValidationError" };
 
   const visibleBuiltinKeys = new Set();
   const customRows = [];
@@ -217,18 +202,19 @@ export function saveProjectMappingRows(rows) {
   const ok1 = saveGroupOverrides(groupMap);
   const ok2 = saveCustomRows(customRows);
   const ok3 = saveHiddenBuiltinKeys(hiddenBuiltinKeys);
-  if (ok1 && ok2 && ok3) {
+  if (ok1.ok && ok2.ok && ok3.ok) {
     emitMappingStoreChanged("project");
   }
-  return ok1 && ok2 && ok3;
+  if (ok1.ok && ok2.ok && ok3.ok) return ok1;
+  return !ok1.ok ? ok1 : !ok2.ok ? ok2 : ok3;
 }
 
 export function saveProjectGroupByColumn(nextMap) {
-  const ok = saveGroupOverrides(nextMap);
-  if (ok) {
+  const result = saveGroupOverrides(nextMap);
+  if (result.ok) {
     emitMappingStoreChanged("project");
   }
-  return ok;
+  return result;
 }
 
 export function getProjectZhByColumn(column) {

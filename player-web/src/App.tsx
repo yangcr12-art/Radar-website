@@ -4,11 +4,13 @@ import {
   deletePlayerDataset,
   fetchPlayerById,
   fetchPlayerDatasets,
+  fetchMappings,
   fetchPlayerList,
   fetchState,
   getApiBaseLabel,
   importPlayerExcel,
   migrateFromLocal,
+  saveMappings,
   saveState
 } from "./api/storageClient";
 import { DEFAULT_CORNER_IMAGE, STORAGE_KEYS } from "./app/constants";
@@ -46,6 +48,7 @@ import { getNameMappingRows, getNameMappingRowsByEnglish, normalizePlayerName, s
 import { getProjectGroupByColumn, getProjectMappingRows, saveProjectMappingRows } from "./utils/projectMappingStore";
 import { getTeamMappingRows, saveTeamMappingRows } from "./utils/teamMappingStore";
 import { formatDateTime } from "./utils/timeFormat";
+import { emitMappingRemoteSyncStatus } from "./utils/mappingRemoteSync";
 
 function App() {
   const apiBaseLabel = getApiBaseLabel();
@@ -101,6 +104,7 @@ function App() {
   const [, setStorageStatus] = useState("connecting");
   const playerExcelInputRef = useRef<any>(null);
   const saveTimerRef = useRef<any>(null);
+  const mappingSaveTimerRef = useRef<any>(null);
   const saveSeqRef = useRef(0);
   const playerDetailReqSeqRef = useRef(0);
 
@@ -562,22 +566,14 @@ function App() {
     selectedId = radarEditor.selectedPresetId,
     playerMetricPresetList = playerMetricPresets,
     matchMetricPresetList = matchMetricPresets,
-    selectedMatchMetricPresetMap = selectedMatchMetricPresetByDataset,
-    projectMappingRowList = projectMappingRows,
-    matchProjectMappingRowList = matchProjectMappingRows,
-    nameMappingRowList = nameMappingRows,
-    teamMappingRowList = teamMappingRows
+    selectedMatchMetricPresetMap = selectedMatchMetricPresetByDataset
   ) => ({
     draft: snapshot,
     presets: presetList,
     selectedPresetId: selectedId,
     playerMetricPresets: playerMetricPresetList,
     matchMetricPresets: matchMetricPresetList,
-    selectedMatchMetricPresetByDataset: selectedMatchMetricPresetMap,
-    projectMappingRows: projectMappingRowList,
-    matchProjectMappingRows: matchProjectMappingRowList,
-    nameMappingRows: nameMappingRowList,
-    teamMappingRows: teamMappingRowList
+    selectedMatchMetricPresetByDataset: selectedMatchMetricPresetMap
   });
 
   const applyPersistedState = (persisted: any) => {
@@ -609,6 +605,14 @@ function App() {
     nameMappingRows: getNameMappingRows(),
     teamMappingRows: getTeamMappingRows()
   });
+
+  const hasAnyMappingRows = (payload: any) =>
+    Boolean(
+      Array.isArray(payload?.projectMappingRows) && payload.projectMappingRows.length > 0 ||
+      Array.isArray(payload?.matchProjectMappingRows) && payload.matchProjectMappingRows.length > 0 ||
+      Array.isArray(payload?.nameMappingRows) && payload.nameMappingRows.length > 0 ||
+      Array.isArray(payload?.teamMappingRows) && payload.teamMappingRows.length > 0
+    );
 
   const applyRemoteMappingState = (payload: any) => {
     let applied = false;
@@ -677,29 +681,32 @@ function App() {
         if (cancelled) return;
         if (remote?.data) {
           applyPersistedState(remote.data);
-          applyRemoteMappingState(remote.data);
-          const payloadWithMappings = {
-            ...remote.data,
-            projectMappingRows: Array.isArray(remote.data.projectMappingRows) ? remote.data.projectMappingRows : localMappingState.projectMappingRows,
-            matchProjectMappingRows: Array.isArray(remote.data.matchProjectMappingRows)
-              ? remote.data.matchProjectMappingRows
-              : localMappingState.matchProjectMappingRows,
-            nameMappingRows: Array.isArray(remote.data.nameMappingRows) ? remote.data.nameMappingRows : localMappingState.nameMappingRows,
-            teamMappingRows: Array.isArray(remote.data.teamMappingRows) ? remote.data.teamMappingRows : localMappingState.teamMappingRows
+          const remoteMappings = await fetchMappings();
+          if (cancelled) return;
+          const serverMappingData = remoteMappings?.data;
+          const legacyStateMappings = {
+            projectMappingRows: Array.isArray(remote.data.projectMappingRows) ? remote.data.projectMappingRows : [],
+            matchProjectMappingRows: Array.isArray(remote.data.matchProjectMappingRows) ? remote.data.matchProjectMappingRows : [],
+            nameMappingRows: Array.isArray(remote.data.nameMappingRows) ? remote.data.nameMappingRows : [],
+            teamMappingRows: Array.isArray(remote.data.teamMappingRows) ? remote.data.teamMappingRows : []
           };
-          const missingMappingData =
-            !Array.isArray(remote.data.projectMappingRows) ||
-            !Array.isArray(remote.data.matchProjectMappingRows) ||
-            !Array.isArray(remote.data.nameMappingRows) ||
-            !Array.isArray(remote.data.teamMappingRows);
-          if (missingMappingData) {
-            await saveState(payloadWithMappings);
+          if (hasAnyMappingRows(serverMappingData)) {
+            applyRemoteMappingState(serverMappingData);
+          } else if (hasAnyMappingRows(legacyStateMappings)) {
+            applyRemoteMappingState(legacyStateMappings);
+            await saveMappings(legacyStateMappings);
             if (cancelled) return;
+          } else {
+            applyRemoteMappingState(localMappingState);
+            if (hasAnyMappingRows(localMappingState)) {
+              await saveMappings(localMappingState);
+              if (cancelled) return;
+            }
           }
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else if (shouldMigrateLocal) {
-          const migrated = await migrateFromLocal({ ...localPersisted, ...localMappingState });
+          const migrated = await migrateFromLocal(localPersisted);
           if (cancelled) return;
           if (migrated?.migrated) {
             writeStorage(STORAGE_KEYS.localMigrated, true);
@@ -707,16 +714,18 @@ function App() {
             if (cancelled) return;
             if (migratedState?.data) {
               applyPersistedState(migratedState.data);
-              applyRemoteMappingState(migratedState.data);
             } else {
               applyPersistedState(localPersisted);
-              applyRemoteMappingState(localMappingState);
             }
-            radarEditor.setMessage("已将本地历史数据迁移到后端。");
           } else {
             applyPersistedState(localPersisted);
-            applyRemoteMappingState(localMappingState);
           }
+          applyRemoteMappingState(localMappingState);
+          if (hasAnyMappingRows(localMappingState)) {
+            await saveMappings(localMappingState);
+            if (cancelled) return;
+          }
+          radarEditor.setMessage("已将本地历史数据迁移到后端。");
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else {
@@ -812,12 +821,30 @@ function App() {
     playerMetricPresets,
     matchMetricPresets,
     selectedMatchMetricPresetByDataset,
-    projectMappingRows,
-    matchProjectMappingRows,
-    nameMappingRows,
-    teamMappingRows,
     isHydrated
   ]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (mappingSaveTimerRef.current) clearTimeout(mappingSaveTimerRef.current);
+
+    const payload = getLocalMappingState();
+    mappingSaveTimerRef.current = setTimeout(async () => {
+      try {
+        await saveMappings(payload);
+        emitMappingRemoteSyncStatus({ ok: true, error: "" });
+      } catch (err) {
+        emitMappingRemoteSyncStatus({
+          ok: false,
+          error: err instanceof Error ? err.message : "后端同步失败。"
+        });
+      }
+    }, 500);
+
+    return () => {
+      if (mappingSaveTimerRef.current) clearTimeout(mappingSaveTimerRef.current);
+    };
+  }, [projectMappingRows, matchProjectMappingRows, nameMappingRows, teamMappingRows, isHydrated]);
 
   useEffect(() => {
     let cancelled = false;

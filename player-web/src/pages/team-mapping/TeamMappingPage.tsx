@@ -3,6 +3,7 @@ import { exportTeamMappingExcel, fetchPlayerDataset, fetchPlayerDatasets, import
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { getTeamMappingRows, mergeTeamMappingRows, normalizeTeamName, saveTeamMappingRows } from "../../utils/teamMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
+import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
 
 const SHAPE_OPTIONS = [
   { value: "circle", label: "圆形" },
@@ -148,11 +149,24 @@ function TeamMappingPage() {
     });
   }, []);
 
+  useEffect(() => {
+    return subscribeMappingRemoteSyncStatus((detail) => {
+      if (!detail.ok) {
+        setError(`对应表后端同步失败：${detail.error}`);
+      }
+    });
+  }, []);
+
   const persistRows = (nextRows) => {
     const normalized = Array.isArray(nextRows) ? nextRows : [];
     const withFallback = normalized.length > 0 ? normalized : [{ en: "", zh: "", color: "", shape: "", logoDataUrl: "", logoFileName: "" }];
+    const result = saveTeamMappingRows(withFallback);
+    if (!result.ok) {
+      setError(`本地缓存写入失败：${result.error}`);
+      return false;
+    }
     setRows(withFallback);
-    saveTeamMappingRows(withFallback);
+    return true;
   };
 
   const handleCellChange = (index, field, value) => {
@@ -259,7 +273,7 @@ function TeamMappingPage() {
         return;
       }
 
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条球队映射，Logo 图片仍按现有上传结果保留。`);
     } catch (err: any) {
       setError(`导入失败：${err.message}`);
@@ -328,7 +342,7 @@ function TeamMappingPage() {
         setError("Excel 中没有可导入的球队行。");
         return;
       }
-      persistRows(importedRows);
+      if (!persistRows(importedRows)) return;
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条球队映射，Logo 图片仍按现有上传结果保留。`);
     } catch (err: any) {
       setError(`导入失败：${err.message}`);
@@ -390,7 +404,7 @@ function TeamMappingPage() {
       const beforeCount = displayRows.filter((row) => String(row.en || "").trim()).length;
       const afterCount = merged.filter((row) => String(row.en || "").trim()).length;
       const addedCount = Math.max(0, afterCount - beforeCount);
-      persistRows(merged);
+      if (!persistRows(merged)) return;
       setMessage(
         `同步完成：新增 ${addedCount} 支球队，当前共 ${afterCount} 支（读取数据集 ${inspectedCount} 个${skippedCount ? `，跳过 ${skippedCount} 个` : ""}）。`
       );
@@ -407,7 +421,7 @@ function TeamMappingPage() {
     setMessage("");
     try {
       const logoDataUrl = String(await readFileAsDataUrl(file));
-      persistRows(
+      if (!persistRows(
         displayRows.map((row, idx) =>
           idx === index
             ? {
@@ -417,7 +431,7 @@ function TeamMappingPage() {
               }
             : row
         )
-      );
+      )) return;
       setMessage(`已上传 logo：${file.name}`);
     } catch (err) {
       setError(`上传 logo 失败：${err.message}`);
@@ -464,14 +478,14 @@ function TeamMappingPage() {
       }
     }
 
-    persistRows(nextRows);
+    if (!persistRows(nextRows)) return;
     setMessage(`批量导入完成：匹配 ${matchedCount} 个，未匹配/失败 ${skippedCount} 个。`);
   };
 
   const handleClearRowLogo = (index) => {
     setError("");
     setMessage("");
-    persistRows(
+    if (!persistRows(
       displayRows.map((row, idx) =>
         idx === index
           ? {
@@ -481,7 +495,7 @@ function TeamMappingPage() {
             }
           : row
       )
-    );
+    )) return;
   };
 
   return (
