@@ -600,10 +600,10 @@ function App() {
   };
 
   const getLocalMappingState = () => ({
-    projectMappingRows: getProjectMappingRows(),
-    matchProjectMappingRows: getMatchProjectMappingRows(),
-    nameMappingRows: getNameMappingRows(),
-    teamMappingRows: getTeamMappingRows()
+    projectMappingRows,
+    matchProjectMappingRows,
+    nameMappingRows,
+    teamMappingRows
   });
 
   const hasAnyMappingRows = (payload: any) =>

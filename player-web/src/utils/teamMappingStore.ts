@@ -3,6 +3,8 @@ import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const TEAM_MAPPING_STORAGE_KEY = "player_web_team_mapping_rows_v1";
 
+let teamMappingMemoryRows: TeamMappingRow[] | null = null;
+
 export type TeamMappingRow = {
   en: string;
   zh: string;
@@ -33,16 +35,30 @@ function normalizeRows(input) {
     .filter((row) => row.en || row.zh);
 }
 
+function toStoredRows(rows) {
+  return normalizeRows(rows).map((row) => ({
+    ...row,
+    // Logo base64 strings can exceed localStorage quota very quickly.
+    // Keep them in memory and on the backend, but store only lightweight metadata locally.
+    logoDataUrl: ""
+  }));
+}
+
 export function normalizeTeamName(text) {
   return String(text || "").trim();
 }
 
 export function getTeamMappingRows() {
+  if (teamMappingMemoryRows) {
+    return normalizeRows(teamMappingMemoryRows);
+  }
   try {
     const raw = localStorage.getItem(buildScopedStorageKey(TEAM_MAPPING_STORAGE_KEY));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return normalizeRows(parsed);
+    const normalized = normalizeRows(parsed);
+    teamMappingMemoryRows = normalized;
+    return normalized;
   } catch {
     return [];
   }
@@ -73,10 +89,9 @@ export function getTeamMappingRowsByName() {
 
 export function saveTeamMappingRows(rows) {
   const normalized = normalizeRows(rows);
-  const result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, normalized);
-  if (result.ok) {
-    emitMappingStoreChanged("team");
-  }
+  teamMappingMemoryRows = normalized;
+  const result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, toStoredRows(normalized));
+  emitMappingStoreChanged("team");
   return result;
 }
 
