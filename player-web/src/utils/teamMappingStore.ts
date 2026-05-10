@@ -1,5 +1,6 @@
 import { emitMappingStoreChanged } from "./mappingSync";
 import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
+import { isQuotaExceededResult } from "./localStorageQuota";
 
 const TEAM_MAPPING_STORAGE_KEY = "player_web_team_mapping_rows_v1";
 
@@ -42,6 +43,19 @@ function toStoredRows(rows) {
     // Keep them in memory and on the backend, but store only lightweight metadata locally.
     logoDataUrl: ""
   }));
+}
+
+function clearStoredTeamMappings() {
+  try {
+    localStorage.removeItem(buildScopedStorageKey(TEAM_MAPPING_STORAGE_KEY));
+  } catch {
+    // Ignore cleanup failures.
+  }
+  try {
+    localStorage.removeItem(TEAM_MAPPING_STORAGE_KEY);
+  } catch {
+    // Ignore legacy cleanup failures.
+  }
 }
 
 export function normalizeTeamName(text) {
@@ -90,7 +104,12 @@ export function getTeamMappingRowsByName() {
 export function saveTeamMappingRows(rows) {
   const normalized = normalizeRows(rows);
   teamMappingMemoryRows = normalized;
-  const result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, toStoredRows(normalized));
+  const storedRows = toStoredRows(normalized);
+  let result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, storedRows);
+  if (!result.ok && isQuotaExceededResult(result)) {
+    clearStoredTeamMappings();
+    result = writeScopedStore(TEAM_MAPPING_STORAGE_KEY, storedRows);
+  }
   emitMappingStoreChanged("team");
   return result;
 }
