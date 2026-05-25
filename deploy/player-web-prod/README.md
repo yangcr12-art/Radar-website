@@ -101,7 +101,7 @@ bash deploy/player-web-prod/scripts/update_player_web_server_local.sh
 
 该脚本会：
 
-- 备份 `player-web/server/data/*.json*`
+- 备份根数据文件以及 `player-web/server/data/users/` 下的账号隔离数据
 - 自动 `git stash` 当前服务器本地改动
 - `git pull origin main`
 - 恢复备份的数据文件
@@ -170,7 +170,8 @@ sudo bash deploy/player-web-prod/scripts/backup_player_web_data.sh
 
 备份内容：
 
-- `player-web/server/data/`
+- `player-web/server/data/` 整个目录
+- 其中包含 `users/<username>/` 账号隔离数据；对应表、预设、草稿、导入数据集都按账号保存在该目录下
 
 ## 6. 运维命令
 

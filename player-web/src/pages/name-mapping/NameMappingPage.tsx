@@ -46,7 +46,7 @@ function extractPlayerNamesFromDatasetDoc(doc) {
 
   const names = new Set();
   players.forEach((player) => {
-    const name = normalizePlayerName(player?.name || player?.id || "");
+    const name = normalizePlayerName(player?.player || player?.name || player?.id || "");
     if (name) names.add(name);
   });
   return [...names];

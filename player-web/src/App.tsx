@@ -101,6 +101,7 @@ function App() {
   const [teamMappingRows, setTeamMappingRows] = useState(() => getTeamMappingRows());
   const [latestMatchRadarImportPayload, setLatestMatchRadarImportPayload] = useState<any>(null);
   const [mappingRevision, setMappingRevision] = useState(0);
+  const [mappingSyncReady, setMappingSyncReady] = useState(false);
   const [, setStorageStatus] = useState("connecting");
   const playerExcelInputRef = useRef<any>(null);
   const saveTimerRef = useRef<any>(null);
@@ -639,6 +640,7 @@ function App() {
 
   useEffect(() => {
     setIsHydrated(false);
+    setMappingSyncReady(false);
   }, [authHydrationVersion]);
 
   useEffect(() => {
@@ -703,6 +705,7 @@ function App() {
               if (cancelled) return;
             }
           }
+          setMappingSyncReady(true);
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else if (shouldMigrateLocal) {
@@ -726,11 +729,13 @@ function App() {
             if (cancelled) return;
           }
           radarEditor.setMessage("已将本地历史数据迁移到后端。");
+          setMappingSyncReady(true);
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         } else {
           applyPersistedState(localPersisted);
           applyRemoteMappingState(localMappingState);
+          setMappingSyncReady(true);
           setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
           setStorageStatus("online");
         }
@@ -738,6 +743,7 @@ function App() {
         if (cancelled) return;
         applyPersistedState(localPersisted);
         applyRemoteMappingState(localMappingState);
+        setMappingSyncReady(false);
         setSelectedPlayerMetricPresetByDataset(localMetricPresetSelection);
         setStorageStatus("offline");
       } finally {
@@ -829,9 +835,13 @@ function App() {
     if (mappingSaveTimerRef.current) clearTimeout(mappingSaveTimerRef.current);
 
     const payload = getLocalMappingState();
+    if (!mappingSyncReady && !hasAnyMappingRows(payload)) {
+      return;
+    }
     mappingSaveTimerRef.current = setTimeout(async () => {
       try {
         await saveMappings(payload);
+        setMappingSyncReady(true);
         emitMappingRemoteSyncStatus({ ok: true, error: "" });
       } catch (err) {
         emitMappingRemoteSyncStatus({
@@ -844,7 +854,7 @@ function App() {
     return () => {
       if (mappingSaveTimerRef.current) clearTimeout(mappingSaveTimerRef.current);
     };
-  }, [projectMappingRows, matchProjectMappingRows, nameMappingRows, teamMappingRows, isHydrated]);
+  }, [projectMappingRows, matchProjectMappingRows, nameMappingRows, teamMappingRows, isHydrated, mappingSyncReady]);
 
   useEffect(() => {
     let cancelled = false;

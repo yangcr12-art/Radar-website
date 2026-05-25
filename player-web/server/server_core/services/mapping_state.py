@@ -163,6 +163,11 @@ def normalize_mapping_payload(payload: Any) -> dict[str, list[dict[str, Any]]]:
     }
 
 
+def has_any_mapping_rows(payload: Any) -> bool:
+    normalized = normalize_mapping_payload(payload)
+    return any(normalized[key] for key in MAPPING_KEYS)
+
+
 def _empty_state_payload() -> dict[str, Any]:
     return {
         "draft": None,
@@ -220,6 +225,9 @@ def save_mapping_payload(payload: Any, username: str | None = None) -> dict[str,
     else:
         doc = build_state_doc(_empty_state_payload())
         data = doc["data"]
+
+    if not has_any_mapping_rows(normalized) and has_any_mapping_rows(data):
+        return doc
 
     next_data = dict(data)
     next_data.update(normalized)

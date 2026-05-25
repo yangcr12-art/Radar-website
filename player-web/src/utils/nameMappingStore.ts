@@ -23,6 +23,22 @@ export function normalizePlayerName(text) {
   return String(text || "").trim();
 }
 
+function makeCanonicalPlayerId(text) {
+  return normalizePlayerName(text)
+    .split("")
+    .map((ch) => (/[0-9A-Za-z]/.test(ch) ? ch.toLowerCase() : "_"))
+    .join("")
+    .replace(/^_+|_+$/g, "");
+}
+
+function shouldUpgradeMappedName(currentName, importedName) {
+  const current = normalizePlayerName(currentName);
+  const imported = normalizePlayerName(importedName);
+  if (!current || !imported || current === imported) return false;
+  if (!current.includes("_") || imported.includes("_")) return false;
+  return makeCanonicalPlayerId(current) === makeCanonicalPlayerId(imported);
+}
+
 export function getNameMappingRows() {
   try {
     const raw = localStorage.getItem(buildScopedStorageKey(NAME_MAPPING_STORAGE_KEY));
@@ -65,14 +81,34 @@ export function mergeNameMappingRows(existingRows, importedPlayerNames) {
   const baseRows = normalizeRows(existingRows);
   const nextRows = [...baseRows];
   const existingKeys = new Set(baseRows.map((row) => normalizePlayerName(row.en).toLowerCase()).filter(Boolean));
+  const canonicalIndexMap = new Map();
+  baseRows.forEach((row, index) => {
+    const canonicalKey = makeCanonicalPlayerId(row.en);
+    if (!canonicalKey || canonicalIndexMap.has(canonicalKey)) return;
+    canonicalIndexMap.set(canonicalKey, index);
+  });
   const imported = Array.isArray(importedPlayerNames) ? importedPlayerNames : [];
 
   imported.forEach((name) => {
     const en = normalizePlayerName(name);
     const key = en.toLowerCase();
     if (!en || existingKeys.has(key)) return;
+    const canonicalKey = makeCanonicalPlayerId(en);
+    const matchedIndex = canonicalKey ? canonicalIndexMap.get(canonicalKey) : undefined;
+    if (typeof matchedIndex === "number") {
+      const currentRow = nextRows[matchedIndex];
+      if (shouldUpgradeMappedName(currentRow?.en, en)) {
+        nextRows[matchedIndex] = { ...currentRow, en };
+        existingKeys.add(key);
+        canonicalIndexMap.set(canonicalKey, matchedIndex);
+        return;
+      }
+    }
     nextRows.push({ en, zh: "", team: "" });
     existingKeys.add(key);
+    if (canonicalKey && !canonicalIndexMap.has(canonicalKey)) {
+      canonicalIndexMap.set(canonicalKey, nextRows.length - 1);
+    }
   });
 
   return nextRows;
