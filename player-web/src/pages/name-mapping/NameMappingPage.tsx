@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { exportNameMappingExcel, fetchPlayerDataset, fetchPlayerDatasets, importNameMappingExcel } from "../../api/storageClient";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
+import { persistMappingsNow } from "../../utils/mappingPersistence";
 import { getTeamMappingRowsByEnglish, normalizeTeamName } from "../../utils/teamMappingStore";
 import { getNameMappingRows, mergeNameMappingRows, normalizePlayerName, saveNameMappingRows } from "../../utils/nameMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
@@ -206,6 +207,11 @@ function NameMappingPage() {
       }
 
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条姓名映射。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
@@ -325,6 +331,11 @@ function NameMappingPage() {
       }
 
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条姓名映射。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);

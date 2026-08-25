@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { exportMatchProjectMappingExcel, importMatchProjectMappingExcel } from "../../api/storageClient";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
+import { persistMappingsNow } from "../../utils/mappingPersistence";
 import { getMatchProjectMappingRows, hasMatchProjectMappingColumn, saveMatchProjectMappingRows } from "../../utils/matchProjectMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
 import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
@@ -195,6 +196,11 @@ function MatchProjectMappingPage() {
       }
 
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条比赛项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);
@@ -246,6 +252,11 @@ function MatchProjectMappingPage() {
         return;
       }
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条比赛项目。`);
     } catch (err) {
       setError(`导入失败：${err.message}`);

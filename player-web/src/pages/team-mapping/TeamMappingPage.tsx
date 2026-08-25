@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { exportTeamMappingExcel, fetchPlayerDataset, fetchPlayerDatasets, importTeamMappingExcel } from "../../api/storageClient";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
+import { persistMappingsNow } from "../../utils/mappingPersistence";
 import { getTeamMappingRows, mergeTeamMappingRows, normalizeTeamName, saveTeamMappingRows } from "../../utils/teamMappingStore";
 import { subscribeMappingStoreChanged } from "../../utils/mappingSync";
 import { subscribeMappingRemoteSyncStatus } from "../../utils/mappingRemoteSync";
@@ -274,6 +275,11 @@ function TeamMappingPage() {
       }
 
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`CSV 导入完成：共写入 ${importedRows.length} 条球队映射，Logo 图片仍按现有上传结果保留。`);
     } catch (err: any) {
       setError(`导入失败：${err.message}`);
@@ -343,6 +349,11 @@ function TeamMappingPage() {
         return;
       }
       if (!persistRows(importedRows)) return;
+      const remote = await persistMappingsNow();
+      if (!remote.ok) {
+        setError(`导入后端持久化失败：${remote.error}`);
+        return;
+      }
       setMessage(`Excel 导入完成：共写入 ${importedRows.length} 条球队映射，Logo 图片仍按现有上传结果保留。`);
     } catch (err: any) {
       setError(`导入失败：${err.message}`);
