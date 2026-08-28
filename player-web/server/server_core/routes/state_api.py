@@ -10,7 +10,12 @@ from server_core.services.state_store import (
     validate_state_payload,
     write_state_doc,
 )
-
+MAPPING_KEYS = (
+    "projectMappingRows",
+    "matchProjectMappingRows",
+    "nameMappingRows",
+    "teamMappingRows",
+)
 
 state_bp = Blueprint("state_api", __name__)
 
@@ -41,12 +46,20 @@ def put_state():
     if not ok:
         return jsonify({"ok": False, "error": message}), 400
     try:
-        doc = build_state_doc(normalize_state_payload(payload))
+        normalized = normalize_state_payload(payload)
+        existing = load_state_doc()
+        existing_data = existing.get("data") if isinstance(existing, dict) else {}
+
+        if isinstance(existing_data, dict):
+            for key in MAPPING_KEYS:
+                if key in existing_data and key not in normalized:
+                    normalized[key] = existing_data.get(key)
+
+        doc = build_state_doc(normalized)
         write_state_doc(doc)
         return jsonify({"ok": True, "updatedAt": doc["updatedAt"]})
     except Exception as exc:
         return jsonify({"ok": False, "error": f"write failed: {exc}"}), 500
-
 
 @state_bp.route("/api/migrate-from-local", methods=["POST"])
 def migrate_from_local():
