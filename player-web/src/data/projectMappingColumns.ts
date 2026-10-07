@@ -1,4 +1,6 @@
-export const PROJECT_MAPPING_COLUMNS = [
+import { defaultPercentileAlgorithm } from "./projectPercentileAlgorithms";
+
+const RAW_PROJECT_MAPPING_COLUMNS = [
   { en: "Player", zh: "球员" },
   { en: "Team", zh: "球队" },
   { en: "Team within selected timeframe", zh: "所选时间范围内球队" },
@@ -8,6 +10,8 @@ export const PROJECT_MAPPING_COLUMNS = [
   { en: "Contract expires", zh: "合同到期时间" },
   { en: "Matches played", zh: "出场场次" },
   { en: "Minutes played", zh: "出场分钟" },
+  { en: "Total actions", zh: "总行动数" },
+  { en: "Total actions per 90", zh: "每90分钟总行动数" },
   { en: "Goals", zh: "进球" },
   { en: "xG", zh: "预期进球（xG）" },
   { en: "Assists", zh: "助攻" },
@@ -66,6 +70,7 @@ export const PROJECT_MAPPING_COLUMNS = [
   { en: "Fouls suffered per 90", zh: "每90分钟被犯规" },
   { en: "Passes per 90", zh: "每90分钟传球" },
   { en: "Accurate passes, %", zh: "传球成功率（%）" },
+  { en: "Losses per 90", zh: "每90分钟球权丢失" },
   { en: "Forward passes per 90", zh: "每90分钟向前传球" },
   { en: "Accurate forward passes, %", zh: "向前传球成功率（%）" },
   { en: "Back passes per 90", zh: "每90分钟回传" },
@@ -129,3 +134,8 @@ export const PROJECT_MAPPING_COLUMNS = [
   { en: "Count Sprint per 90 (+25 km/h)", zh: "每90分钟冲刺次数（+25 km/h）" },
   { en: "Count HI per 90 (+20 km/h)", zh: "每90分钟高强度次数（+20 km/h）" }
 ];
+
+export const PROJECT_MAPPING_COLUMNS = RAW_PROJECT_MAPPING_COLUMNS.map((item) => ({
+  ...item,
+  percentileAlgorithm: defaultPercentileAlgorithm(item.en)
+}));

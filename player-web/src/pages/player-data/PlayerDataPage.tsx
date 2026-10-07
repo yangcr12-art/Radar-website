@@ -38,7 +38,9 @@ function PlayerDataPage(props) {
     playerDataMetaNumericColumns,
     selectedPlayerDetail,
     handleToggleMetricColumn,
-    formatPlayerDataColumnLabel
+    formatPlayerDataColumnLabel,
+    playerPercentileMode,
+    setPlayerPercentileMode
   } = props;
   const backendOnline = backendHealth === "online";
   const apiBaseLabel = getApiBaseLabel();
@@ -108,6 +110,13 @@ function PlayerDataPage(props) {
             <div className="player-export-summary-row">
               <p className="selected-player-title">{`当前球员：${selectedPlayerName || "-"}`}</p>
               <p className="player-export-count">{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
+              <label className="player-percentile-mode">
+                <span>雷达百分位</span>
+                <select value={playerPercentileMode} onChange={(event) => setPlayerPercentileMode(event.target.value)}>
+                  <option value="standard">标准百分位</option>
+                  <option value="smoothed">算法百分位</option>
+                </select>
+              </label>
             </div>
             <div className="player-metric-preset-actions">
               <div className="player-metric-preset-row">
@@ -161,13 +170,14 @@ function PlayerDataPage(props) {
                   <th>group</th>
                   <th>数值</th>
                   <th>排名</th>
-                  <th>百分比 (%)</th>
+                  <th className={playerPercentileMode === "standard" ? "is-active-percentile" : ""}>标准百分位</th>
+                  <th className={playerPercentileMode === "smoothed" ? "is-active-percentile" : ""}>算法百分位</th>
                 </tr>
               </thead>
               <tbody>
                 {playerDataLoading ? (
                   <tr>
-                    <td colSpan="6">加载中...</td>
+                    <td colSpan="7">加载中...</td>
                   </tr>
                 ) : null}
                 {!playerDataLoading && selectedPlayerDetail?.columns?.length
@@ -187,13 +197,14 @@ function PlayerDataPage(props) {
                           <td>{getProjectGroupByColumn(row.column) || "-"}</td>
                           <td>{String(row.value ?? "")}</td>
                           <td>{row.rank ?? "-"}</td>
-                          <td>{row.percentile === null || row.percentile === undefined ? "-" : Number(row.percentile).toFixed(2)}</td>
+                          <td className={playerPercentileMode === "standard" ? "is-active-percentile" : ""}>{row.rawPercentile === null || row.rawPercentile === undefined ? "-" : Number(row.rawPercentile).toFixed(2)}</td>
+                          <td className={playerPercentileMode === "smoothed" ? "is-active-percentile" : ""} title={row.smoothingReason || undefined}>{row.adjustedPercentile === null || row.adjustedPercentile === undefined ? "-" : Number(row.adjustedPercentile).toFixed(2)}</td>
                         </tr>
                       ))
                   : null}
                 {!playerDataLoading && (!selectedPlayerDetail || !selectedPlayerDetail.columns || selectedPlayerDetail.columns.length === 0) ? (
                   <tr>
-                    <td colSpan="6">暂无球员数据，请先导入 Excel。</td>
+                    <td colSpan="7">暂无球员数据，请先导入 Excel。</td>
                   </tr>
                 ) : null}
               </tbody>

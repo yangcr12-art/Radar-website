@@ -86,6 +86,7 @@ export const STORAGE_KEYS = {
   selectedPresetId: "player_web_selected_preset_id_v1",
   localMigrated: "player_web_local_migrated_to_backend_v1",
   metricSelectionsByDataset: "player_web_metric_selection_by_dataset_v1",
+  playerPercentileMode: "player_web_player_percentile_mode_v1",
   playerMetricPresets: "player_web_player_metric_presets_v2",
   legacyPlayerMetricPresetsByDataset: "player_web_player_metric_presets_by_dataset_v1",
   selectedPlayerMetricPresetByDataset: "player_web_selected_player_metric_preset_by_dataset_v1",
@@ -190,7 +191,16 @@ export const NAV_ITEMS = [
     ]
   },
   { key: "opta_analysis", label: "opta数据分析" },
+  {
+    key: "scout_search_menu",
+    label: "球探搜索",
+    children: [
+      { key: "scout_search", label: "球探搜索" },
+      { key: "forward_archetype_method", label: "职责算法库" }
+    ]
+  },
   { key: "csl_standings_trend", label: "中超积分走势" },
+  { key: "statsbomb_data", label: "StatsBomb 分析" },
   {
     key: "mapping_menu",
     label: "对应表",

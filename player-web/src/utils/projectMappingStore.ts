@@ -1,8 +1,13 @@
 import { PROJECT_MAPPING_COLUMNS } from "../data/projectMappingColumns";
+import {
+  defaultPercentileAlgorithm,
+  normalizePercentileAlgorithm
+} from "../data/projectPercentileAlgorithms";
 import { emitMappingStoreChanged } from "./mappingSync";
 import { buildScopedStorageKey, writeScopedStore } from "./storageScope";
 
 const PROJECT_GROUP_STORAGE_KEY = "player_web_project_mapping_groups_v1";
+const PROJECT_PERCENTILE_ALGORITHM_STORAGE_KEY = "player_web_project_mapping_percentile_algorithms_v1";
 const PROJECT_CUSTOM_ROWS_STORAGE_KEY = "player_web_project_mapping_custom_rows_v1";
 const PROJECT_HIDDEN_BUILTIN_STORAGE_KEY = "player_web_project_mapping_hidden_builtin_keys_v1";
 
@@ -21,7 +26,11 @@ const PROJECT_GROUP_ORDER = {
 };
 
 const BUILTIN_ROW_BY_KEY = new Map(
-  PROJECT_MAPPING_COLUMNS.map((item) => [normalizeColumnKey(item.en), { en: String(item.en || "").trim(), zh: String(item.zh || "").trim() }])
+  PROJECT_MAPPING_COLUMNS.map((item) => [normalizeColumnKey(item.en), {
+    en: String(item.en || "").trim(),
+    zh: String(item.zh || "").trim(),
+    percentileAlgorithm: normalizePercentileAlgorithm(item.percentileAlgorithm, defaultPercentileAlgorithm(item.en))
+  }])
 );
 
 const PROJECT_ZH_MAP = new Map(
@@ -43,6 +52,17 @@ function normalizeGroupMap(input) {
   return next;
 }
 
+function normalizePercentileAlgorithmMap(input) {
+  if (!input || typeof input !== "object") return {};
+  const next = {};
+  Object.entries(input).forEach(([key, value]) => {
+    const normalizedKey = normalizeColumnKey(key);
+    if (!normalizedKey) return;
+    next[normalizedKey] = normalizePercentileAlgorithm(value, defaultPercentileAlgorithm(key));
+  });
+  return next;
+}
+
 function normalizeCustomRows(input) {
   if (!Array.isArray(input)) return [];
   const rows = [];
@@ -56,6 +76,7 @@ function normalizeCustomRows(input) {
       en,
       zh: String(row?.zh || "").trim(),
       group: String(row?.group || "").trim(),
+      percentileAlgorithm: normalizePercentileAlgorithm(row?.percentileAlgorithm, defaultPercentileAlgorithm(en)),
       isBuiltin: false
     });
   });
@@ -95,6 +116,16 @@ function readCustomRows() {
   }
 }
 
+function readPercentileAlgorithmOverrides() {
+  try {
+    const raw = localStorage.getItem(buildScopedStorageKey(PROJECT_PERCENTILE_ALGORITHM_STORAGE_KEY));
+    if (!raw) return {};
+    return normalizePercentileAlgorithmMap(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
 function readHiddenBuiltinKeys() {
   try {
     const raw = localStorage.getItem(buildScopedStorageKey(PROJECT_HIDDEN_BUILTIN_STORAGE_KEY));
@@ -110,6 +141,11 @@ function saveGroupOverrides(nextMap) {
   return writeScopedStore(PROJECT_GROUP_STORAGE_KEY, normalized);
 }
 
+function savePercentileAlgorithmOverrides(nextMap) {
+  const normalized = normalizePercentileAlgorithmMap(nextMap);
+  return writeScopedStore(PROJECT_PERCENTILE_ALGORITHM_STORAGE_KEY, normalized);
+}
+
 function saveCustomRows(rows) {
   const normalized = normalizeCustomRows(rows);
   return writeScopedStore(PROJECT_CUSTOM_ROWS_STORAGE_KEY, normalized);
@@ -122,6 +158,7 @@ function saveHiddenBuiltinKeys(keys) {
 
 function buildRows() {
   const overrides = readGroupOverrides();
+  const algorithmOverrides = readPercentileAlgorithmOverrides();
   const hidden = new Set(readHiddenBuiltinKeys());
   const builtinRows = PROJECT_MAPPING_COLUMNS
     .map((item) => {
@@ -132,6 +169,10 @@ function buildRows() {
         en,
         zh: String(item.zh || "").trim(),
         group: String(overrides[key] || "").trim(),
+        percentileAlgorithm: normalizePercentileAlgorithm(
+          algorithmOverrides[key],
+          normalizePercentileAlgorithm(item.percentileAlgorithm, defaultPercentileAlgorithm(en))
+        ),
         isBuiltin: true
       };
     })
@@ -143,6 +184,10 @@ function buildRows() {
       en: row.en,
       zh: row.zh,
       group: String(overrides[key] || row.group || "").trim(),
+      percentileAlgorithm: normalizePercentileAlgorithm(
+        algorithmOverrides[key] || row.percentileAlgorithm,
+        defaultPercentileAlgorithm(row.en)
+      ),
       isBuiltin: false
     };
   });
@@ -157,6 +202,17 @@ function toGroupMap(rows) {
     const key = normalizeColumnKey(row?.en);
     if (!key) return;
     next[key] = String(row?.group || "").trim();
+  });
+  return next;
+}
+
+function toPercentileAlgorithmMap(rows) {
+  const next = {};
+  if (!Array.isArray(rows)) return next;
+  rows.forEach((row) => {
+    const key = normalizeColumnKey(row?.en);
+    if (!key) return;
+    next[key] = normalizePercentileAlgorithm(row?.percentileAlgorithm, defaultPercentileAlgorithm(row?.en));
   });
   return next;
 }
@@ -189,6 +245,7 @@ export function saveProjectMappingRows(rows) {
       en,
       zh: String(row?.zh || "").trim(),
       group: String(row?.group || "").trim(),
+      percentileAlgorithm: normalizePercentileAlgorithm(row?.percentileAlgorithm, defaultPercentileAlgorithm(en)),
       isBuiltin: false
     });
   });
@@ -199,14 +256,16 @@ export function saveProjectMappingRows(rows) {
   });
 
   const groupMap = toGroupMap(rows);
+  const percentileAlgorithmMap = toPercentileAlgorithmMap(rows);
   const ok1 = saveGroupOverrides(groupMap);
-  const ok2 = saveCustomRows(customRows);
-  const ok3 = saveHiddenBuiltinKeys(hiddenBuiltinKeys);
-  if (ok1.ok && ok2.ok && ok3.ok) {
+  const ok2 = savePercentileAlgorithmOverrides(percentileAlgorithmMap);
+  const ok3 = saveCustomRows(customRows);
+  const ok4 = saveHiddenBuiltinKeys(hiddenBuiltinKeys);
+  if (ok1.ok && ok2.ok && ok3.ok && ok4.ok) {
     emitMappingStoreChanged("project");
   }
-  if (ok1.ok && ok2.ok && ok3.ok) return ok1;
-  return !ok1.ok ? ok1 : !ok2.ok ? ok2 : ok3;
+  if (ok1.ok && ok2.ok && ok3.ok && ok4.ok) return ok1;
+  return !ok1.ok ? ok1 : !ok2.ok ? ok2 : !ok3.ok ? ok3 : ok4;
 }
 
 export function saveProjectGroupByColumn(nextMap) {
@@ -231,6 +290,12 @@ export function getProjectGroupByColumn(column) {
   const en = normalizeColumnKey(column);
   const overrides = readGroupOverrides();
   return String(overrides[en] || "").trim();
+}
+
+export function getProjectPercentileAlgorithmByColumn(column) {
+  const key = normalizeColumnKey(column);
+  const overrides = readPercentileAlgorithmOverrides();
+  return normalizePercentileAlgorithm(overrides[key], defaultPercentileAlgorithm(column));
 }
 
 export function getProjectGroupOrder(group) {

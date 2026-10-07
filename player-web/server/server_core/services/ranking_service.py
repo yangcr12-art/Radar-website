@@ -2,10 +2,20 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from server_core.services.percentile_algorithm import (
+    EVENT_NEGATIVE,
+    EVENT_POSITIVE,
+    EXCLUDE,
+    STANDARD_NEGATIVE,
+    default_percentile_algorithm,
+    percentile_algorithm_label,
+    resolve_percentile_algorithm,
+)
+from server_core.services.percentile_service import percentile_pair, percentile_pair_for_algorithm, smoothing_profile
+
 
 def is_lower_better_column(column_name: str) -> bool:
-    text = str(column_name or "").strip().lower()
-    return "foul" in text or "犯规" in text
+    return default_percentile_algorithm(column_name) in {STANDARD_NEGATIVE, EVENT_NEGATIVE}
 
 
 def compute_player_metrics(
@@ -13,6 +23,7 @@ def compute_player_metrics(
     candidate_numeric_cols: list[str],
     to_float_fn: Callable[[Any], float | None],
     is_lower_better_fn: Callable[[str], bool] = is_lower_better_column,
+    algorithm_by_column: dict[str, str] | None = None,
 ) -> tuple[list[str], list[str]]:
     numeric_values_by_col: dict[str, list[tuple[int, float]]] = {}
     for player in players:
@@ -31,11 +42,16 @@ def compute_player_metrics(
     numeric_columns: list[str] = []
     lower_better_columns: list[str] = []
     for col in candidate_numeric_cols:
+        algorithm = resolve_percentile_algorithm(col, algorithm_by_column) if algorithm_by_column is not None else (
+            STANDARD_NEGATIVE if is_lower_better_fn(col) else "standard_positive"
+        )
+        if algorithm == EXCLUDE:
+            continue
         values = numeric_values_by_col.get(col, [])
         if not values:
             continue
         numeric_columns.append(col)
-        lower_better = is_lower_better_fn(col)
+        lower_better = algorithm in {STANDARD_NEGATIVE, EVENT_NEGATIVE}
         if lower_better:
             lower_better_columns.append(col)
         values_sorted = sorted(values, key=lambda x: x[1], reverse=not lower_better)
@@ -48,14 +64,37 @@ def compute_player_metrics(
             rank_map[player_pos] = current_rank
             prev_val = val
 
-        n = len(values_sorted)
+        ascending_values = sorted(value for _, value in values)
+        smoothing = smoothing_profile(ascending_values)
         for player_pos, val in values:
             rank = rank_map[player_pos]
-            percentile = 100.0 if n == 1 else ((n - rank) / (n - 1)) * 100
+            percentiles = percentile_pair_for_algorithm(
+                ascending_values,
+                val,
+                algorithm=algorithm,
+                alpha=smoothing["alpha"],
+            ) if algorithm_by_column is not None else percentile_pair(
+                ascending_values, val, higher_is_better=not lower_better, alpha=smoothing["alpha"]
+            )
+            mode_label = percentile_algorithm_label(algorithm)
+            if algorithm == EVENT_POSITIVE:
+                algorithm_reason = f"{mode_label}：零值按并列占比压缩到0-8分；正值按非零排名75%与对数强度25%评分；最大正值100，全体同值50"
+            elif algorithm == EVENT_NEGATIVE:
+                algorithm_reason = f"{mode_label}：先按稀疏事件正向评分再取100减分；最大事件值0，全体同值50"
+            else:
+                algorithm_reason = f"{mode_label}；{smoothing['reason']}"
             players[player_pos]["metrics"][col] = {
                 "value": val,
                 "rank": rank,
-                "percentile": round(percentile, 2),
+                "percentile": round(percentiles["rawPercentile"], 2),
+                "rawPercentile": round(percentiles["rawPercentile"], 2),
+                "adjustedPercentile": round(percentiles["adjustedPercentile"], 2),
+                "smoothingAlpha": round(float(smoothing["alpha"]), 3),
+                "zeroShare": round(float(smoothing["zeroShare"]), 3),
+                "zeroFloorPercentile": smoothing["zeroFloorPercentile"],
+                "smoothingReason": algorithm_reason,
+                "percentileAlgorithm": algorithm,
+                "percentileAlgorithmLabel": mode_label,
             }
 
     return numeric_columns, lower_better_columns
@@ -65,6 +104,7 @@ def normalize_player_dataset_doc(
     doc: dict[str, Any],
     to_float_fn: Callable[[Any], float | None],
     is_lower_better_fn: Callable[[str], bool] = is_lower_better_column,
+    algorithm_by_column: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     players = doc.get("players", [])
     if not isinstance(players, list) or not players:
@@ -87,6 +127,7 @@ def normalize_player_dataset_doc(
         candidate_numeric_cols,
         to_float_fn=to_float_fn,
         is_lower_better_fn=is_lower_better_fn,
+        algorithm_by_column=algorithm_by_column,
     )
     for player in players:
         player.pop("_numeric", None)

@@ -343,7 +343,14 @@ td select {
 
 .player-data-table-wrap table {
   width: 100%;
-  min-width: 720px;
+  min-width: 820px;
+}
+
+.player-data-table-wrap th.is-active-percentile,
+.player-data-table-wrap td.is-active-percentile {
+  background: #eef6fa;
+  color: #315f79;
+  font-weight: 800;
 }
 
 .match-team-data-layout .player-data-table-wrap .match-team-data-table {
@@ -395,18 +402,34 @@ svg {
   }
 
   .nav-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     overflow: visible;
     padding-bottom: 2px;
-    flex-wrap: wrap;
   }
 
   .nav-item {
+    width: 100%;
     white-space: nowrap;
+    text-align: center;
   }
 
   .nav-dropdown {
     width: 100%;
+  }
+
+  .top-nav-main {
+    flex: 1 0 100%;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .nav-session {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .nav-dropdown-trigger {
@@ -492,4 +515,10 @@ svg {
     gap: 6px;
   }
 
+}
+
+@media (max-width: 680px) {
+  .nav-list {
+    grid-template-columns: 1fr;
+  }
 }

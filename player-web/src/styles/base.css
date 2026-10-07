@@ -335,6 +335,19 @@ body {
   color: #3b3228;
 }
 
+.player-percentile-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #5a4f42;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.player-percentile-mode select {
+  min-width: 128px;
+}
+
 .player-metric-preset-row {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);

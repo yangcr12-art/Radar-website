@@ -180,9 +180,14 @@
   width: 64px;
 }
 
-.mapping-table td input {
+.mapping-table td input,
+.mapping-table td select {
   width: 100%;
   min-width: 140px;
+}
+
+.mapping-table td select {
+  min-width: 132px;
 }
 
 .team-mapping-table td input {

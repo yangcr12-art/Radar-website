@@ -78,6 +78,19 @@ curl -s http://127.0.0.1:8787/api/health
 curl -s http://127.0.0.1:<端口>/api/health
 ```
 
+### StatsBomb 商业 API（可选）
+
+StatsBomb 功能使用独立的后端环境文件，不在网页或仓库中保存密码。创建 `/etc/player-web/statsbomb.env`，写入：
+
+```text
+SB_USERNAME=你的StatsBomb用户名
+SB_PASSWORD=你的StatsBomb密码
+```
+
+将文件权限设置为仅 `root` 和后端运行组可读，然后重启 `player-web-backend`。未创建该文件时，原有工作台保持正常运行，StatsBomb 页面只显示“未配置”。
+
+若账号只能通过 Hudl/StatsBomb Classic 网页登录，可在 Scout Results 页面使用 `Download all` 下载 `player-stats.csv`，再从工作台的 StatsBomb 分析页面导入。该 CSV 路径不需要 `SB_USERNAME` / `SB_PASSWORD`，数据保存在当前工作台账号的独立 StatsBomb 空间。
+
 ## 4. 日常更新
 
 仓库代码更新后，在服务器仓库根目录执行：

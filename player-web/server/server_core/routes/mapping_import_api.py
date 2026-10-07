@@ -6,6 +6,11 @@ from flask import Blueprint, jsonify, request, send_file
 from openpyxl import Workbook, load_workbook
 
 from server_core.services.player_dataset_store import pick_name_column, pick_team_column, to_cell_value, normalize_header_name
+from server_core.services.percentile_algorithm import (
+    default_percentile_algorithm,
+    normalize_percentile_algorithm,
+    percentile_algorithm_label,
+)
 
 
 mapping_import_bp = Blueprint("mapping_import_api", __name__)
@@ -160,12 +165,25 @@ def import_project_mapping_excel():
     if not rows:
         return jsonify({"ok": False, "error": "excel must contain at least one header row"}), 400
 
-    table_items, _ = _table_rows_from_sheet(rows, ["English", "中文翻译", "group"])
+    table_items, _ = _table_rows_from_sheet(rows, ["English", "中文翻译", "group", "百分位算法"])
+    if table_items is None:
+        table_items, _ = _table_rows_from_sheet(rows, ["English", "中文翻译", "group"])
     if table_items is not None:
         return jsonify(
             {
                 "ok": True,
-                "items": [{"en": item["English"], "zh": item["中文翻译"], "group": item["group"]} for item in table_items],
+                "items": [
+                    {
+                        "en": item["English"],
+                        "zh": item["中文翻译"],
+                        "group": item["group"],
+                        "percentileAlgorithm": normalize_percentile_algorithm(
+                            item.get("百分位算法"),
+                            default_percentile_algorithm(item["English"]),
+                        ),
+                    }
+                    for item in table_items
+                ],
                 "count": len(table_items),
                 "sheet": ws.title,
             }
@@ -210,8 +228,12 @@ def export_project_mapping_excel():
             str(item.get("en") or "").strip(),
             str(item.get("zh") or "").strip(),
             str(item.get("group") or "").strip(),
+            percentile_algorithm_label(
+                item.get("percentileAlgorithm"),
+                default_percentile_algorithm(item.get("en")),
+            ),
         ])
-    return _build_excel_response("project_mapping.xlsx", ["English", "中文翻译", "group"], data_rows)
+    return _build_excel_response("project_mapping.xlsx", ["English", "中文翻译", "group", "百分位算法"], data_rows)
 
 
 @mapping_import_bp.route("/api/team-mapping/import-excel", methods=["POST"])

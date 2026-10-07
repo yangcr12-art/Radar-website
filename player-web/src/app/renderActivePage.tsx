@@ -15,6 +15,9 @@ import FitnessPer90Page from "../pages/fitness-analysis/FitnessPer90Page";
 import OptaAnalysisPage from "../pages/opta-analysis/OptaAnalysisPage";
 import CslStandingsTrendPage from "../pages/csl-standings-trend/CslStandingsTrendPage";
 import PlayerPersonalRadarPage from "../pages/player-personal-radar/PlayerPersonalRadarPage";
+import ScoutSearchPage from "../pages/scout-search/ScoutSearchPage";
+import ForwardArchetypeMethodPage from "../pages/scout-search/ForwardArchetypeMethodPage";
+import StatsBombDataPage from "../pages/statsbomb-data/StatsBombDataPage";
 import { type AppPageKey } from "./pageRegistry";
 
 type RenderActivePageArgs = {
@@ -27,6 +30,7 @@ type RenderActivePageArgs = {
   matchRadarPageProps: any;
   scatterPageProps: any;
   playerPersonalRadarProps: any;
+  scoutSearchProps: any;
 };
 
 export function renderActivePage({
@@ -38,7 +42,8 @@ export function renderActivePage({
   matchTeamDataPageProps,
   matchRadarPageProps,
   scatterPageProps,
-  playerPersonalRadarProps
+  playerPersonalRadarProps,
+  scoutSearchProps
 }: RenderActivePageArgs) {
   switch (activePage) {
     case "home":
@@ -75,6 +80,12 @@ export function renderActivePage({
       return <ScatterPlotPage {...scatterPageProps} />;
     case "player_personal_radar":
       return <PlayerPersonalRadarPage {...playerPersonalRadarProps} />;
+    case "scout_search":
+      return <ScoutSearchPage {...scoutSearchProps} />;
+    case "forward_archetype_method":
+      return <ForwardArchetypeMethodPage />;
+    case "statsbomb_data":
+      return <StatsBombDataPage />;
     default:
       return null;
   }

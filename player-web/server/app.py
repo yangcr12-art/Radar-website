@@ -14,7 +14,9 @@ from server_core.routes.match_data_api import match_data_bp
 from server_core.routes.match_project_mapping_api import match_project_mapping_bp
 from server_core.routes.opta_data_api import opta_data_bp
 from server_core.routes.player_data_api import player_data_bp
+from server_core.routes.scouting_api import scouting_bp
 from server_core.routes.state_api import state_bp
+from server_core.routes.statsbomb_api import statsbomb_bp
 from server_core.services.auth_config import get_session_secret
 from server_core.services.mapping_state import recover_all_users_mapping_payloads_from_backup
 from server_core.services.ranking_service import is_lower_better_column as _ranking_service_marker
@@ -44,6 +46,8 @@ app.register_blueprint(state_bp)
 app.register_blueprint(player_data_bp)
 app.register_blueprint(mapping_import_bp)
 app.register_blueprint(mappings_bp)
+app.register_blueprint(statsbomb_bp)
+app.register_blueprint(scouting_bp)
 
 
 PUBLIC_API_PATHS = {

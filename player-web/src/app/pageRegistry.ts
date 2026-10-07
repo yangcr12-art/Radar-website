@@ -15,7 +15,10 @@ export const APP_PAGE_KEYS = [
   "csl_standings_trend",
   "player_data",
   "scatter_plot",
-  "player_personal_radar"
+  "player_personal_radar",
+  "scout_search",
+  "forward_archetype_method",
+  "statsbomb_data"
 ] as const;
 
 export type AppPageKey = (typeof APP_PAGE_KEYS)[number];

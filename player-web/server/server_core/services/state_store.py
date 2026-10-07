@@ -16,6 +16,12 @@ from server_core.services.user_storage import ensure_data_dir, user_data_file
 
 VERSION = 1
 WRITE_LOCK = Lock()
+LEGACY_MAPPING_KEYS = (
+    "projectMappingRows",
+    "matchProjectMappingRows",
+    "nameMappingRows",
+    "teamMappingRows",
+)
 
 
 def iso_now() -> str:
@@ -162,6 +168,8 @@ def normalize_state_payload(payload: dict[str, Any]) -> dict[str, Any]:
     normalized["matchMetricPresets"] = normalize_metric_presets(payload.get("matchMetricPresets"))
     normalized["selectedMatchMetricPresetByDataset"] = normalize_selection_map(payload.get("selectedMatchMetricPresetByDataset"))
     normalized.pop("playerMetricPresetsByDataset", None)
+    for key in LEGACY_MAPPING_KEYS:
+        normalized.pop(key, None)
     return normalized
 
 

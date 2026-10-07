@@ -15,6 +15,7 @@ from server_core.services.ranking_service import (
     normalize_player_dataset_doc as _svc_normalize_player_dataset_doc,
 )
 from server_core.services.auth_config import get_primary_login_username
+from server_core.services.percentile_algorithm import build_percentile_algorithm_map
 from server_core.services.session_auth import get_authenticated_username
 from server_core.services.state_store import VERSION, atomic_write_json, ensure_data_dir, iso_now
 from server_core.services.user_storage import ensure_user_data_dir, user_data_file, user_data_subdir
@@ -109,12 +110,20 @@ def is_lower_better_column(column_name: str) -> bool:
     return _svc_is_lower_better_column(column_name)
 
 
+def _current_percentile_algorithm_map() -> dict[str, str]:
+    from server_core.services.mapping_state import load_mapping_payload
+
+    payload = load_mapping_payload(_resolve_username())
+    return build_percentile_algorithm_map(payload.get("projectMappingRows"))
+
+
 def compute_player_metrics(players: list[dict[str, Any]], candidate_numeric_cols: list[str]) -> tuple[list[str], list[str]]:
     return _svc_compute_player_metrics(
         players,
         candidate_numeric_cols,
         to_float_fn=to_float,
         is_lower_better_fn=is_lower_better_column,
+        algorithm_by_column=_current_percentile_algorithm_map(),
     )
 
 
@@ -123,6 +132,7 @@ def normalize_player_dataset_doc(doc: dict[str, Any]) -> dict[str, Any]:
         doc,
         to_float_fn=to_float,
         is_lower_better_fn=is_lower_better_column,
+        algorithm_by_column=_current_percentile_algorithm_map(),
     )
 
 
@@ -151,6 +161,14 @@ def build_player_columns(player: dict[str, Any], schema: dict[str, Any]) -> list
                 "value": raw.get(col, ""),
                 "rank": metric.get("rank"),
                 "percentile": metric.get("percentile"),
+                "rawPercentile": metric.get("rawPercentile", metric.get("percentile")),
+                "adjustedPercentile": metric.get("adjustedPercentile", metric.get("percentile")),
+                "smoothingAlpha": metric.get("smoothingAlpha"),
+                "zeroShare": metric.get("zeroShare"),
+                "zeroFloorPercentile": metric.get("zeroFloorPercentile"),
+                "smoothingReason": metric.get("smoothingReason", ""),
+                "percentileAlgorithm": metric.get("percentileAlgorithm", "standard_positive"),
+                "percentileAlgorithmLabel": metric.get("percentileAlgorithmLabel", "普通平滑"),
                 "isNumeric": col in numeric_cols,
             }
         )

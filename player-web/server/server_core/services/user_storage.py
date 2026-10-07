@@ -13,6 +13,8 @@ USERS_DIR = DATA_DIR / "users"
 MANAGED_DATA_FILES = (
     "state.json",
     "state.json.bak",
+    "mappings.json",
+    "mappings.json.bak",
     "player_dataset.json",
     "player_dataset.json.bak",
     "player_datasets_index.json",
@@ -25,6 +27,8 @@ MANAGED_DATA_FILES = (
     "opta_datasets_index.json.bak",
     "csl_standings_datasets_index.json",
     "csl_standings_datasets_index.json.bak",
+    "statsbomb_classic_datasets_index.json",
+    "statsbomb_classic_datasets_index.json.bak",
 )
 
 MANAGED_DATA_DIRS = (
@@ -33,6 +37,7 @@ MANAGED_DATA_DIRS = (
     "fitness_datasets",
     "opta_datasets",
     "csl_standings_datasets",
+    "statsbomb_classic_datasets",
 )
 
 

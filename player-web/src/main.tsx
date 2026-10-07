@@ -4,6 +4,8 @@ import App from "./App";
 import "./styles.css";
 import "./home-about.css";
 import "./match-pages.css";
+import "./styles/statsbomb.css";
+import "./styles/scout-search.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

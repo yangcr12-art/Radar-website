@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { exportProjectMappingExcel, importProjectMappingExcel } from "../../api/storageClient";
+import {
+  defaultPercentileAlgorithm,
+  normalizePercentileAlgorithm,
+  PERCENTILE_ALGORITHM_OPTIONS,
+  percentileAlgorithmLabel
+} from "../../data/projectPercentileAlgorithms";
 import { parseMappingCsv, readTextFile } from "../../utils/mappingCsv";
 import { persistMappingsNow } from "../../utils/mappingPersistence";
 import { getProjectMappingRows, hasProjectMappingColumn, saveProjectMappingRows } from "../../utils/projectMappingStore";
@@ -55,8 +61,13 @@ function escapeCsvCell(value) {
 }
 
 function toCsv(rows) {
-  const header = "English,中文翻译,group";
-  const body = rows.map((item) => [item.en, item.zh, item.group].map((value) => escapeCsvCell(value)).join(",")).join("\n");
+  const header = "English,中文翻译,group,百分位算法";
+  const body = rows.map((item) => [
+    item.en,
+    item.zh,
+    item.group,
+    percentileAlgorithmLabel(item.percentileAlgorithm)
+  ].map((value) => escapeCsvCell(value)).join(",")).join("\n");
   return `${header}\n${body}\n`;
 }
 
@@ -106,7 +117,7 @@ function ProjectMappingPage() {
 
     const current = rows[index];
     if (!current) return;
-    if (current.isBuiltin && field !== "group") return;
+    if (current.isBuiltin && field !== "group" && field !== "percentileAlgorithm") return;
 
     if (field === "en") {
       const nextKey = normalizeColumnKey(value);
@@ -139,7 +150,13 @@ function ProjectMappingPage() {
 
     const zhInput = window.prompt("请输入中文翻译（可留空）：", "");
     const zh = String(zhInput || "").trim();
-    const nextRows = [...rows, { en, zh, group: "", isBuiltin: false }];
+    const nextRows = [...rows, {
+      en,
+      zh,
+      group: "",
+      percentileAlgorithm: defaultPercentileAlgorithm(en),
+      isBuiltin: false
+    }];
     if (!persistRows(nextRows)) return;
     setMessage("已新增项目。");
   };
@@ -190,7 +207,8 @@ function ProjectMappingPage() {
     try {
       const csvText = await readTextFile(file);
       const parsed = parseMappingCsv(csvText, {
-        requiredHeaders: ["English", "中文翻译", "group"]
+        requiredHeaders: ["English", "中文翻译", "group"],
+        optionalHeaders: ["百分位算法"]
       });
       if (parsed.error) {
         setError(parsed.error);
@@ -204,7 +222,8 @@ function ProjectMappingPage() {
         const key = normalizeColumnKey(en);
         const zh = String(item?.中文翻译 || "").trim();
         const group = String(item?.group || "").trim();
-        if (!en && !zh && !group) continue;
+        const percentileAlgorithm = normalizePercentileAlgorithm(item?.百分位算法, defaultPercentileAlgorithm(en));
+        if (!en && !zh && !group && !String(item?.百分位算法 || "").trim()) continue;
         if (!en || !key) {
           setError("CSV 中每一行都必须填写 English。");
           return;
@@ -218,6 +237,7 @@ function ProjectMappingPage() {
           en,
           zh: zh || String(FITNESS_ZH_BY_EN[en] || "").trim(),
           group,
+          percentileAlgorithm,
           isBuiltin: !hasProjectMappingColumn(en)
         });
       }
@@ -269,7 +289,8 @@ function ProjectMappingPage() {
           const key = normalizeColumnKey(en);
           const zh = String(item?.zh || "").trim();
           const group = String(item?.group || "").trim();
-          if (!en && !zh && !group) continue;
+          const percentileAlgorithm = normalizePercentileAlgorithm(item?.percentileAlgorithm, defaultPercentileAlgorithm(en));
+          if (!en && !zh && !group && !String(item?.percentileAlgorithm || "").trim()) continue;
           if (!en || !key) {
             setError("Excel 中每一行都必须填写 English。");
             return;
@@ -283,6 +304,7 @@ function ProjectMappingPage() {
             en,
             zh: zh || String(FITNESS_ZH_BY_EN[en] || "").trim(),
             group,
+            percentileAlgorithm,
             isBuiltin: !hasProjectMappingColumn(en)
           });
         }
@@ -300,6 +322,7 @@ function ProjectMappingPage() {
             en,
             zh: String(FITNESS_ZH_BY_EN[en] || "").trim(),
             group: "体能",
+            percentileAlgorithm: defaultPercentileAlgorithm(en),
             isBuiltin: !hasProjectMappingColumn(en)
           }));
       }
@@ -342,7 +365,7 @@ function ProjectMappingPage() {
     <section className="info-page">
       <div className="info-card mapping-card">
         <h1>项目对应表</h1>
-        <p>维护字段中英映射与分组，支持新增、删除，并同时支持 CSV/Excel 导入导出。</p>
+        <p>维护字段中英映射、分组与百分位算法，支持新增、删除，并同时支持 CSV/Excel 导入导出。</p>
         <div className="mapping-actions btn-row">
           <button onClick={handleImportCsvClick} disabled={importing}>
             {importing ? "导入中..." : "从 CSV 导入项目"}
@@ -368,6 +391,7 @@ function ProjectMappingPage() {
                 <th>English</th>
                 <th>中文翻译</th>
                 <th>group</th>
+                <th>百分位算法</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -403,6 +427,17 @@ function ProjectMappingPage() {
                       onChange={(e) => handleCellChange(index, "group", e.target.value)}
                       placeholder="例如：体能 / 传球 / 防守"
                     />
+                  </td>
+                  <td>
+                    <select
+                      value={normalizePercentileAlgorithm(item.percentileAlgorithm, defaultPercentileAlgorithm(item.en))}
+                      onChange={(e) => handleCellChange(index, "percentileAlgorithm", e.target.value)}
+                      aria-label={`${item.en} 的百分位算法`}
+                    >
+                      {PERCENTILE_ALGORITHM_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
                   </td>
                   <td>
                     <button className="danger" onClick={() => handleDeleteRow(index)}>

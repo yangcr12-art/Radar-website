@@ -65,6 +65,9 @@ function App() {
   const [playerDataImporting, setPlayerDataImporting] = useState(false);
   const [playerDataMessage, setPlayerDataMessage] = useState("");
   const [playerDataError, setPlayerDataError] = useState("");
+  const [playerPercentileMode, setPlayerPercentileMode] = useState<"standard" | "smoothed">(() =>
+    readStorage(STORAGE_KEYS.playerPercentileMode, "standard") === "smoothed" ? "smoothed" : "standard"
+  );
   const [backendHealth, setBackendHealth] = useState("checking");
   const [playerDetailReloadTick, setPlayerDetailReloadTick] = useState(0);
   const [metricSelectionsByDataset, setMetricSelectionsByDataset] = useState(() => {
@@ -484,7 +487,11 @@ function App() {
       .map((column, index) => {
         const detail = detailMap.get(column);
         if (!detail) return null;
-        const percentile = Number(detail.percentile);
+        const percentile = Number(
+          playerPercentileMode === "smoothed"
+            ? detail.adjustedPercentile
+            : detail.rawPercentile ?? detail.percentile
+        );
         if (!Number.isFinite(percentile)) return null;
         const value = Math.max(0, Math.min(100, Number(percentile.toFixed(2))));
         const metric = getMetricDisplayNameFromColumn(column);
@@ -558,7 +565,7 @@ function App() {
     setPlayerDataError("");
     setPlayerDataMessage("");
     radarEditor.setError("");
-    radarEditor.setMessage(`已导入 ${finalRows.length} 个指标并同步更新标题。`);
+    radarEditor.setMessage(`已按${playerPercentileMode === "smoothed" ? "项目对应表算法" : "标准"}百分位导入 ${finalRows.length} 个指标并同步更新标题。`);
   };
 
   const getPersistedState = (
@@ -762,6 +769,10 @@ function App() {
     if (!isHydrated) return;
     writeStorage(STORAGE_KEYS.metricSelectionsByDataset, metricSelectionsByDataset);
   }, [metricSelectionsByDataset, isHydrated]);
+
+  useEffect(() => {
+    writeStorage(STORAGE_KEYS.playerPercentileMode, playerPercentileMode);
+  }, [playerPercentileMode]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -1083,7 +1094,9 @@ function App() {
             playerDataMetaNumericColumns: playerDataMeta.numericColumns || [],
             selectedPlayerDetail,
             handleToggleMetricColumn,
-            formatPlayerDataColumnLabel
+            formatPlayerDataColumnLabel,
+            playerPercentileMode,
+            setPlayerPercentileMode
           },
           scatterPageProps: {
             datasetOptions,
@@ -1106,6 +1119,10 @@ function App() {
             scatterLoading: scatterDataLoading,
             scatterError: scatterDataError,
             scatterDoc: scatterDatasetDoc,
+            mappingRevision
+          },
+          scoutSearchProps: {
+            playerMetricPresets,
             mappingRevision
           },
           matchTeamDataPageProps: {
