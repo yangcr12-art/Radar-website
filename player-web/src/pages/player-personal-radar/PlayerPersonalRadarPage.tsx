@@ -3,6 +3,7 @@ import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
 import { getNameMappingRowsByEnglish, normalizePlayerName } from "../../utils/nameMappingStore";
 import { getProjectZhByColumn } from "../../utils/projectMappingStore";
+import { getTeamMappingRowsByName, normalizeTeamName } from "../../utils/teamMappingStore";
 
 const PLAYER_RADAR_WIDTH = 1080;
 const PLAYER_RADAR_HEIGHT = 860;
@@ -53,6 +54,7 @@ type PlayerDoc = {
 type ScatterDoc = {
   players?: PlayerDoc[];
   schema?: {
+    columns?: string[];
     numericColumns?: string[];
     lowerBetterColumns?: string[];
   };
@@ -297,13 +299,26 @@ function PlayerPersonalRadarPage({
     return players.filter((row) => selected.has(row.id));
   }, [players, selectedPlayerIds]);
 
+  const teamMappingByName = useMemo(() => getTeamMappingRowsByName(), [mappingRevision]);
+  const teamColumn = useMemo(() => {
+    const columns = [...(scatterDoc?.schema?.columns || []), ...Object.keys(players[0]?.raw || {})];
+    const keywords = ["team", "club", "squad", "球队", "俱乐部"];
+    return columns.find((column) => String(column).trim().toLowerCase() === "team")
+      || columns.find((column) => keywords.includes(String(column).trim().toLowerCase()))
+      || columns.find((column) => keywords.some((keyword) => String(column).toLowerCase().includes(keyword)))
+      || "";
+  }, [scatterDoc, players]);
+
   const playerColorMap = useMemo(() => {
     const map = new Map<string, string>();
+    const customColors = playerPersonalRadarConfigByDataset[selectedDatasetId]?.playerColors;
     players.forEach((row, idx) => {
-      map.set(row.id, PLAYER_OVERLAY_PALETTE[idx % PLAYER_OVERLAY_PALETTE.length]);
+      const teamKey = normalizeTeamName(row.raw[teamColumn]).toLowerCase();
+      const teamColor = normalizeHexColor(teamMappingByName.get(teamKey)?.color);
+      map.set(row.id, normalizeHexColor(customColors?.[row.id]) || teamColor || PLAYER_OVERLAY_PALETTE[idx % PLAYER_OVERLAY_PALETTE.length]);
     });
     return map;
-  }, [players]);
+  }, [players, selectedDatasetId, playerPersonalRadarConfigByDataset, teamColumn, teamMappingByName]);
 
   const metricMinMaxMap = useMemo(() => {
     const map = new Map<string, MetricMinMax>();
@@ -519,6 +534,16 @@ function PlayerPersonalRadarPage({
     }));
   };
 
+  const updatePlayerColor = (playerId: string, value: string) => {
+    const ds = String(selectedDatasetId || "");
+    const color = normalizeHexColor(value);
+    if (!ds || !color) return;
+    setPlayerPersonalRadarConfigByDataset((prev) => {
+      const config = prev[ds] || DEFAULT_PLAYER_PERSONAL_RADAR_CONFIG;
+      return { ...prev, [ds]: { ...config, playerColors: { ...config.playerColors, [playerId]: color } } };
+    });
+  };
+
   return (
     <section className="info-page">
       <div className="info-card fitness-page-shell player-personal-radar-page">
@@ -594,6 +619,28 @@ function PlayerPersonalRadarPage({
                   <label key={metric} className="fitness-check-item">
                     <input type="checkbox" checked={selectedMetrics.includes(metric)} onChange={() => toggleMetric(metric)} />
                     <span>{formatMetricLabelZh(metric)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="fitness-card">
+              <h2>球员颜色</h2>
+              <p>默认使用球队对应表中的颜色；点击色块自定义，雷达图与单项比较同步更新。</p>
+              <div className="btn-row">
+                <button onClick={() => updatePlayerPersonalRadarConfig({ playerColors: {} })} disabled={players.length === 0}>恢复默认配色</button>
+              </div>
+              <div className="fitness-check-grid">
+                {players.map((player) => (
+                  <label key={player.id} className="fitness-check-item">
+                    <input
+                      className="square-color-picker"
+                      type="color"
+                      aria-label={`${player.name}的颜色`}
+                      value={playerColorMap.get(player.id)}
+                      onChange={(e) => updatePlayerColor(player.id, e.target.value)}
+                    />
+                    <span>{player.name}</span>
                   </label>
                 ))}
               </div>
