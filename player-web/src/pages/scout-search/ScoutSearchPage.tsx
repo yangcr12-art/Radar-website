@@ -8,6 +8,9 @@ import {
 } from "../../api/storageClient";
 import { DEFAULT_TIER_COLORS } from "../../app/constants";
 import { getProjectZhByColumn } from "../../utils/projectMappingStore";
+import { readScoutSettings, saveScoutSettings } from "./scoutSession";
+import { getNameMappingRows } from "../../utils/nameMappingStore";
+import { buildScoutNameAliases, filterScoutPlayers } from "./scoutPlayerSearch";
 
 type DatasetOption = {
   id: string;
@@ -25,6 +28,7 @@ type MetricResult = {
   dimensionName: string;
   weight: number;
   rawValue: number | null;
+  rawSources?: { column: string; value: number | null; unit: "per90" | "percent" }[];
   rawPercentile: number;
   percentile: number;
   scoringPercentile?: number;
@@ -39,6 +43,9 @@ type MetricResult = {
   coupledGroupLabel?: string;
   coupledFormula?: string;
   coupledComponents?: {
+    mode?: string;
+    volumePer90?: number;
+    attempts?: number;
     volumeScore: number;
     successfulScore: number;
     rateScore: number;
@@ -64,7 +71,11 @@ type ScoredPlayer = {
   player: string;
   team: string;
   age: string | number;
+  height?: string | number;
   position: string;
+  qualifiedActivitySides?: string[] | null;
+  qualifiedIdentityBySide?: Record<string, string>;
+  qualifiedPositionIdentity?: string;
   foot: string;
   minutes: number;
   matches: number;
@@ -99,6 +110,14 @@ type ScoredPlayer = {
     minuteReliability: number;
     positionReliability: number;
     positionContext: string;
+    classificationNote?: string;
+    positionProfile?: string;
+    positionIdentity?: string;
+    positionCompatibility?: { center: boolean; wideSides: string[]; pendingWide: boolean; labels: string[] };
+    identityBySide?: Record<string, string>;
+    activitySides?: string[];
+    behaviorLabel?: string;
+    attackStyle?: { label: string; note: string; reason: string; available: boolean; scores: Record<string, number>; gap: number | null };
     denominatorMode: string;
     activitySide?: "主要左侧活动" | "主要右侧活动" | "左右活动侧暂不明确";
     completeForwardGate?: {
@@ -191,6 +210,8 @@ type EvaluationResult = {
     wingerExperimentEnabled?: boolean;
     attackingMidfielderExperimentEnabled?: boolean;
     centralMidfielderExperimentEnabled?: boolean;
+    defenderExperimentEnabled?: boolean;
+    positionIdentityModel?: boolean;
     roleSimilarityEnabled?: boolean;
     coupledMetricMode?: string;
     eliteThreshold?: number;
@@ -213,6 +234,7 @@ type EvaluationResult = {
     wingerExperimentEnabled?: boolean;
     attackingMidfielderExperimentEnabled?: boolean;
     centralMidfielderExperimentEnabled?: boolean;
+    defenderExperimentEnabled?: boolean;
     roleSimilarityEnabled?: boolean;
     coupledGroupCount?: number;
     archetypeAvailable?: boolean;
@@ -222,6 +244,38 @@ type EvaluationResult = {
 };
 
 type ActiveListKey = "confirmed" | "pending" | "leftWing" | "rightWing" | "sidePending";
+type DefenderSide = "all" | "left" | "center" | "right" | "pending";
+type CentreBackCompatibility = "all" | "left" | "right" | "both" | "pending";
+
+function matchesCentreBackCompatibility(player: ScoredPlayer, filter: CentreBackCompatibility): boolean {
+  const evidence = player.archetype?.positionCompatibility;
+  if (filter === "all") return true;
+  if (filter === "pending") return Boolean(evidence?.pendingWide);
+  if (filter === "both") return Boolean(evidence?.wideSides.includes("left") && evidence.wideSides.includes("right"));
+  return Boolean(evidence?.wideSides.includes(filter));
+}
+
+function defenderIdentity(player: ScoredPlayer, side: DefenderSide): string {
+  return player.qualifiedIdentityBySide?.[side] || player.qualifiedPositionIdentity || player.archetype?.identityBySide?.[side] || player.archetype?.positionIdentity || player.position || "-";
+}
+
+function defenderSides(player: ScoredPlayer): string[] {
+  return player.qualifiedActivitySides || player.archetype?.activitySides || ["pending"];
+}
+
+function rankingFitScore(player: ScoredPlayer, identityModel: boolean): number | null {
+  if (!identityModel) return player.roleFitScore ?? null;
+  const fits = (player.archetype?.fits || []).filter((fit) => fit.eligible);
+  return fits.length ? Math.max(...fits.map((fit) => fit.score)) : null;
+}
+
+function RankingSimilarityCell({ player, roleId, identityModel }: { player: ScoredPlayer; roleId: string; identityModel: boolean }) {
+  const fit = player.archetype?.fits.find((item) => item.roleId === roleId);
+  if (!identityModel && fit?.eligible === false) {
+    return <span className="scout-search-admission-note">未达标</span>;
+  }
+  return <span className="scout-search-score" title={identityModel ? "三类已满足必要核心的行为相似度最高分，不是边翼卫或边中卫身份分" : undefined}>{rankingFitScore(player, identityModel)?.toFixed(1) ?? "-"}</span>;
+}
 
 function wingerRowsBySide(result: EvaluationResult) {
   const eligibleRows = [...result.confirmed, ...result.pending];
@@ -244,6 +298,11 @@ type ScoutSearchPageProps = {
 };
 
 const RANKING_PAGE_SIZE = 20;
+
+function formatPlayerHeight(value: unknown) {
+  const height = Number(String(value ?? "").trim().replace(/\s*(cm|厘米)\s*$/i, ""));
+  return Number.isFinite(height) && height > 0 ? `${height} cm` : "身高未知";
+}
 
 function formatNumber(value: unknown) {
   const number = Number(value);
@@ -356,14 +415,16 @@ function selectedQualityScores(
 }
 
 function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: ScoutSearchPageProps) {
+  const [initialSettings] = useState(readScoutSettings);
   const [datasets, setDatasets] = useState<DatasetOption[]>([]);
-  const [selectedDatasetId, setSelectedDatasetId] = useState("");
+  const [selectedDatasetId, setSelectedDatasetId] = useState(initialSettings.selectedDatasetId);
   const [modelOptions, setModelOptions] = useState<Array<{ id: string; name: string; family: string; description: string }>>([]);
-  const [selectedRoleId, setSelectedRoleId] = useState("target_forward");
-  const [earlySeason, setEarlySeason] = useState(false);
-  const [minMinutes, setMinMinutes] = useState(300);
-  const [minAvgMinutes, setMinAvgMinutes] = useState(15);
-  const [reliabilityMinutes, setReliabilityMinutes] = useState(500);
+  const [selectedRoleId, setSelectedRoleId] = useState(initialSettings.selectedRoleId);
+  const [earlySeason, setEarlySeason] = useState(initialSettings.earlySeason);
+  const [minMinutes, setMinMinutes] = useState(initialSettings.minMinutes);
+  const [minAvgMinutes, setMinAvgMinutes] = useState(initialSettings.minAvgMinutes);
+  const [reliabilityMinutes, setReliabilityMinutes] = useState(initialSettings.reliabilityMinutes);
+  const [playerSearch, setPlayerSearch] = useState(initialSettings.playerSearch);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
@@ -376,7 +437,13 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
   const [showHiddenPlayers, setShowHiddenPlayers] = useState(false);
   const [rankingPage, setRankingPage] = useState(1);
   const [rankingMode, setRankingMode] = useState<"ability" | "fit">("ability");
+  const [defenderSide, setDefenderSide] = useState<DefenderSide>("all");
+  const [centreBackCompatibility, setCentreBackCompatibility] = useState<CentreBackCompatibility>("all");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    saveScoutSettings({ selectedDatasetId, selectedRoleId, playerSearch, earlySeason, minMinutes, minAvgMinutes, reliabilityMinutes });
+  }, [selectedDatasetId, selectedRoleId, playerSearch, earlySeason, minMinutes, minAvgMinutes, reliabilityMinutes]);
 
   const metricLabel = (column: string) => {
     void mappingRevision;
@@ -404,8 +471,13 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
         if (!active) return;
         const nextDatasets = Array.isArray(datasetResponse.datasets) ? datasetResponse.datasets : [];
         setDatasets(nextDatasets);
-        setSelectedDatasetId(String(datasetResponse.selectedDatasetId || nextDatasets[0]?.id || ""));
-        setModelOptions(Array.isArray(modelResponse.models) ? modelResponse.models : []);
+        setSelectedDatasetId(nextDatasets.some((item: DatasetOption) => item.id === initialSettings.selectedDatasetId)
+          ? initialSettings.selectedDatasetId : String(datasetResponse.selectedDatasetId || nextDatasets[0]?.id || ""));
+        const models = Array.isArray(modelResponse.models) ? modelResponse.models : [];
+        setModelOptions(models);
+        if (models.length > 0 && !models.some((item: { id: string }) => item.id === initialSettings.selectedRoleId)) {
+          setSelectedRoleId(models.some((item: { id: string }) => item.id === "target_forward") ? "target_forward" : models[0].id);
+        }
       })
       .catch((err: Error) => {
         if (active) setError(`读取球探搜索配置失败：${err.message}`);
@@ -433,6 +505,9 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
         reliabilityMinutes
       })) as EvaluationResult;
       setResult(response);
+      setDefenderSide("all");
+      setCentreBackCompatibility("all");
+      if (response.settings.positionIdentityModel) setRankingMode("ability");
       setSelectedDimensionIds(response.model.dimensions.map((dimension) => dimension.id));
       setHiddenPlayerIds([]);
       setShowHiddenPlayers(false);
@@ -532,22 +607,27 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
   }, [activeList, rankingMode, result, selectedDimensionIds]);
 
   const hiddenPlayerIdSet = useMemo(() => new Set(hiddenPlayerIds), [hiddenPlayerIds]);
-  const activeRows = useMemo(() => rankedRows.filter((player) => !hiddenPlayerIdSet.has(player.id)), [hiddenPlayerIdSet, rankedRows]);
-  const hiddenRows = useMemo(() => rankedRows.filter((player) => hiddenPlayerIdSet.has(player.id)), [hiddenPlayerIdSet, rankedRows]);
+  const sideOnlyRows = useMemo(() => rankedRows.filter((player) => !result?.settings.defenderExperimentEnabled || defenderSide === "all" || defenderSides(player).includes(defenderSide)), [rankedRows, defenderSide, result]);
+  const sideRows = useMemo(() => sideOnlyRows.filter((player) => result?.model.family !== "中卫" || matchesCentreBackCompatibility(player, centreBackCompatibility)), [sideOnlyRows, centreBackCompatibility, result]);
+  const activeRows = useMemo(() => sideRows.filter((player) => !hiddenPlayerIdSet.has(player.id)), [hiddenPlayerIdSet, sideRows]);
+  const hiddenRows = useMemo(() => sideRows.filter((player) => hiddenPlayerIdSet.has(player.id)), [hiddenPlayerIdSet, sideRows]);
+  const nameAliases = useMemo(() => buildScoutNameAliases(getNameMappingRows()), [mappingRevision]);
+  const searchedRows = useMemo(() => filterScoutPlayers(activeRows, playerSearch, nameAliases), [activeRows, playerSearch, nameAliases]);
   const selectedPlayer = useMemo(
-    () => activeRows.find((player) => player.id === selectedPlayerId) || activeRows[0] || null,
-    [activeRows, selectedPlayerId]
+    () => searchedRows.find((player) => player.id === selectedPlayerId) || searchedRows[0] || null,
+    [searchedRows, selectedPlayerId]
   );
-  const rankingPageCount = Math.max(1, Math.ceil(activeRows.length / RANKING_PAGE_SIZE));
+  const rankingPageCount = Math.max(1, Math.ceil(searchedRows.length / RANKING_PAGE_SIZE));
   const pagedRows = useMemo(
-    () => activeRows.slice((rankingPage - 1) * RANKING_PAGE_SIZE, rankingPage * RANKING_PAGE_SIZE),
-    [activeRows, rankingPage]
+    () => searchedRows.slice((rankingPage - 1) * RANKING_PAGE_SIZE, rankingPage * RANKING_PAGE_SIZE),
+    [searchedRows, rankingPage]
   );
+  useEffect(() => { setRankingPage(1); }, [playerSearch]);
 
   useEffect(() => {
     setRankingPage(1);
-    setSelectedPlayerId(rankedRows[0]?.id || "");
-  }, [activeList, rankedRows, result?.model.id, selectedDimensionIds]);
+    setSelectedPlayerId(sideRows[0]?.id || "");
+  }, [activeList, sideRows, result?.model.id, selectedDimensionIds]);
 
   useEffect(() => {
     if (rankingPage > rankingPageCount) setRankingPage(rankingPageCount);
@@ -556,7 +636,7 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
   const changeRankingPage = (nextPage: number) => {
     const page = Math.max(1, Math.min(rankingPageCount, nextPage));
     setRankingPage(page);
-    setSelectedPlayerId(activeRows[(page - 1) * RANKING_PAGE_SIZE]?.id || "");
+    setSelectedPlayerId(searchedRows[(page - 1) * RANKING_PAGE_SIZE]?.id || "");
   };
 
   const selectedDimensions = useMemo(
@@ -567,6 +647,7 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
   const isWingerExperiment = Boolean(result?.settings.wingerExperimentEnabled);
   const isAttackingMidfielderExperiment = Boolean(result?.settings.attackingMidfielderExperimentEnabled);
   const isCentralMidfielderExperiment = Boolean(result?.settings.centralMidfielderExperimentEnabled);
+  const isDefenderExperiment = Boolean(result?.settings.defenderExperimentEnabled);
   const hasCoupledMetrics = Boolean(result?.settings.coupledMetricMode && result.settings.coupledMetricMode !== "off");
   const wingerSideGroups = useMemo(() => result && isWingerExperiment ? wingerRowsBySide(result) : null, [isWingerExperiment, result]);
   const isRoleSimilarityExperiment = Boolean(result?.settings.roleSimilarityEnabled || result?.summary.archetypeAvailable);
@@ -681,6 +762,12 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
           </div>
         </section>
 
+        <section className="scout-search-player-search" aria-label="球员姓名搜索">
+          <label htmlFor="scout-player-search">搜索球员</label>
+          <div><input id="scout-player-search" type="search" placeholder="输入球员原名或中文名，例如：Zeca / 泽卡" value={playerSearch} onChange={event => setPlayerSearch(event.target.value)} /><button type="button" disabled={!playerSearch} onClick={() => setPlayerSearch("")}>清空搜索</button></div>
+          <p>{result ? `当前榜单匹配 ${searchedRows.length} / ${activeRows.length} 人；保留原排名与评分。` : "先运行职责模型，再按姓名查找结果。"} 搜索支持中英文姓名映射，只筛选当前榜单，不改变职责、出场门槛或隐藏状态。</p>
+        </section>
+
         {message ? <p className="msg ok">{message}</p> : null}
         {error ? <p className="msg err">{error}</p> : null}
 
@@ -714,12 +801,14 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                 <h2>算法口径</h2>
                 <p>{`比较群体：符合 ${result.model.positionTokens.join(" / ")}，且通过当前出场门槛的全部球员${isWingerExperiment ? "；位置记录与左右路传中来源决定左、右边锋榜单，惯用脚只参与职责资格和可信度判断" : result.model.usesFootFilter ? "；足侧只决定榜单归类，不缩小百分位基准" : ""}。`}</p>
                 <p>指标分：先计算并列中位标准百分位，再按样本量与零值集中程度进行平滑；非负指标的真实 0 另设零值门槛，平滑不得把 0 向上抬高。缺失值按中性 50 分计入。</p>
-                {hasCoupledMetrics ? <p>量效耦合：当前职责中同时存在次数与成功率的对抗、空中对抗、盘带或射门转化指标，会合并为修正后的复合指标；成功率按实际尝试次数向同位置平均值收缩，再按次数35%、调整成功次数45%、调整成功率20%合成。</p> : null}
+                {hasCoupledMetrics ? <p>{result.model.family === "中卫" ? "三类中卫的总对抗、空中对抗、防守对抗只按可靠度修正成功率的同位置百分位计分；次数只用于估算尝试次数，不直接加分。总对抗与防守对抗分别保留权重，不作重叠扣减。长传仍沿用次数35%、调整成功次数45%、调整成功率20%的有效性合成。" : "量效耦合：按当前职责配对配置，将次数与成功率合并为修正复合指标。成功率按实际尝试次数向同位置平均值收缩，再按次数35%、调整成功次数45%、调整成功率20%合成。"}</p> : null}
                 <p>尖点奖励适用于所有职责并逐项计入：标准排名进入前10%的指标，从第90百分位开始线性增加，排名第一最多获得15分，并直接写入该指标的计分百分位与贡献；量效耦合组只计算一次。</p>
                 {isForwardExperiment ? <p>职责识别独立于能力分：五种中锋分别计算0–100行为相似度，不做合计100%的概率归一；CF不是第一位置时会降低数据可信度。数据可信度和职责区分度都不参与能力分或相似度。</p> : null}
                 {isWingerExperiment ? <p>边锋职责识别独立于能力分：先形成边路传中、持球突破、禁区威胁、纵深冲击、机会创造、连接参与、跑动防守和定位球参与八项中文行为支柱，再分别计算四种职责相似度；足侧与左右路传中来源只用于活动侧和职责资格判断。</p> : null}
                 {isAttackingMidfielderExperiment ? <p>前腰职责识别独立于能力分：先形成接应连接、机会创造、传球推进、持球推进、禁区攻击、无球纵深、边肋活动和定位球参与八项行为支柱，再分别计算古典前腰、影锋和边前腰三种独立职责相似度。</p> : null}
                 {isCentralMidfielderExperiment ? <p>中前卫职责识别独立于能力分：先形成覆盖跑动、防守参与、身体参与、持球推进、传球推进、控球连接、机会创造和后插上威胁八项行为支柱，再分别计算全场覆盖型、推进型和组织核心三种独立职责相似度。</p> : null}
+                {result.model.family === "门将" ? <p>门将按八个专属行为支柱独立识别扑救型与出球型。被射门是环境负荷，不是扑救能力；扑救率、预防失球与传球成功率只进入能力评价。类型为Research代理，需结合球队环境与录像。</p> : null}
+                {isDefenderExperiment ? <p>{result.model.family === "中卫" ? "中卫以七个行为支柱计算上抢、拖后、出球三项独立相似度。CB确认居中兼容性，边中卫仅作为同侧位置兼容性说明和筛选条件，不参与评分。" : "边后卫以七个行为支柱与边翼卫位置支持计算四项独立相似度。"}量效耦合与逐指标尖点奖励只用于能力分；真实站位仍需录像复核。</p> : null}
                 <p>贡献闭环：所选模块最终分 = 50 + Σ可靠度后贡献；每项贡献按该指标在所选模块中的原始权重比例计算。</p>
                 <p>Goal − xG = 全部进球/90 − xG/90，用于衡量总体实际进球相对总体预期进球的超额表现。</p>
                 <p>{`最终分 = 50 + min(1, 出场分钟 / ${result.settings.reliabilityMinutes}) × (原始职责分 - 50)`}</p>
@@ -768,7 +857,7 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
               <div className="scout-search-ranking-head">
                 <div>
                   <h2>职责排名</h2>
-                  <p>{isWingerExperiment ? "按照位置记录为主、左右路传中来源为佐证的活动侧判断，分别进入左边锋或右边锋榜单；活动侧仍不明确者单独列出。" : result.model.usesFootFilter ? "双脚与未知足侧进入待确认榜；足侧不明者不与确认榜混排。" : "榜单仅包含符合该职责位置池和当前出场门槛的球员。"}</p>
+                  <p>{isDefenderExperiment ? `${result.model.family === "中卫" ? "上抢、拖后、出球三类独立匹配；居中与边中卫兼容性仅作位置说明。" : "四类职责独立匹配。"}位置列保留源表英文缩写；侧别与兼容性筛选不改变分数、整体排名或百分位基准。` : isWingerExperiment ? "按照位置记录为主、左右路传中来源为佐证的活动侧判断，分别进入左边锋或右边锋榜单；活动侧仍不明确者单独列出。" : result.model.usesFootFilter ? "双脚与未知足侧进入待确认榜；足侧不明者不与确认榜混排。" : "榜单仅包含符合该职责位置池和当前出场门槛的球员。"}</p>
                 </div>
                 <div className="scout-search-ranking-controls">
                   <div className="scout-search-tabs">
@@ -786,6 +875,19 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                           </button>
                         ) : null}
                       </>
+                    ) : isDefenderExperiment ? (
+                      <>
+                        {(["all", "left", ...(result.model.family === "中卫" ? ["center"] : []), "right", "pending"] as DefenderSide[]).map((side) => (
+                          <button key={side} className={defenderSide === side ? "is-active" : ""} onClick={() => setDefenderSide(side)}>
+                            {{ all: "全部", left: result.model.family === "中卫" ? "左侧" : "左路", center: "居中", right: result.model.family === "中卫" ? "右侧" : "右路", pending: "待确认" }[side]} ({side === "all" ? rankedRows.length : rankedRows.filter((player) => defenderSides(player).includes(side)).length})
+                          </button>
+                        ))}
+                        {result.model.family === "中卫" ? <label>边中卫兼容性
+                          <select value={centreBackCompatibility} onChange={(event) => setCentreBackCompatibility(event.target.value as CentreBackCompatibility)}>
+                            {(["all", "left", "right", "both", "pending"] as CentreBackCompatibility[]).map((filter) => <option key={filter} value={filter}>{{ all: "不限", left: "兼容左侧边中卫", right: "兼容右侧边中卫", both: "兼容双侧边中卫", pending: "兼容待确认" }[filter]} ({sideOnlyRows.filter((player) => matchesCentreBackCompatibility(player, filter)).length})</option>)}
+                          </select>
+                        </label> : null}
+                      </>
                     ) : (
                       <>
                         <button className={activeList === "confirmed" ? "is-active" : ""} onClick={() => { setActiveList("confirmed"); setSelectedPlayerId(result.confirmed[0]?.id || ""); }}>
@@ -799,12 +901,13 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                       </>
                     )}
                   </div>
-                  {isRoleSimilarityExperiment ? (
+                  {isRoleSimilarityExperiment && !result.settings.positionIdentityModel ? (
                     <div className="scout-search-tabs scout-search-ranking-mode">
                       <button className={rankingMode === "ability" ? "is-active" : ""} onClick={() => setRankingMode("ability")}>能力排名</button>
                       <button className={rankingMode === "fit" ? "is-active" : ""} onClick={() => setRankingMode("fit")}>职责相似度</button>
                     </div>
                   ) : null}
+                  {result.settings.positionIdentityModel ? <span className="scout-search-identity-mode">位置资格榜 · 能力排名</span> : null}
                   <button className={`scout-search-hidden-toggle ${showHiddenPlayers ? "is-active" : ""}`} type="button" onClick={() => setShowHiddenPlayers((value) => !value)} disabled={hiddenRows.length === 0}>
                     {`已隐藏球员 (${hiddenRows.length})`}
                   </button>
@@ -821,15 +924,15 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
               <div className="scout-search-table-wrap">
                 <table className="scout-search-ranking-table">
                   <colgroup>
-                    <col className="ranking-col-rank" /><col className="ranking-col-player" /><col className="ranking-col-team" /><col className="ranking-col-position" /><col className="ranking-col-foot" /><col className="ranking-col-minutes" /><col className="ranking-col-average" />
+                    <col className="ranking-col-rank" /><col className="ranking-col-player" /><col className="ranking-col-team" /><col className="ranking-col-position" /><col className="ranking-col-age" /><col className="ranking-col-foot" /><col className="ranking-col-minutes" /><col className="ranking-col-average" />
                     {isRoleSimilarityExperiment ? <><col className="ranking-col-archetype" /><col className="ranking-col-fit" /><col className="ranking-col-confidence" /></> : null}
                     <col className="ranking-col-raw" />
                     <col className="ranking-col-reliability" /><col className="ranking-col-final" /><col className="ranking-col-actions" />
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>排名</th><th>球员</th><th>球队</th><th>位置</th><th>足侧</th><th>分钟</th><th>场均</th>
-                      {isRoleSimilarityExperiment ? <><th>主要职责</th><th>当前职责相似度</th><th>数据可信度</th></> : null}
+                      <th>排名</th><th>球员</th><th>球队</th><th>位置</th><th className="ranking-age-cell">年龄</th><th>足侧</th><th>分钟</th><th>场均</th>
+                      {isRoleSimilarityExperiment ? <><th>主要职责</th><th>{result.settings.positionIdentityModel ? "最高行为相似度" : "当前职责相似度"}</th><th>数据可信度</th></> : null}
                       <th>{isRoleSimilarityExperiment ? "职责能力分" : "所选模块原始分"}</th>
                       <th>可靠度</th><th>所选模块最终分</th><th>操作</th>
                     </tr>
@@ -837,9 +940,9 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                   <tbody>
                     {pagedRows.map((player) => (
                       <tr key={player.id} className={selectedPlayer?.id === player.id ? "is-selected" : ""} onClick={() => setSelectedPlayerId(player.id)}>
-                        <td>{player.selectedRank}</td><td className="ranking-text-cell" title={player.player}><strong>{player.player}</strong></td><td className="ranking-text-cell" title={player.team || "-"}>{player.team || "-"}</td><td className="ranking-text-cell" title={player.position || "-"}>{player.position || "-"}</td><td>{player.foot || "未知"}</td>
+                        <td>{player.selectedRank}</td><td className="ranking-text-cell" title={player.player}><strong>{player.player}</strong></td><td className="ranking-text-cell" title={player.team || "-"}>{player.team || "-"}</td><td className="ranking-text-cell" title={player.position || "-"}>{player.position || "-"}</td><td className="ranking-age-cell">{Number.isFinite(Number(player.age)) && Number(player.age) > 0 ? String(player.age).trim() : "—"}</td><td>{player.foot || "未知"}</td>
                         <td>{formatNumber(player.minutes)}</td><td>{formatNumber(player.avgMinutes)}</td>
-                        {isRoleSimilarityExperiment ? <><td className="ranking-text-cell" title={player.archetype?.label || "数据不足"}>{player.archetype?.label || "数据不足"}</td><td><span className="scout-search-score">{player.roleFitScore == null ? "-" : player.roleFitScore.toFixed(1)}</span></td><td>{player.archetype ? `${Math.round((player.archetype.dataConfidence ?? player.archetype.confidence) * 100)}%` : "-"}</td></> : null}
+                        {isRoleSimilarityExperiment ? <><td className="ranking-text-cell"><div className="scout-search-role-with-style"><span title={player.archetype?.label || "数据不足"}>{isDefenderExperiment ? player.archetype?.behaviorLabel || "数据不足" : player.archetype?.label || "数据不足"}</span>{player.archetype?.attackStyle?.label ? <span className="scout-search-attack-style" title={player.archetype.attackStyle.note}>{player.archetype.attackStyle.label}</span> : null}{player.archetype?.positionCompatibility?.labels.map((label) => <span key={label} className="scout-search-attack-style">{label}</span>)}</div></td><td><RankingSimilarityCell player={player} roleId={result.model.id} identityModel={Boolean(result.settings.positionIdentityModel)} /></td><td>{player.archetype ? `${Math.round((player.archetype.dataConfidence ?? player.archetype.confidence) * 100)}%` : "-"}</td></> : null}
                         <td><span className={`scout-search-score ${scoreTone(player.selectedRawScore)}`}>{player.selectedRawScore.toFixed(1)}</span></td>
                         <td>{Math.round(player.reliability * 100)}%</td>
                         <td><span className={`scout-search-score ${scoreTone(player.selectedScore)}`}>{player.selectedScore.toFixed(1)}</span></td>
@@ -848,11 +951,11 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                         </td>
                       </tr>
                     ))}
-                    {activeRows.length === 0 ? <tr><td colSpan={isRoleSimilarityExperiment ? 14 : 11}>当前榜单没有可见球员，可从“已隐藏球员”中恢复。</td></tr> : null}
+                    {searchedRows.length === 0 ? <tr><td colSpan={isRoleSimilarityExperiment ? 15 : 12}>{playerSearch.trim() ? `当前榜单未找到“${playerSearch.trim()}”。可清空搜索、切换榜单，或检查职责与出场门槛；已隐藏球员需先恢复。` : "当前榜单没有可见球员，可从“已隐藏球员”中恢复。"}</td></tr> : null}
                   </tbody>
                 </table>
               </div>
-              {activeRows.length > 0 ? (
+              {searchedRows.length > 0 ? (
                 <nav className="scout-search-pagination" aria-label="职责排名分页">
                   <button type="button" onClick={() => changeRankingPage(rankingPage - 1)} disabled={rankingPage <= 1}>上一页</button>
                   <div className="scout-search-page-numbers">
@@ -861,7 +964,7 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                     ))}
                   </div>
                   <button type="button" onClick={() => changeRankingPage(rankingPage + 1)} disabled={rankingPage >= rankingPageCount}>下一页</button>
-                  <span>{`第 ${rankingPage} / ${rankingPageCount} 页 · 共 ${activeRows.length} 人`}</span>
+                  <span>{`第 ${rankingPage} / ${rankingPageCount} 页 · 共 ${searchedRows.length} 人`}</span>
                 </nav>
               ) : null}
             </section>
@@ -869,7 +972,7 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
             {selectedPlayer ? (
               <section className="scout-search-detail">
                 <header>
-                  <div><h2>{selectedPlayer.player}</h2><p>{`${selectedPlayer.team || "-"} · ${selectedPlayer.position || "-"} · ${selectedPlayer.minutes} 分钟`}</p></div>
+                  <div><h2>{selectedPlayer.player}</h2><p>{`${selectedPlayer.team || "-"} · ${selectedPlayer.position || "-"} · ${formatPlayerHeight(selectedPlayer.height)} · ${selectedPlayer.minutes} 分钟`}</p></div>
                   <div className="scout-search-detail-score-stack">
                     {isRoleSimilarityExperiment ? <div className="scout-search-total"><span>职责能力分</span><strong>{selectedPlayer.selectedRawScore.toFixed(1)}</strong></div> : null}
                     <div className={`scout-search-total ${scoreTone(selectedPlayer.selectedScore)}`}><span>所选模块最终分</span><strong>{selectedPlayer.selectedScore.toFixed(1)}</strong></div>
@@ -886,12 +989,22 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                         <div className="scout-search-archetype-roles">
                           <div className="scout-search-archetype-primary-role">
                             <small>主要职责</small>
-                            <strong>{selectedPlayer.archetype.label}</strong>
+                            <div className="scout-search-role-with-style">
+                              <strong>{isDefenderExperiment ? `${defenderIdentity(selectedPlayer, defenderSide)}｜${selectedPlayer.archetype.behaviorLabel}` : selectedPlayer.archetype.label}</strong>
+                              {selectedPlayer.archetype.attackStyle?.label ? <span className="scout-search-attack-style" title={selectedPlayer.archetype.attackStyle.note}>{selectedPlayer.archetype.attackStyle.label}</span> : null}
+                              {selectedPlayer.archetype.positionCompatibility?.labels.map((label) => <span key={label} className="scout-search-attack-style">{label}</span>)}
+                            </div>
                           </div>
                           <i aria-hidden="true" />
                           <div className="scout-search-archetype-secondary-role">
-                            <small>次要职责</small>
-                            <b>{selectedPlayer.archetype.secondaryName || "暂无"}</b>
+                            <div className="scout-search-selected-age" aria-label="所选球员年龄">
+                              <small>年龄</small>
+                              <strong>{String(selectedPlayer.age ?? "").trim() && Number.isFinite(Number(selectedPlayer.age)) && Number(selectedPlayer.age) > 0 ? `${selectedPlayer.age} 岁` : "年龄未知"}</strong>
+                            </div>
+                            <div className="scout-search-archetype-secondary-name">
+                              <small>次要职责</small>
+                              <b>{selectedPlayer.archetype.secondaryName || "暂无"}</b>
+                            </div>
                           </div>
                         </div>
                         <div className="scout-search-archetype-verdict-meta">
@@ -910,12 +1023,13 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                       </div>
                     </div>
                     {isForwardExperiment && selectedPlayer.archetype.completeForwardGate && !selectedPlayer.archetype.completeForwardGate.eligible ? <p className="scout-search-archetype-note"><b>全能型未通过准入</b><span>{selectedPlayer.archetype.completeForwardGate.reasons.join("；")}</span></p> : null}
+                    {selectedPlayer.archetype.classificationNote ? <p className="scout-search-archetype-note"><b>识别边界</b><span>{[selectedPlayer.archetype.classificationNote, selectedPlayer.archetype.positionProfile].filter(Boolean).join("；")}</span></p> : null}
                     {isForwardExperiment && selectedPlayer.archetype.primaryRoleId === "complete_forward" ? <p className="scout-search-archetype-note"><b>全能型说明</b><span>五类核心行为已全部达到准入门槛；具体完成质量请结合职责能力分。</span></p> : null}
                     <div className="scout-search-fit-grid">
-                      {selectedPlayer.archetype.fits.map((fit) => <article key={fit.roleId} className={fit.eligible ? "" : "is-ineligible"}><span>{fit.name}</span><strong>{fit.score.toFixed(1)}</strong><small>{fit.eligible ? `独立职责相似度 · 覆盖 ${Math.round(fit.evidenceCoverage * 100)}%` : fit.eligibilityReason}</small><div className="scout-search-bar"><i style={{ width: `${Math.max(0, Math.min(100, fit.score))}%` }} /></div></article>)}
+                      {selectedPlayer.archetype.fits.map((fit) => <article key={fit.roleId} className={fit.eligible ? "" : "is-ineligible"}><span>{fit.name}</span><strong>{fit.score.toFixed(1)}</strong><small>{fit.eligible ? `独立职责相似度 · 覆盖 ${Math.round(fit.evidenceCoverage * 100)}%` : `${isDefenderExperiment ? "诊断分 · " : ""}${fit.eligibilityReason}`}</small>{isDefenderExperiment && ["defensive_fullback", "inverted_fullback", "wingback"].includes(fit.roleId) ? <small>{fit.adjustmentReason}</small> : null}<div className="scout-search-bar"><i style={{ width: `${Math.max(0, Math.min(100, fit.score))}%` }} /></div></article>)}
                     </div>
                     <div className="scout-search-pillar-grid">
-                      {selectedPlayer.archetype.pillars.map((pillar) => <article key={pillar.id}><span>{pillar.name}</span><strong>{pillar.score == null ? "缺失" : pillar.score.toFixed(1)}</strong><small>{`覆盖 ${Math.round(pillar.coverage * 100)}%`}</small></article>)}
+                      {selectedPlayer.archetype.pillars.map((pillar) => pillar.id === "wide_cb_compatibility" ? <article key={pillar.id}><span>{pillar.name}</span><strong>{selectedPlayer.archetype?.positionCompatibility?.labels.join(" · ") || "无明确兼容记录"}</strong><small>仅说明与筛选，不参与计分</small></article> : <article key={pillar.id}><span>{pillar.name}</span><strong>{pillar.score == null ? "缺失" : pillar.score.toFixed(1)}</strong><small>{`${isDefenderExperiment && pillar.id.endsWith("compatibility") ? "结构规则分 · " : ""}覆盖 ${Math.round(pillar.coverage * 100)}%`}</small></article>)}
                     </div>
                   </section>
                 ) : null}
@@ -943,11 +1057,11 @@ function ScoutSearchPage({ playerMetricPresets = [], mappingRevision = 0 }: Scou
                           {isGroupStart ? <td rowSpan={dimensionRowCount} className="metric-dimension-cell"><span>{metric.dimensionName}</span></td> : null}
                           <td className="metric-name-cell" title={[metric.note, metric.coupledFormula].filter(Boolean).join("；") || undefined}>{displayedMetricLabel(metric)}{metric.members.length > 1 ? <small className="metric-coupled-label">量效耦合指标</small> : null}</td>
                           <td className="metric-value-cell">{metric.available ? (
-                            metric.members.length > 1 ? <span className="metric-source-values">{metric.members.map((member) => <small key={member.column}>{`${displayedMetricLabel(member)} ${formatNumber(member.rawValue)}`}</small>)}</span> : formatNumber(metric.rawValue)
+                            metric.rawSources?.length ? <span className="metric-source-values">{metric.rawSources.map((source) => <small key={source.column}>{`${source.unit === "per90" ? "次数/90" : "成功率"}：${source.value == null ? "—" : `${formatNumber(source.value)}${source.unit === "percent" ? "%" : ""}`}`}</small>)}</span> : metric.members.length > 1 ? <span className="metric-source-values">{metric.members.map((member) => <small key={member.column}>{`${displayedMetricLabel(member)} ${member.rawValue == null ? "—" : formatNumber(member.rawValue)}`}</small>)}</span> : metric.members[0]?.rawValue == null ? "—" : formatNumber(metric.members[0].rawValue)
                           ) : "缺失"}</td>
                           <td className="metric-percentile-cell">
                             {metric.available ? (
-                              <span className="scout-search-percentile-stack" title={`${metric.coupledFormula || metric.smoothingReason}；标准排名百分位 ${metric.rawPercentile.toFixed(1)}${metric.coupledComponents ? `；调整成功率 ${metric.coupledComponents.adjustedRate.toFixed(1)}%；调整成功次数/90 ${metric.coupledComponents.successfulPer90.toFixed(2)}` : ""}`}>
+                              <span className="scout-search-percentile-stack" title={`${metric.coupledFormula || metric.smoothingReason}；标准排名百分位 ${metric.rawPercentile.toFixed(1)}${metric.coupledComponents ? (metric.coupledComponents.mode === "rate_only" ? `；次数/90 ${metric.coupledComponents.volumePer90?.toFixed(2)}；估算尝试次数 ${metric.coupledComponents.attempts?.toFixed(1)}；修正成功率 ${metric.coupledComponents.adjustedRate.toFixed(1)}%` : `；调整成功率 ${metric.coupledComponents.adjustedRate.toFixed(1)}%；调整成功次数/90 ${metric.coupledComponents.successfulPer90.toFixed(2)}`) : ""}`}>
                                 <span className="scout-search-percentile" style={percentileStyle(metric.percentile)}>{metric.percentile.toFixed(1)}</span>
                                 <small>{`标准 ${metric.rawPercentile.toFixed(1)}`}</small>
                                 {(metric.eliteMetricBonus ?? 0) > 0 ? <small className="metric-elite-detail">{`尖点 +${metric.eliteMetricBonus!.toFixed(1)} · 计分 ${(metric.scoringPercentile ?? metric.percentile).toFixed(1)}`}</small> : null}

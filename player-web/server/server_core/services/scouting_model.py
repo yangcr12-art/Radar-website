@@ -18,6 +18,7 @@ from server_core.services.forward_role_analysis import (
     PAIR_BAYES_FORMULA,
     PAIR_SCORE_FORMULA,
     PAIR_SPECS,
+    pair_specs_for_role,
     PILLAR_SPECS,
     build_forward_archetypes,
     build_forward_pair_scores,
@@ -43,7 +44,14 @@ from server_core.services.defensive_midfielder_role_analysis import (
     DEFENSIVE_MIDFIELDER_ROLE_IDS,
     build_defensive_midfielder_archetypes,
 )
+from server_core.services.defender_role_analysis import (
+    DEFENDER_ANALYSIS_COLUMNS, DEFENDER_ROLE_IDS,
+    build_defender_archetypes, defender_method,
+)
 from server_core.services.scouting_role_catalog import ADDITIONAL_SCOUTING_MODELS
+from server_core.services.goalkeeper_role_analysis import (
+    GOALKEEPER_ANALYSIS_COLUMNS, GOALKEEPER_ROLE_IDS, build_goalkeeper_archetypes, goalkeeper_method,
+)
 
 
 MODEL_VERSION = "inverted-right-winger-v6-five-dimensions"
@@ -209,6 +217,7 @@ FIELD_ALIASES: dict[str, list[str]] = {
     "matches": ["Matches played", "Appearances", "Matches", "出场场次"],
     "team": ["Team within selected timeframe", "Team", "Club", "Squad", "球队"],
     "age": ["Age", "年龄"],
+    "height": ["Height", "Height, cm", "Height (cm)", "身高", "身高（厘米）", "身高(cm)"],
 }
 
 
@@ -259,6 +268,8 @@ def _is_model_position(value: Any, model: dict[str, Any]) -> bool:
     accepted = set(model["positionTokens"])
     if tokens & accepted:
         return True
+    if model["id"] in DEFENDER_ROLE_IDS or model["id"] in GOALKEEPER_ROLE_IDS:
+        return False
     long_name_map = {
         "RWF": {"RIGHT WINGER", "RIGHT FORWARD", "右边锋"},
         "RW": {"RIGHT WINGER", "右边锋", "右前卫"},
@@ -430,9 +441,10 @@ def list_scouting_models() -> list[dict[str, Any]]:
         metrics = dimension["metrics"]
         dimension_columns = {metric["column"] for metric in metrics}
         pair_by_column: dict[str, dict[str, Any]] = {}
-        for spec in PAIR_SPECS:
-            if spec["volume"] in dimension_columns and spec["rate"] in dimension_columns:
-                pair_by_column[str(spec["volume"])] = spec
+        for spec in pair_specs_for_role(model["id"]):
+            if spec["rate"] in dimension_columns and (spec.get("mode") == "rate_only" or spec["volume"] in dimension_columns):
+                if spec.get("mode") != "rate_only":
+                    pair_by_column[str(spec["volume"])] = spec
                 pair_by_column[str(spec["rate"])] = spec
         return [
             {
@@ -448,7 +460,7 @@ def list_scouting_models() -> list[dict[str, Any]]:
                     if metric["column"] in pair_by_column
                     else ""
                 ),
-                "coupledFormula": PAIR_SCORE_FORMULA if metric["column"] in pair_by_column else "",
+                "coupledFormula": pair_by_column[metric["column"]].get("formula", PAIR_SCORE_FORMULA) if metric["column"] in pair_by_column else "",
                 "coupledBayesFormula": PAIR_BAYES_FORMULA if metric["column"] in pair_by_column else "",
             }
             for metric in metrics
@@ -475,6 +487,7 @@ def list_scouting_models() -> list[dict[str, Any]]:
                 for dimension in model["dimensions"]
             ],
             "notScored": list(model.get("notScored", [])),
+            "roleAnalysis": goalkeeper_method() if model["id"] in GOALKEEPER_ROLE_IDS else defender_method(model["family"]),
         }
         for model in SCOUTING_MODELS.values()
         if model.get("catalogVisible", True)
@@ -559,6 +572,8 @@ def evaluate_scouting_role(
     is_attacking_midfielder_experiment = role_id in ATTACKING_MIDFIELDER_ROLE_IDS
     is_central_midfielder_experiment = role_id in CENTRAL_MIDFIELDER_ROLE_IDS
     is_defensive_midfielder_experiment = role_id in DEFENSIVE_MIDFIELDER_ROLE_IDS
+    is_defender_experiment = role_id in DEFENDER_ROLE_IDS
+    is_goalkeeper_experiment = role_id in GOALKEEPER_ROLE_IDS
     analysis_canonicals: set[str] = {
         str(spec[key])
         for spec in PAIR_SPECS
@@ -580,6 +595,10 @@ def evaluate_scouting_role(
         analysis_canonicals.update(CENTRAL_MIDFIELDER_ANALYSIS_COLUMNS)
     if is_defensive_midfielder_experiment:
         analysis_canonicals.update(DEFENSIVE_MIDFIELDER_ANALYSIS_COLUMNS)
+    if is_defender_experiment:
+        analysis_canonicals.update(DEFENDER_ANALYSIS_COLUMNS)
+    if is_goalkeeper_experiment:
+        analysis_canonicals.update(GOALKEEPER_ANALYSIS_COLUMNS)
     analysis_columns = {
         canonical: _resolve_column(lookup, canonical, METRIC_ALIASES.get(canonical, []))
         for canonical in analysis_canonicals
@@ -590,12 +609,17 @@ def evaluate_scouting_role(
         model_metric_columns=model_metric_columns,
         columns=analysis_columns,
         to_float=_to_float,
+        role_id=role_id,
     )
     pair_by_metric = {
         str(spec[key]): str(spec["id"])
-        for spec in PAIR_SPECS
+        for spec in pair_specs_for_role(role_id)
         if str(spec["id"]) in pair_metadata
-        for key in ("volume", "rate")
+        for key in (("rate",) if spec.get("mode") == "rate_only" else ("volume", "rate"))
+    }
+    rate_only_sources = {
+        str(spec["rate"]): str(spec["volume"])
+        for spec in pair_specs_for_role(role_id) if spec.get("mode") == "rate_only"
     }
     forward_archetypes = build_forward_archetypes(
         position_candidates,
@@ -627,6 +651,14 @@ def evaluate_scouting_role(
         to_float=_to_float,
         reliability_minutes=reliability_minutes,
     ) if is_defensive_midfielder_experiment else {}
+    defender_archetypes = build_defender_archetypes(
+        position_candidates, family=model["family"], columns=analysis_columns,
+        to_float=_to_float, reliability_minutes=reliability_minutes,
+    ) if is_defender_experiment else {}
+    goalkeeper_archetypes = build_goalkeeper_archetypes(
+        position_candidates, columns=analysis_columns, to_float=_to_float,
+        reliability_minutes=reliability_minutes,
+    ) if is_goalkeeper_experiment else {}
 
     metric_resolution: dict[str, dict[str, Any]] = {}
     for _, metric in _iter_model_metrics(model):
@@ -745,6 +777,12 @@ def evaluate_scouting_role(
                         "dimensionName": dimension["name"],
                         "weight": weight,
                         "rawValue": raw_value,
+                        "rawSources": ([
+                            {"column": rate_only_sources[metric["column"]],
+                             "value": _to_float(candidate["raw"].get(analysis_columns.get(rate_only_sources[metric["column"]], ""))),
+                             "unit": "per90"},
+                            {"column": metric["column"], "value": raw_value, "unit": "percent"},
+                        ] if metric["column"] in rate_only_sources else []),
                         "rawPercentile": raw_percentile,
                         "percentile": percentile,
                         "scoringPercentile": scoring_percentile,
@@ -791,6 +829,10 @@ def evaluate_scouting_role(
             if is_central_midfielder_experiment
             else defensive_midfielder_archetypes.get(candidate_index)
             if is_defensive_midfielder_experiment
+            else defender_archetypes.get(candidate_index)
+            if is_defender_experiment
+            else goalkeeper_archetypes.get(candidate_index)
+            if is_goalkeeper_experiment
             else None
         )
         current_role_result = next(
@@ -798,6 +840,8 @@ def evaluate_scouting_role(
             None,
         )
         current_role_fit = float(current_role_result["score"]) if current_role_result else None
+        if (is_defender_experiment or is_goalkeeper_experiment) and current_role_result and not current_role_result.get("eligible"):
+            current_role_fit = None
         strongest = sorted((row for row in metric_rows if row["available"]), key=lambda row: row["contribution"], reverse=True)[:3]
         weakest = sorted((row for row in metric_rows if row["available"]), key=lambda row: row["contribution"])[:3]
         scored_players.append(
@@ -806,6 +850,7 @@ def evaluate_scouting_role(
                 "player": source.get("player"),
                 "team": raw.get(resolved_fields["team"], "") if resolved_fields["team"] else "",
                 "age": raw.get(resolved_fields["age"], "") if resolved_fields["age"] else "",
+                "height": raw.get(resolved_fields["height"], "") if resolved_fields["height"] else "",
                 "position": raw.get(resolved_fields["position"], ""),
                 "foot": raw.get(resolved_fields["foot"], ""),
                 "minutes": round(candidate["minutes"], 1),
@@ -830,6 +875,8 @@ def evaluate_scouting_role(
             }
         )
 
+    # All four defender roles retain the full family ability list. Structural
+    # evidence limits label competition, not the percentile cohort or ability score.
     confirmed = sorted((item for item in scored_players if item["footStatus"] == "confirmed"), key=lambda item: (-item["score"], -item["rawScore"], str(item["player"])))
     pending = sorted((item for item in scored_players if item["footStatus"] == "pending"), key=lambda item: (-item["score"], -item["rawScore"], str(item["player"])))
     for index, item in enumerate(confirmed, start=1):
@@ -854,19 +901,22 @@ def evaluate_scouting_role(
             "attackingMidfielderExperimentEnabled": is_attacking_midfielder_experiment,
             "centralMidfielderExperimentEnabled": is_central_midfielder_experiment,
             "defensiveMidfielderExperimentEnabled": is_defensive_midfielder_experiment,
-            "roleSimilarityEnabled": is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment,
+            "defenderExperimentEnabled": is_defender_experiment,
+            "positionIdentityModel": False,
+            "roleSimilarityEnabled": is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment or is_defender_experiment or is_goalkeeper_experiment,
             "coupledMetricMode": "bayesian_volume_efficiency_v1" if pair_metadata else "off",
             "eliteThreshold": ELITE_THRESHOLD,
             "eliteMode": "per_metric_linear_top_decile_v2",
             "eliteMaxPoints": ELITE_MAX_POINTS,
             "reliabilityBaseline": 50.0,
-            "archetypeProbabilityMode": "independent_similarity_not_normalized_v8" if is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment else "off",
+            "archetypeProbabilityMode": "independent_similarity_not_normalized_v8" if is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment or is_defender_experiment else "off",
             "archetypeSoftmaxTemperature": None,
-            "archetypeLabelMode": "sparse_exclusive_labels_v8" if is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment else "off",
+            "archetypeLabelMode": "sparse_exclusive_labels_v8" if is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment or is_defender_experiment else "off",
         },
         "summary": {
             "datasetPlayerCount": len(players),
             "comparisonCohortCount": len(position_candidates),
+            "positionQualificationExcludedCount": 0,
             "confirmedCount": len(confirmed),
             "pendingCount": len(pending),
             "footExcludedCount": sum(1 for item in scored_players if item["footStatus"] == "excluded"),
@@ -880,9 +930,10 @@ def evaluate_scouting_role(
             "attackingMidfielderExperimentEnabled": is_attacking_midfielder_experiment,
             "centralMidfielderExperimentEnabled": is_central_midfielder_experiment,
             "defensiveMidfielderExperimentEnabled": is_defensive_midfielder_experiment,
-            "roleSimilarityEnabled": is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment,
+            "defenderExperimentEnabled": is_defender_experiment,
+            "roleSimilarityEnabled": is_forward_experiment or is_winger_experiment or is_attacking_midfielder_experiment or is_central_midfielder_experiment or is_defensive_midfielder_experiment or is_defender_experiment or is_goalkeeper_experiment,
             "coupledGroupCount": len(pair_metadata),
-            "archetypeAvailable": bool(forward_archetypes or winger_archetypes or attacking_midfielder_archetypes or central_midfielder_archetypes or defensive_midfielder_archetypes),
+            "archetypeAvailable": bool(forward_archetypes or winger_archetypes or attacking_midfielder_archetypes or central_midfielder_archetypes or defensive_midfielder_archetypes or defender_archetypes or goalkeeper_archetypes),
         },
         "confirmed": confirmed,
         "pending": pending,

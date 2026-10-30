@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import { build } from '../player-web/node_modules/esbuild/lib/main.js';
+const bundle = await build({entryPoints:['player-web/src/pages/player-data/playerAnalysis.ts'],bundle:true,write:false,format:'esm',platform:'node'});
+const {generatePlayerAnalysis: generate, analysisReady, analysisKey} = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
+const row = (column,score,extra={}) => ({column,value:2,isNumeric:true,rawPercentile:score,adjustedPercentile:score,percentileAlgorithm:'standard_positive',comparisonCount:40,comparisonHasVariation:true,...extra});
+const input = {datasetId:'d',datasetName:'Test',playerId:'p',mode:'standard',selectedColumns:['Shots per 90','Aerial duels won, %','Fouls per 90','Unknown field'], detail:{id:'p',player:'Test Player',datasetId:'d',comparison:{mode:'position',position:'CF'},columns:[row('Shots per 90',90),row('Aerial duels won, %',10),row('Fouls per 90',85,{percentileAlgorithm:'standard_negative',value:0}),row('Unknown field',80)]}};
+const report = generate(input);
+assert.equal(report.high.length,3); assert.equal(report.low.length,1);
+assert.match(report.high.find(f=>f.evidence.column==='Shots per 90').text,/参与量不能单独证明/);
+assert.match(report.high.find(f=>f.evidence.column==='Fouls per 90').text,/原始事件量较少/);
+assert.match(report.high.find(f=>f.evidence.column==='Unknown field').text,/仅作分布描述/);
+assert.equal(report.high.find(f=>f.evidence.column==='Fouls per 90').evidence.value,0);
+assert.equal(analysisReady({...input,detail:{...input.detail,datasetId:'other'}}),false);
+assert.throws(()=>generate({...input,playerId:'other'}));
+for (const bad of [{rawPercentile:null},{comparisonCount:7},{comparisonCount:undefined},{comparisonHasVariation:false},{rawPercentile:NaN},{value:''}]) {
+ const x={...input,selectedColumns:['Shots per 90'],detail:{...input.detail,columns:[row('Shots per 90',90,bad)]}};
+ assert.equal(generate(x).facts.length,0);
+}
+const reversed=generate({...input,selectedColumns:['Shots per 90'],detail:{...input.detail,columns:[row('Shots per 90',95,{percentileAlgorithm:'standard_negative'})]}});
+assert.match(reversed.facts[0].text,/仅作分布描述/);
+const event={...input,selectedColumns:['Shots per 90'],detail:{...input.detail,columns:[row('Shots per 90',20,{adjustedPercentile:95,percentileAlgorithm:'event_positive'})]}};
+assert.equal(generate(event).low.length,1);assert.equal(generate({...event,mode:'smoothed'}).high.length,1);
+assert.notEqual(analysisKey(input),analysisKey({...input,mode:'smoothed'}));
+assert.notEqual(analysisKey(input),analysisKey({...input,selectedColumns:[]}));
+assert.equal(analysisKey(input),analysisKey({...input,selectedColumns:[...input.selectedColumns].reverse()}));
+console.log('PASS: analysis thresholds, direction, zero/missing data, sample boundaries, unknown semantics, mode and stale context');
+const pairs = {...input,selectedColumns:['Aerial duels per 90','Aerial duels won, %'],detail:{...input.detail,columns:[row('Aerial duels per 90',20),row('Aerial duels won, %',85)]}};
+assert.match(generate(pairs).features[0],/不能据此推断扩大参与/);
+assert.equal(generate({...pairs,selectedColumns:['Aerial duels won, %']}).features.length,0);
+const outfield={...input,selectedColumns:['Save rate, %'],detail:{...input.detail,columns:[{column:'Position',value:'CF'},row('Save rate, %',99)]}};
+assert.equal(generate(outfield).facts.length,0);
+assert.equal(generate({...outfield,detail:{...outfield.detail,columns:[{column:'Position',value:'GK'},row('Save rate, %',99)]}}).facts.length,1);
+console.log('PASS: quantity/efficiency paired evidence and goalkeeper position gate');
+// Narrative regression: cross-metric prose must preserve the distinction between frequency and completion.
+const pairedNarrative=generate(pairs).narrative;
+assert.equal(pairedNarrative.other.length,1);
+assert.match(pairedNarrative.other[0].text,/参与较少、成功率较高/);
+assert.equal(pairedNarrative.reviews.length,0);
+assert.match(pairedNarrative.profile,/比较他与同位置球员/);
+assert.doesNotMatch(pairedNarrative.profile,/全球|同位置领先/);
+const contrast={...pairs,detail:{...pairs.detail,columns:[row('Aerial duels per 90',90,{value:5}),row('Aerial duels won, %',20,{value:20})]}};
+const contrasted=generate(contrast).narrative;
+assert.equal(contrasted.reviews.length,1);
+assert.match(contrasted.reviews[0].text,/尝试较多，但成功率偏低/);
+assert.equal(contrasted.reviews[0].evidence.length,2);
+const unknown={...input,selectedColumns:['Unknown field'],detail:{...input.detail,columns:[row('Unknown field',99)]}};
+assert.equal(generate(unknown).narrative.strengths.length,0);
+assert.match(generate(unknown).narrative.profile,/不足以匹配/);
+const creation={...input,selectedColumns:['xA per 90','Key passes per 90','Assists per 90'],detail:{...input.detail,columns:[row('xA per 90',95),row('Key passes per 90',85),row('Assists per 90',80),{column:'Minutes played',value:418},{column:'Age',value:20},{column:'Position',value:'LW'}]}};
+const narrative=generate(creation).narrative;
+assert.equal(narrative.strengths.length,1);
+assert.equal(narrative.strengths[0].evidence.length,3);
+assert.match(narrative.profile,/20岁.*左边锋/);
+assert.match(narrative.profile,/阶段性观察/);
+assert.equal(generate({...creation,selectedColumns:['xA per 90']}).narrative.strengths[0].evidence.length,1);
+const wrongDirection={...pairs,detail:{...pairs.detail,columns:[row('Aerial duels per 90',95,{percentileAlgorithm:'standard_negative'}),row('Aerial duels won, %',80)]}};
+assert.equal(generate(wrongDirection).narrative.unused.length,1);
+assert.equal(generate(wrongDirection).narrative.strengths[0].evidence.length,1);
+console.log('PASS: Chinese thematic narrative, joint evidence, conflicting indicators, sample prose, unknown/direction fallback and selection isolation');
+assert.throws(()=>generate({...input,detail:{...input.detail,comparison:{mode:'dataset'}}}),/同位置/);
+for (const prose of [...generate(creation).narrative.strengths,...generate(contrast).narrative.reviews]) {
+ assert.doesNotMatch(prose.text,/提供了补充依据|共同支持|画像|技术执行与战术要求/);
+}
+const inverseNarrative=generate({...input,selectedColumns:['Fouls per 90']}).narrative;
+assert.match(inverseNarrative.strengths[0].text,/事件发生得较少/);
+assert.doesNotMatch(inverseNarrative.strengths[0].text,/高于多数同位置球员/);
+assert.doesNotMatch(generate({...creation,mode:'smoothed'}).narrative.strengths[0].text,/高于多数同位置球员/);
+console.log('PASS: required position provenance, natural wording, inverse raw values and algorithm score wording');

@@ -187,7 +187,8 @@ export const NAV_ITEMS = [
     children: [
       { key: "fitness_team_radar", label: "两队体能雷达图" },
       { key: "fitness_player_overlay", label: "球员体能叠加雷达" },
-      { key: "fitness_per90", label: "分均体能数据" }
+      { key: "fitness_per90", label: "分均体能数据" },
+      { key: "fitness_history", label: "个人多场体能" }
     ]
   },
   { key: "opta_analysis", label: "opta数据分析" },

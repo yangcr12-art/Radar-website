@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from threading import Lock
+from threading import RLock
 from typing import Any
 from uuid import uuid4
 
@@ -17,8 +17,39 @@ from server_core.services.session_auth import get_authenticated_username
 from server_core.services.user_storage import ensure_user_data_dir, user_data_file, user_data_subdir
 
 VERSION = 1
-WRITE_LOCK = Lock()
+WRITE_LOCK = RLock()
 fitness_data_bp = Blueprint("fitness_data_api", __name__)
+
+
+@fitness_data_bp.route("/api/fitness-data/history", methods=["GET", "POST"])
+def fitness_history():
+    from server_core.services.fitness_history import extract_match
+    path = user_data_file(_resolve_username(), "fitness_history.json")
+    try:
+        with WRITE_LOCK:
+            stored = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"matches": []}
+            if request.method == "GET":
+                return jsonify({"ok": True, "matches": stored.get("matches", [])})
+            files = request.files.getlist("files")
+            if not files:
+                return jsonify({"ok": False, "error": "请选择体能 Excel 文件"}), 400
+            matches = {m["id"]: m for m in stored.get("matches", [])}
+            errors, imported = [], 0
+            for upload in files:
+                try:
+                    if not str(upload.filename).lower().endswith(".xlsx"):
+                        raise ValueError("仅支持 .xlsx")
+                    match = extract_match(upload, upload.filename, _build_player_doc_from_team_overview)
+                    matches[match["id"]] = match
+                    imported += 1
+                except Exception as exc:
+                    errors.append({"filename": upload.filename, "error": str(exc)})
+            result = sorted(matches.values(), key=lambda m: (m["date"], m["match"]))
+            if imported:
+                _atomic_write_json(path, path.with_suffix(".json.bak"), "fitness_history_", {"matches": result})
+            return jsonify({"ok": True, "matches": result, "imported": imported, "errors": errors})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 def _resolve_username() -> str:

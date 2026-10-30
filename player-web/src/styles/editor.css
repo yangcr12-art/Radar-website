@@ -396,6 +396,7 @@ svg {
 
 @media (max-width: 1100px) {
   .top-nav {
+    position: relative;
     height: auto;
     flex-wrap: wrap;
     padding: 10px 14px;

@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { fetchAuthStatus, loginSharedSession, logoutSharedSession } from "../api/storageClient";
 import { setStorageScope } from "../utils/storageScope";
 
-type AuthStatus = "checking" | "anonymous" | "authenticated";
+type AuthStatus = "checking" | "unavailable" | "anonymous" | "authenticated";
 
 export function useSharedAuth() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
@@ -12,6 +12,7 @@ export function useSharedAuth() {
   const [loginSubmitting, setLoginSubmitting] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [authHydrationVersion, setAuthHydrationVersion] = useState(0);
+  const [authCheckVersion, setAuthCheckVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,15 +32,14 @@ export function useSharedAuth() {
         setAuthStatus(status?.authenticated ? "authenticated" : "anonymous");
       } catch {
         if (cancelled) return;
-        setStorageScope("anonymous");
-        setAuthStatus("anonymous");
+        setAuthStatus("unavailable");
       }
     };
     loadAuthStatus();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authCheckVersion]);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,7 +92,11 @@ export function useSharedAuth() {
     setLoginError,
     handleLogin,
     handleLogout,
-    authHydrationVersion
+    authHydrationVersion,
+    retryAuthCheck: () => {
+      setAuthStatus("checking");
+      setAuthCheckVersion((prev) => prev + 1);
+    }
   };
 }
 

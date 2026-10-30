@@ -1,3 +1,4 @@
+import { normalizeHexColor, clampRatio, polygonPath, colorToAlpha } from "../../utils/radarGeometry";
 import React, { useEffect, useMemo, useState } from "react";
 import { STORAGE_KEYS } from "../../app/constants";
 import { readLocalStore, writeLocalStore } from "../../utils/localStore";
@@ -95,35 +96,11 @@ function formatValueDisplay(value: unknown) {
   return num.toFixed(2).replace(/\.?0+$/, "");
 }
 
-function clampRatio(value: number) {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(1, value));
-}
-
 function pointAt(centerX: number, centerY: number, radius: number, angle: number) {
   return {
     x: centerX + radius * Math.cos(angle),
     y: centerY + radius * Math.sin(angle)
   };
-}
-
-function polygonPath(points: Array<{ x: number; y: number }>) {
-  if (!Array.isArray(points) || points.length === 0) return "";
-  return `${points.map((p, idx) => `${idx === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")} Z`;
-}
-
-function colorToAlpha(hex: string, alpha = 0.22) {
-  const h = String(hex || "").replace("#", "");
-  if (h.length !== 6) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function normalizeHexColor(value: unknown) {
-  const text = String(value || "").trim();
-  return /^#[0-9a-fA-F]{6}$/.test(text) ? text : "";
 }
 
 function stripPer90Text(text: string) {

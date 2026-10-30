@@ -11,6 +11,8 @@ DATA_DIR = APP_DIR / "data"
 USERS_DIR = DATA_DIR / "users"
 
 MANAGED_DATA_FILES = (
+    "fitness_history.json",
+    "fitness_history.json.bak",
     "state.json",
     "state.json.bak",
     "mappings.json",

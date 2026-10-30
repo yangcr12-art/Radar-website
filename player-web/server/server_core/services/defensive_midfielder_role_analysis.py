@@ -42,10 +42,10 @@ BALL_WINNER_EVIDENCE_WEIGHTS = {
     "build_progression": 0.05,
 }
 HALF_BACK_EVIDENCE_WEIGHTS = {
-    "centre_back_compatibility": 0.40,
-    "build_progression": 0.30,
-    "physical": 0.20,
-    "defensive_shield": 0.10,
+    "centre_back_compatibility": 0.50,
+    "build_progression": 0.25,
+    "physical": 0.10,
+    "defensive_shield": 0.15,
 }
 
 
@@ -126,11 +126,11 @@ DEFENSIVE_MIDFIELDER_PILLAR_SPECS: dict[str, dict[str, Any]] = {
     "build_progression": {
         "name": "接应推进",
         "features": {
-            "event:passes": 0.15,
+            "event:passes": 0.10,
             "event:received_passes": 0.15,
-            "event:progressive_passes": 0.25,
-            "event:forward_passes": 0.10,
-            "ratio:forward_pass_share": 0.20,
+            "event:progressive_passes": 0.10,
+            "event:forward_passes": 0.20,
+            "ratio:forward_pass_share": 0.30,
             "event:final_third_passes": 0.15,
         },
     },

@@ -160,6 +160,8 @@ def build_player_columns(player: dict[str, Any], schema: dict[str, Any]) -> list
                 "column": col,
                 "value": raw.get(col, ""),
                 "rank": metric.get("rank"),
+                "comparisonCount": metric.get("comparisonCount"),
+                "comparisonHasVariation": metric.get("comparisonHasVariation"),
                 "percentile": metric.get("percentile"),
                 "rawPercentile": metric.get("rawPercentile", metric.get("percentile")),
                 "adjustedPercentile": metric.get("adjustedPercentile", metric.get("percentile")),

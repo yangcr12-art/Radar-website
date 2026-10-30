@@ -51,7 +51,24 @@ PAIR_SPECS = (
     {"id": "offensive_duel_effectiveness", "label": "进攻对抗有效性", "volume": "Offensive duels per 90", "rate": "Offensive duels won, %"},
     {"id": "crossing_effectiveness", "label": "传中有效性", "volume": "Crosses per 90", "rate": "Accurate crosses, %"},
     {"id": "finishing_effectiveness", "label": "射门转化有效性", "volume": "Shots per 90", "rate": "Goal conversion, %"},
+    {"id": "defensive_duel_effectiveness", "label": "防守对抗有效性", "volume": "Defensive duels per 90", "rate": "Defensive duels won, %",
+     "roleIds": ("defensive_fullback", "attacking_wingback", "inverted_fullback", "wingback", "front_foot_centre_back")},
+    {"id": "long_pass_effectiveness", "label": "长传有效性", "volume": "Long passes per 90", "rate": "Accurate long passes, %",
+     "roleIds": ("front_foot_centre_back", "ball_playing_centre_back", "cover_centre_back", "shot_stopping_goalkeeper", "ball_playing_goalkeeper")},
 )
+
+
+def pair_specs_for_role(role_id: str | None) -> tuple[dict[str, Any], ...]:
+    """Keep role-scoped capability changes out of unrelated position models."""
+    specs = [spec for spec in PAIR_SPECS if not spec.get("roleIds") or role_id in spec["roleIds"]]
+    if role_id in {"front_foot_centre_back", "ball_playing_centre_back", "cover_centre_back"}:
+        specs = [spec for spec in specs if spec["id"] != "defensive_duel_effectiveness"]
+        specs.append(next(spec for spec in PAIR_SPECS if spec["id"] == "defensive_duel_effectiveness"))
+        labels = {"duel_effectiveness": "对抗成功率", "aerial_effectiveness": "空中对抗成功率", "defensive_duel_effectiveness": "防守对抗成功率"}
+        specs = [{**spec, "label": labels[spec["id"]], "mode": "rate_only",
+                  "formula": "修正成功率的同位置百分位；次数仅用于可靠度，不直接加分"}
+                 if spec["id"] in labels else spec for spec in specs]
+    return tuple(specs)
 
 
 PILLAR_SPECS: dict[str, dict[str, Any]] = {
@@ -125,14 +142,21 @@ def build_forward_pair_scores(
     model_metric_columns: set[str],
     columns: dict[str, str],
     to_float: Callable[[Any], float | None],
+    role_id: str | None = None,
 ) -> tuple[dict[int, dict[str, dict[str, Any]]], dict[str, dict[str, Any]]]:
     by_candidate: dict[int, dict[str, dict[str, Any]]] = {index: {} for index in range(len(candidates))}
     metadata: dict[str, dict[str, Any]] = {}
-    for spec in PAIR_SPECS:
+    for spec in pair_specs_for_role(role_id):
+        rate_only = spec.get("mode") == "rate_only"
         volume_name = str(spec["volume"])
         rate_name = str(spec["rate"])
-        if volume_name not in model_metric_columns or rate_name not in model_metric_columns:
+        if rate_name not in model_metric_columns or (not rate_only and volume_name not in model_metric_columns):
             continue
+        if rate_only:
+            # Keep the scoring group even when evidence is absent: never fall
+            # back to an uncorrected success rate or reward zero attempts.
+            metadata[str(spec["id"])] = {**spec, "cohortCount": 0, "priorMean": None,
+                "priorAttempts": PAIR_PRIOR_ATTEMPTS, "bayesFormula": PAIR_BAYES_FORMULA}
         if not columns.get(volume_name) or not columns.get(rate_name):
             continue
 
@@ -147,6 +171,8 @@ def build_forward_pair_scores(
                 continue
             rate = max(0.0, min(1.0, rate_percent / 100.0))
             attempts = max(0.0, volume * float(candidate["minutes"]) / 90.0)
+            if rate_only and (attempts <= 0 or not 0 <= rate_percent <= 100):
+                continue
             successes = attempts * rate
             observations.append({"index": index, "volume": volume, "rate": rate, "attempts": attempts, "successes": successes})
             total_attempts += attempts
@@ -182,10 +208,14 @@ def build_forward_pair_scores(
             volume_score = percentile_pair(sorted_volumes, float(observation["volume"]), alpha=volume_alpha)["adjustedPercentile"]
             successful_score = percentile_pair(sorted_successful, float(observation["successfulPer90"]), alpha=successful_alpha)["adjustedPercentile"]
             rate_score = percentile_pair(sorted_rates, float(observation["adjustedRate"]) * 100.0, alpha=rate_alpha)["adjustedPercentile"]
-            score = 0.35 * volume_score + 0.45 * successful_score + 0.20 * rate_score
+            score = rate_score if rate_only else 0.35 * volume_score + 0.45 * successful_score + 0.20 * rate_score
             index = int(observation["index"])
             provisional[index] = {
                 "score": score,
+                "mode": spec.get("mode", "volume_efficiency"),
+                "volumePer90": float(observation["volume"]),
+                "attempts": float(observation["attempts"]),
+                "observedRate": float(observation["rate"]) * 100.0,
                 "volumeScore": volume_score,
                 "successfulScore": successful_score,
                 "rateScore": rate_score,
@@ -208,7 +238,7 @@ def build_forward_pair_scores(
             "cohortCount": len(observations),
             "priorMean": prior_mean * 100.0,
             "priorAttempts": PAIR_PRIOR_ATTEMPTS,
-            "formula": PAIR_SCORE_FORMULA,
+            "formula": spec.get("formula", PAIR_SCORE_FORMULA),
             "bayesFormula": PAIR_BAYES_FORMULA,
         }
     return by_candidate, metadata

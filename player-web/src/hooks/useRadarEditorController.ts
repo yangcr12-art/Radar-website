@@ -200,7 +200,9 @@ export function useRadarEditorController({
       return;
     }
     setRows(recomputeRowsTier(parsed.rows));
-    setMessage(`CSV 导入成功，共 ${parsed.rows.length} 行`);
+    setSelectedPresetId("draft");
+    setSaveName("");
+    setMessage(`CSV 已导入新草稿，共 ${parsed.rows.length} 行；已保存版本保持不变。`);
     setError("");
   };
 
@@ -265,6 +267,13 @@ export function useRadarEditorController({
     setChartStyle(normalized.chartStyle);
     setCenterImage(normalized.centerImage);
     setCornerImage(normalized.cornerImage);
+  };
+
+  // Imports create a new working draft; never auto-save them into the viewed version.
+  const importSnapshotAsDraft = (snapshot: any) => {
+    setSelectedPresetId("draft");
+    setSaveName("");
+    applySnapshot(snapshot);
   };
 
   const handleSavePreset = () => {
@@ -546,6 +555,7 @@ export function useRadarEditorController({
     updateChartStyle,
     getSnapshot,
     applySnapshot,
+    importSnapshotAsDraft,
     handleSavePreset,
     handleSwitchPreset,
     handleDeletePreset,

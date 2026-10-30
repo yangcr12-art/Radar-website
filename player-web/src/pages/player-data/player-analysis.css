@@ -1,0 +1,20 @@
+.player-analysis { margin: 18px 0; padding: 20px; border: 1px solid #d5cebe; border-radius: 14px; background: #faf8f2; }
+.player-analysis-heading { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.player-analysis h2, .player-analysis h3 { margin: 0 0 10px; color: #244b40; }
+.player-analysis h4 { margin: 20px 0 10px; }
+.player-analysis p { overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; }
+.player-analysis .player-analysis-source { color: #706b60; font-size: 12px; }
+.player-analysis details { margin: 10px 0; padding: 12px; border-radius: 8px; background: #efeee6; }
+.player-analysis summary { cursor: pointer; line-height: 1.7; font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .player-analysis { padding: 14px; } }
+.player-analysis article { max-width: 850px; margin: 22px auto 0; }
+.player-analysis-report-title { padding-bottom: 18px; border-bottom: 1px solid #d5cebe; }
+.player-analysis-report-title > span { font-size: 12px; letter-spacing: 2px; color: #706b60; }
+.player-analysis-report-title h3 { margin: 10px 0; font-size: 27px; }
+.player-analysis .player-analysis-prose { margin-top: 24px; }
+.player-analysis .player-analysis-prose h4 { font-size: 18px; color: #244b40; }
+.player-analysis .player-analysis-prose p { font-size: 15px; line-height: 1.95; margin: 12px 0 18px; }
+.player-analysis .player-analysis-evidence { margin-top: 28px; background: transparent; border-top: 1px solid #d5cebe; padding: 14px 0; }
+.player-analysis-evidence-table { overflow-x: auto; }
+.player-analysis-evidence-table table { min-width: 640px; width: 100%; border-collapse: collapse; font-size: 12px; }
+.player-analysis-evidence-table td, .player-analysis-evidence-table th { padding: 8px; text-align: left; border-bottom: 1px solid #d5cebe; }

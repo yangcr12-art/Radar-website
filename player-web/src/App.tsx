@@ -14,7 +14,8 @@ import {
   saveState
 } from "./api/storageClient";
 import { DEFAULT_CORNER_IMAGE, STORAGE_KEYS } from "./app/constants";
-import { isAppPageKey, type AppPageKey } from "./app/pageRegistry";
+import { isAppPageKey } from "./app/pageRegistry";
+import { usePageNavigation } from "./hooks/usePageNavigation";
 import { renderActivePage } from "./app/renderActivePage";
 import {
   computeTierFromValue,
@@ -52,7 +53,6 @@ import { emitMappingRemoteSyncStatus } from "./utils/mappingRemoteSync";
 
 function App() {
   const apiBaseLabel = getApiBaseLabel();
-  const [activePage, setActivePage] = useState<AppPageKey>("radar");
   const [isHydrated, setIsHydrated] = useState(false);
   const [playerDataMeta, setPlayerDataMeta] = useState({ playerCount: 0, updatedAt: "", numericColumns: [] });
   const [datasetOptions, setDatasetOptions] = useState([]);
@@ -123,8 +123,11 @@ function App() {
     loginError,
     handleLogin,
     handleLogout,
-    authHydrationVersion
+    authHydrationVersion,
+    retryAuthCheck
   } = useSharedAuth();
+
+  const { activePage, setActivePage } = usePageNavigation(authStatus === "authenticated", authUsername);
 
   const selectedMetricColumns = useMemo(() => {
     if (!selectedDatasetId) return [];
@@ -553,7 +556,7 @@ function App() {
     const nextTitle = `${titlePlayerName} (${nextMeta.age}, ${nextMeta.position}, ${nextMeta.minutes} mins.), ${nextMeta.club}`;
     const nextSubtitle = `${nextMeta.season} ${nextMeta.league} Percentile Rankings & Per 90 Values`;
 
-    radarEditor.applySnapshot({
+    radarEditor.importSnapshotAsDraft({
       ...radarEditor.getSnapshot(),
       rows: finalRows,
       meta: nextMeta,
@@ -565,7 +568,7 @@ function App() {
     setPlayerDataError("");
     setPlayerDataMessage("");
     radarEditor.setError("");
-    radarEditor.setMessage(`已按${playerPercentileMode === "smoothed" ? "项目对应表算法" : "标准"}百分位导入 ${finalRows.length} 个指标并同步更新标题。`);
+    radarEditor.setMessage(`已按${playerPercentileMode === "smoothed" ? "项目对应表算法" : "标准"}百分位导入 ${finalRows.length} 个指标至新草稿；已保存版本保持不变。`);
   };
 
   const getPersistedState = (
@@ -948,7 +951,7 @@ function App() {
       try {
         const res = await fetchPlayerById(selectedPlayerId, selectedDatasetId);
         if (playerDetailReqSeqRef.current !== seq) return;
-        setSelectedPlayerDetail(res.player || null);
+        setSelectedPlayerDetail(res.player ? { ...res.player, datasetId: res.datasetId, updatedAt: res.updatedAt } : null);
       } catch (err: any) {
         if (playerDetailReqSeqRef.current !== seq) return;
         setPlayerDataError(`球员详情读取失败：${err.message}`);
@@ -958,7 +961,7 @@ function App() {
       }
     };
     loadPlayerDetail();
-  }, [activePage, selectedPlayerId, selectedDatasetId, playerDetailReloadTick]);
+  }, [activePage, selectedPlayerId, selectedDatasetId, playerDetailReloadTick, mappingRevision]);
 
   const filteredPlayerOptions = useMemo(() => {
     const keyword = playerSearchQuery.trim().toLowerCase();
@@ -1027,6 +1030,14 @@ function App() {
 
   if (authStatus === "checking" || (authStatus === "authenticated" && !isHydrated)) {
     return <AppLoadingScreen />;
+  }
+
+  if (authStatus === "unavailable") {
+    return <div className="login-shell"><div className="login-card">
+      <h1>暂时无法连接服务</h1>
+      <p>当前页面位置和本地草稿已保留，请恢复网络后重试。</p>
+      <button onClick={retryAuthCheck}>重新连接</button>
+    </div></div>;
   }
 
   if (authStatus !== "authenticated") {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
+from server_core.services.player_position_comparison import position_comparison_doc
 
 from server_core.services.player_dataset_store import (
     build_player_columns,
@@ -110,6 +111,14 @@ def get_player_detail(player_id: str):
         dataset_id, doc = resolve_dataset(index, str(request.args.get("datasetId") or ""))
         if doc is None:
             return jsonify({"ok": False, "error": "player dataset not found"}), 404
+        comparison = {"mode": "dataset"}
+        if request.args.get("comparison") == "position":
+            try:
+                doc, comparison = position_comparison_doc(doc, player_id)
+            except ValueError as exc:
+                return jsonify({"ok": False, "error": str(exc)}), 400
+            except LookupError:
+                return jsonify({"ok": False, "error": "player not found"}), 404
         doc = normalize_player_dataset_doc(doc)
         players = doc.get("players", [])
         selected = next((p for p in players if p.get("id") == player_id), None)
@@ -123,6 +132,7 @@ def get_player_detail(player_id: str):
                     "id": selected.get("id"),
                     "player": selected.get("player"),
                     "columns": build_player_columns(selected, schema),
+                    "comparison": comparison,
                 },
                 "datasetId": dataset_id,
                 "selectedDatasetId": index.get("selectedDatasetId", ""),

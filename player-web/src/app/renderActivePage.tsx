@@ -12,6 +12,7 @@ import MatchRadarPage from "../pages/match-radar/MatchRadarPage";
 import FitnessTeamRadarPage from "../pages/fitness-analysis/FitnessTeamRadarPage";
 import FitnessPlayerOverlayPage from "../pages/fitness-analysis/FitnessPlayerOverlayPage";
 import FitnessPer90Page from "../pages/fitness-analysis/FitnessPer90Page";
+import FitnessHistoryPage from "../pages/fitness-analysis/FitnessHistoryPage";
 import OptaAnalysisPage from "../pages/opta-analysis/OptaAnalysisPage";
 import CslStandingsTrendPage from "../pages/csl-standings-trend/CslStandingsTrendPage";
 import PlayerPersonalRadarPage from "../pages/player-personal-radar/PlayerPersonalRadarPage";
@@ -70,6 +71,8 @@ export function renderActivePage({
       return <FitnessPlayerOverlayPage mappingRevision={mappingRevision} />;
     case "fitness_per90":
       return <FitnessPer90Page mappingRevision={mappingRevision} />;
+    case "fitness_history":
+      return <FitnessHistoryPage />;
     case "opta_analysis":
       return <OptaAnalysisPage />;
     case "csl_standings_trend":

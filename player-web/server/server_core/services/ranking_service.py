@@ -85,6 +85,8 @@ def compute_player_metrics(
                 algorithm_reason = f"{mode_label}；{smoothing['reason']}"
             players[player_pos]["metrics"][col] = {
                 "value": val,
+                "comparisonCount": len(values),
+                "comparisonHasVariation": ascending_values[0] != ascending_values[-1],
                 "rank": rank,
                 "percentile": round(percentiles["rawPercentile"], 2),
                 "rawPercentile": round(percentiles["rawPercentile"], 2),

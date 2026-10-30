@@ -1,6 +1,7 @@
 import React from "react";
 import { getApiBaseLabel } from "../../api/storageClient";
 import { getProjectGroupByColumn } from "../../utils/projectMappingStore";
+import PlayerAnalysisPanel from "./PlayerAnalysisPanel";
 
 function PlayerDataPage(props) {
   const {
@@ -111,7 +112,7 @@ function PlayerDataPage(props) {
               <p className="selected-player-title">{`当前球员：${selectedPlayerName || "-"}`}</p>
               <p className="player-export-count">{`已勾选：${selectedMetricColumns.length}/${playerDataMetaNumericColumns.length || 0}`}</p>
               <label className="player-percentile-mode">
-                <span>雷达百分位</span>
+                <span>分析 / 雷达百分位</span>
                 <select value={playerPercentileMode} onChange={(event) => setPlayerPercentileMode(event.target.value)}>
                   <option value="standard">标准百分位</option>
                   <option value="smoothed">算法百分位</option>
@@ -161,6 +162,11 @@ function PlayerDataPage(props) {
               </button>
             </div>
           </div>
+          <PlayerAnalysisPanel
+            input={{ datasetId: selectedDatasetId, datasetName: datasetOptions.find(item => item.id === selectedDatasetId)?.name || "", playerId: selectedPlayerId, mode: playerPercentileMode, selectedColumns: selectedMetricColumns, detail: selectedPlayerDetail }}
+            loading={playerDataLoading || Boolean(playerDataError)}
+            label={formatPlayerDataColumnLabel}
+          />
           <div className="player-data-table-wrap">
             <table>
               <thead>

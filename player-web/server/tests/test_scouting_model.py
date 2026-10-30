@@ -86,9 +86,22 @@ def _doc(players: list[dict]) -> dict:
 
 
 class ScoutingModelTest(unittest.TestCase):
+    def test_height_is_profile_metadata_and_does_not_change_scores(self):
+        players = [_player(index) for index in range(1, 10)]
+        baseline = evaluate_inverted_right_winger(_doc(players))
+        for column in ("Height", "身高", "Height (cm)"):
+            for player in players:
+                player["raw"][column] = 185
+            result = evaluate_inverted_right_winger(_doc(players))
+            self.assertEqual([p["height"] for p in [*result["confirmed"], *result["pending"]]], [185] * len([*result["confirmed"], *result["pending"]]))
+            self.assertEqual([(p["id"], p["score"]) for p in [*result["confirmed"], *result["pending"]]], [(p["id"], p["score"]) for p in [*baseline["confirmed"], *baseline["pending"]]])
+            for player in players:
+                del player["raw"][column]
+        self.assertTrue(all(p["height"] == "" for p in [*baseline["confirmed"], *baseline["pending"]]))
+
     def test_model_catalog_exposes_auditable_role_definitions(self):
         catalog = list_scouting_models()
-        self.assertEqual(len(catalog), 26)
+        self.assertEqual(len(catalog), 27)
         self.assertEqual({model["family"] for model in catalog}, {"中锋", "边锋", "前腰", "中前卫", "后腰", "边后卫", "中卫", "门将"})
         expected_names = {
             "中锋": {"支点中锋", "抢点型前锋", "冲击型前锋", "全能前锋", "组织型前锋"},
@@ -96,7 +109,7 @@ class ScoutingModelTest(unittest.TestCase):
             "前腰": {"古典前腰", "影锋", "边前腰"},
             "中前卫": {"全场覆盖型（B2B）中场", "推进型中场", "组织核心"},
             "后腰": {"拖后组织者", "防守型后腰", "半中卫"},
-            "边后卫": {"防守型边后卫", "进攻型边后卫（边翼卫）", "内收型边后卫"},
+            "边后卫": {"防守型边后卫", "进攻型边后卫", "攻守均衡型边后卫", "边翼卫"},
             "中卫": {"上抢型中卫", "出球型中卫", "拖后型中卫"},
             "门将": {"扑救型门将", "出球型门将"},
         }
@@ -613,11 +626,11 @@ class ScoutingModelTest(unittest.TestCase):
             "event:accelerations": 0.50,
         })
         self.assertEqual(DEFENSIVE_MIDFIELDER_PILLAR_SPECS["build_progression"]["features"], {
-            "event:passes": 0.15,
+            "event:passes": 0.10,
             "event:received_passes": 0.15,
-            "event:progressive_passes": 0.25,
-            "event:forward_passes": 0.10,
-            "ratio:forward_pass_share": 0.20,
+            "event:progressive_passes": 0.10,
+            "event:forward_passes": 0.20,
+            "ratio:forward_pass_share": 0.30,
             "event:final_third_passes": 0.15,
         })
         self.assertEqual(DEFENSIVE_MIDFIELDER_PILLAR_SPECS["long_distribution"]["features"], {
@@ -633,6 +646,12 @@ class ScoutingModelTest(unittest.TestCase):
         ))
         for weights in (DEEP_PLAYMAKER_EVIDENCE_WEIGHTS, BALL_WINNER_EVIDENCE_WEIGHTS, HALF_BACK_EVIDENCE_WEIGHTS):
             self.assertAlmostEqual(sum(weights.values()), 1.0, places=9)
+        self.assertEqual(HALF_BACK_EVIDENCE_WEIGHTS, {
+            "centre_back_compatibility": 0.50,
+            "build_progression": 0.25,
+            "physical": 0.10,
+            "defensive_shield": 0.15,
+        })
 
         playmaker = _defensive_midfielder_role_evidence({
             "defensive_shield": 0.55, "ball_winning": 0.35, "physical": 0.45, "coverage": 0.50,
@@ -704,10 +723,10 @@ class ScoutingModelTest(unittest.TestCase):
                 "身体对抗": 20, "后场调度": 32, "纵向输送": 26, "防守保护": 16, "无球覆盖": 6,
             },
             "ball_winning_midfielder": {
-                "身体对抗": 27, "夺回球权": 38, "覆盖跑动": 15, "防守纪律": 10, "后场调度": 10,
+                "身体对抗": 27, "夺回球权": 35, "覆盖跑动": 17, "防守纪律": 13, "后场调度": 8,
             },
             "half_back": {
-                "身体对抗": 23, "回撤出球": 27, "防守": 30, "转换保护": 12, "控球克制": 8,
+                "身体对抗": 23, "回撤出球": 27, "防守": 30, "转换保护": 12, "控球推进": 8,
             },
         }
         for role_id, expected in expected_dimensions.items():
@@ -729,8 +748,8 @@ class ScoutingModelTest(unittest.TestCase):
         self.assertEqual(
             [(metric["column"], metric["weight"]) for metric in ball_winner_dimensions["后场调度"]["metrics"]],
             [
-                ("Forward passes per 90", 4),
-                ("Accurate passes, %", 2),
+                ("Forward passes per 90", 3),
+                ("Accurate passes, %", 1),
                 ("Accurate long passes, %", 2),
                 ("Progressive passes per 90", 2),
             ],
@@ -752,7 +771,7 @@ class ScoutingModelTest(unittest.TestCase):
         )
 
     def test_half_back_losses_uses_auditable_pass_loss_fallback(self):
-        security = next(dimension for dimension in SCOUTING_MODELS["half_back"]["dimensions"] if dimension["name"] == "控球克制")
+        security = next(dimension for dimension in SCOUTING_MODELS["half_back"]["dimensions"] if dimension["name"] == "控球推进")
         losses = next(metric for metric in security["metrics"] if metric["column"] == "Losses per 90")
         lookup = _column_lookup(["Passes per 90", "Accurate passes, %"])
         resolved = _resolve_metric(lookup, losses)
@@ -768,7 +787,7 @@ class ScoutingModelTest(unittest.TestCase):
         self.assertIsNone(direct["derived"])
 
     def test_complete_role_catalog_is_present_and_balanced(self):
-        self.assertEqual(len([model for model in SCOUTING_MODELS.values() if model.get("catalogVisible", True)]), 26)
+        self.assertEqual(len([model for model in SCOUTING_MODELS.values() if model.get("catalogVisible", True)]), 27)
         self.assertEqual(
             {model["family"] for model in SCOUTING_MODELS.values() if model.get("catalogVisible", True)},
             {"中锋", "边锋", "前腰", "中前卫", "后腰", "边后卫", "中卫", "门将"},

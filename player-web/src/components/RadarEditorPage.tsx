@@ -109,6 +109,7 @@ function RadarEditorPage(props: any) {
               删除当前版本
             </button>
           </div>
+          <p className="hint">导入新球员或 CSV 会进入草稿，不覆盖已保存版本。</p>
         </div>
 
         <div className="meta-section">

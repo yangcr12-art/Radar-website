@@ -5,6 +5,8 @@ import WingerArchetypeMethod from "./WingerArchetypeMethod";
 import AttackingMidfielderArchetypeMethod from "./AttackingMidfielderArchetypeMethod";
 import CentralMidfielderArchetypeMethod from "./CentralMidfielderArchetypeMethod";
 import DefensiveMidfielderArchetypeMethod from "./DefensiveMidfielderArchetypeMethod";
+import DefenderArchetypeMethod, { type DefenderMethodDefinition } from "./DefenderArchetypeMethod";
+import GoalkeeperArchetypeMethod from "./GoalkeeperArchetypeMethod";
 
 type RoleMetricDefinition = {
   column: string;
@@ -22,6 +24,7 @@ type RoleMetricDefinition = {
 type DisplayRoleMetricDefinition = RoleMetricDefinition & { members: RoleMetricDefinition[] };
 
 type RoleModelDefinition = {
+  roleAnalysis?: DefenderMethodDefinition | null;
   id: string;
   version: string;
   name: string;
@@ -163,6 +166,7 @@ function mergeCoupledRoleMetrics(metrics: RoleMetricDefinition[]): DisplayRoleMe
 function derivedMetricFormula(metric: RoleMetricDefinition) {
   if (!metric.derived) return "";
   if (metric.derived.operation === "ratio_percent") return `${metric.derived.columns[0]} ÷ ${metric.derived.columns[1]} × 100`;
+  if (metric.derived.operation === "volume_times_failure_rate") return `${metric.derived.columns[0]} × (100 − ${metric.derived.columns[1]}) ÷ 100（仅缺列时估算传球失误）`;
   return metric.derived.columns.join(" − ");
 }
 
@@ -214,10 +218,10 @@ function ForwardArchetypeMethodPage() {
             <p className="scout-search-kicker">Research · Role Library v2</p>
             <h1>全位置职责算法库</h1>
             <p>
-              选择位置与职责，查看当前系统实际使用的维度、指标和权重。中锋、边锋、前腰、中前卫和后腰另提供各自独立的职责相似度识别。
+              选择位置与职责，查看当前系统实际使用的维度、指标和权重。八个位置族分别提供独立职责相似度识别，Research结论需结合数据覆盖与录像复核。
             </p>
           </div>
-          <span className="scout-method-status">26 个中文职责 · 当前实现口径</span>
+          <span className="scout-method-status">{models.length} 个中文模型 · 当前实现口径</span>
         </header>
 
         <section className="scout-role-library-controls">
@@ -233,9 +237,9 @@ function ForwardArchetypeMethodPage() {
               {familyModels.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
             </select>
           </label>
-          <div className="scout-role-library-count">
+          <div className="scout-role-library-count-field">
             <span>当前位置职责</span>
-            <strong>{familyModels.length || "–"}</strong>
+            <div className="scout-role-library-count"><strong>{familyModels.length || "–"}</strong></div>
           </div>
         </section>
 
@@ -291,7 +295,7 @@ function ForwardArchetypeMethodPage() {
             </section>
 
             <section className="scout-role-score-method">
-              <article><span>1</span><div><b>指标计分</b><p>{selectedFamily === "中锋" ? "对抗、空中对抗、盘带和射门转化在次数与成功率同时存在时先合成为修正有效性；其他指标按项目对应表百分位计分，缺失回退中性50分。" : "按项目对应表选择普通、反向或稀疏事件百分位；缺失指标回退中性50分。"}</p></div></article>
+              <article><span>1</span><div><b>指标计分</b><p>对抗、空中对抗、盘带、进攻对抗、传中和射门转化在配对字段同时存在时合成为修正有效性；其他指标按项目对应表百分位计分，缺失回退中性50分。尖点奖励逐指标计入。</p></div></article>
               <article><span>2</span><div><b>维度得分</b><p>Σ（指标计分百分位 × 指标权重）÷ 维度权重。</p></div></article>
               <article><span>3</span><div><b>职责能力分</b><p>Σ（指标计分百分位 × 指标权重）÷ 100；权重不因页面筛选而改写。</p></div></article>
               <article><span>4</span><div><b>分钟可靠度</b><p>最终分 = 50 + min（1，分钟 ÷ 500）×（原始职责分 − 50）。</p></div></article>
@@ -407,12 +411,12 @@ function ForwardArchetypeMethodPage() {
         </section>
 
         <section className="scout-method-split">
-          <article className="scout-method-card scout-method-card-dark">
+          <article className="scout-method-card">
             <span className="scout-method-number">05</span>
             <div>
               <h2>独立相似度，不做概率归一</h2>
               <p>每种职责直接保留0–100的行为相似度。至少有4个行为支柱时才开始判断，全能前锋必须覆盖全部五类行为轴。</p>
-              <div className="scout-method-formula scout-method-formula-dark">
+              <div className="scout-method-formula">
                 职责相似度ᵢ = 该职责可用行为支柱的加权得分<br />
                 五项相似度互相独立，不要求合计100
               </div>
@@ -498,10 +502,14 @@ function ForwardArchetypeMethodPage() {
           <CentralMidfielderArchetypeMethod />
         ) : selectedFamily === "后腰" ? (
           <DefensiveMidfielderArchetypeMethod />
+        ) : (selectedFamily === "边后卫" || selectedFamily === "中卫") && selectedModel?.roleAnalysis ? (
+          <DefenderArchetypeMethod method={selectedModel.roleAnalysis} />
+        ) : selectedFamily === "门将" && selectedModel?.roleAnalysis ? (
+          <GoalkeeperArchetypeMethod method={selectedModel.roleAnalysis} />
         ) : (
           <section className="scout-role-archetype-unavailable">
             <strong>{`${selectedFamily}当前使用职责能力评分`}</strong>
-            <p>该位置的不同职责已在上方按独立维度与指标权重完整列出。独立职责相似度识别目前完成中锋、边锋、前腰、中前卫和后腰试验版；其他位置不会套用现有公式，也不会用未经验证的参数强行分类。</p>
+            <p>当前职责的行为说明暂不可用，请检查后端目录是否已更新；不套用其他位置公式。</p>
           </section>
         )}
       </div>

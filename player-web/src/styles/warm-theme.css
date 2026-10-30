@@ -1,0 +1,80 @@
+/* Existing warm palette, screen chrome only. Do not add sizing/spacing rules here.
+   Dense table controls, chart artwork, team colors and score colors keep their own rules. */
+@media screen {
+  :root {
+    --ui-paper: #fffdf8;
+    --ui-soft: #f8f3ea;
+    --ui-border: #d9d1c6;
+    --ui-text: #2f2a24;
+    --ui-muted: #6b6257;
+    --ui-active: #2f2a24;
+    --ui-focus: #795d3d;
+  }
+  /* Heading colors belong to their surface: dark banners retain light text. */
+  .content-shell :is(.info-card, .fitness-card, .statsbomb-page-shell, .statsbomb-main, .statsbomb-status-card, .statsbomb-table-card, .statsbomb-module-card, .fh-controls, .fh-fields, .fh-report) { background-color: var(--ui-paper); border-color: var(--ui-border); }
+  .content-shell :is(input:not([type="color"]):not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea) { border-color: #cfc4b7; color: var(--ui-text); background-color: #fff; }
+  .content-shell :is(button, .fh-upload):focus-visible,
+  .top-nav button:focus-visible,
+  .content-shell :is(input, select, textarea, summary):focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+  /* Ordinary actions inherit the original compact control dimensions. */
+  .content-shell :is(.btn-row, .mapping-actions, .fitness-top-bar, .csl-top-bar, .statsbomb-toolbar, .fh-actions) > button { border-color: #cfc4b7; background-color: #fffdf8; color: var(--ui-text); }
+  .content-shell :is(.btn-row, .mapping-actions, .fitness-top-bar, .csl-top-bar, .statsbomb-toolbar, .fh-actions) > button:hover { background-color: var(--ui-soft); }
+  .content-shell :is(.btn-row, .mapping-actions, .fitness-top-bar, .csl-top-bar, .statsbomb-toolbar, .fh-actions) > button.danger { background-color: #d32f2f; color: #fff; border-color: #b12727; }
+  .content-shell :is(.scatter-section, .player-export-section, .scout-search-controls, .statsbomb-classic-controls) { border-color: var(--ui-border); background-color: var(--ui-soft); }
+  .content-shell :is(.mapping-table, .player-data-table-wrap table, .statsbomb-table, .fitness-table) th { background-color: var(--ui-soft); border-color: var(--ui-border); color: var(--ui-text); }
+  .content-shell :is(.mapping-table-wrap, .player-data-table-wrap, .scatter-chart-panel, .scatter-detail-panel, .statsbomb-workspace) { border-color: var(--ui-border); }
+
+  /* Landing and About retain every section and the existing editorial geometry. */
+  .home-page, .about-page {
+    --editorial-ink: #2f2a24;
+    --editorial-copy: #5f554a;
+    --editorial-muted: #756b60;
+    --editorial-accent: #6f5739;
+    --editorial-border: #d9d1c6;
+    background: linear-gradient(160deg, #f5f0e7 0%, #f2ede4 46%, #ece4d8 100%);
+  }
+  .home-hero-art { background: #3b332a; border-color: #665849; }
+  .home-hero-art .home-hero-art-mark, .home-hero-art .home-hero-art-note, .home-hero-art-note span { color: #e2d7c5; }
+  .content-shell :is(.home-quick-actions button:first-child, .fh-upload) { background-color: var(--ui-active); border-color: var(--ui-active); color: #fff; }
+  .content-shell .home-quick-actions button:first-child:hover { background-color: #494035; }
+  .content-shell :is(.home-feature-card h3, .about-card h2) { color: var(--ui-text); }
+
+  /* Personal match report: keep table widths, row spacing, units and print CSS intact. */
+  .fitness-history { color: var(--ui-text); }
+  .fitness-history :is(.fh-heading h1, .fh-report h2, .fh-empty h2) { color: var(--ui-text); }
+  .fitness-history :is(.fh-heading p, .fh-report-header p, .fh-count span, .fh-note, .fh-sources, .fh-empty, .fh-metric-unit) { color: var(--ui-muted); }
+  .fitness-history .fh-eyebrow { color: #795d3d !important; }
+  .fitness-history :is(.fh-report-header, .fh-report tfoot) { border-color: #7c6b55; }
+  .fitness-history .fh-report thead { border-color: var(--ui-border); }
+  .fitness-history .fh-report :is(td, th) { border-bottom-color: #e8e1d7; }
+  .fitness-history .fh-report th { color: #5f554a; }
+  .fitness-history .fh-report tbody tr:nth-child(even) { background-color: #faf6ef; }
+  .fitness-history .fh-report tbody tr:hover { background-color: #f3ede2; }
+  .fitness-history .fh-report tfoot { background-color: #f5efe5; }
+
+  /* StatsBomb navigation keeps its groups, counts and module availability states. */
+  .statsbomb-sidebar { background-color: #f6f0e6; border-color: var(--ui-border); color: var(--ui-text); }
+  .statsbomb-nav-group > strong { color: var(--ui-muted); }
+  .statsbomb-nav-group button { color: #5f554a; }
+  .statsbomb-nav-group button:hover { background-color: #eee6d9; color: var(--ui-text); }
+  .statsbomb-nav-group button.is-active { background-color: var(--ui-active); color: #fff; box-shadow: none; }
+  .statsbomb-nav-group button small { color: #756b60; }
+  .statsbomb-nav-group button.is-active small { color: #e2d7c5; }
+  .statsbomb-kicker { color: #795d3d; }
+  .statsbomb-classic-import { background-color: #f8f3ea; border-color: var(--ui-border); }
+  .statsbomb-classic-import p { color: var(--ui-muted); }
+
+  /* Correct confirmed outer overflow without changing the inner chart/table geometry. */
+  .info-page { grid-template-columns: minmax(0, 1fr); }
+  .info-page > .info-card { max-width: 100%; }
+  .scout-method-shell { grid-template-columns: minmax(0, 1fr); }
+  .scout-method-shell > * { min-width: 0; }
+  @media (max-width: 680px) {
+    .match-team-data-layout { flex-direction: column; }
+    .match-team-data-layout .player-data-left { flex-basis: auto; width: 100%; max-width: 100%; }
+    .match-team-data-layout .player-data-right { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home-shell, .about-shell { animation: none; }
+  }
+}

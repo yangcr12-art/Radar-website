@@ -2,6 +2,7 @@ const DEFAULT_API_BASE = "http://127.0.0.1:8787";
 const API_BASE = (import.meta.env.VITE_STORAGE_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
 const REQ_TIMEOUT_MS = 8000;
 const STATSBOMB_REQ_TIMEOUT_MS = 30000;
+const FITNESS_HISTORY_TIMEOUT_MS = 120000;
 
 export class AuthRequiredError extends Error {
   constructor(message = "请先登录。") {
@@ -10,143 +11,56 @@ export class AuthRequiredError extends Error {
   }
 }
 
-async function request(path, options = {}) {
+type RequestOptions = RequestInit & { headers?: Record<string, string> };
+
+async function sendRequest(path: string, options: RequestOptions = {}, mode: "json" | "form" | "blob" | "statsbomb" = "json", timeoutMs?: number) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs ?? (mode === "statsbomb" ? STATSBOMB_REQ_TIMEOUT_MS : REQ_TIMEOUT_MS));
   try {
     const resp = await fetch(`${API_BASE}${path}`, {
       ...options,
       credentials: "include",
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
+      ...(mode === "form" ? {} : { headers: { "Content-Type": "application/json", ...(options.headers || {}) } })
     });
-
+    if (mode === "blob" && resp.ok) return await resp.blob();
     let body = null;
     try {
       body = await resp.json();
     } catch {
       body = null;
     }
-
-    if (resp.status === 401 || body?.authRequired) {
-      throw new AuthRequiredError(body?.error || "请先登录。");
+    if (resp.status === 401 || (mode !== "blob" && body?.authRequired)) {
+      throw new AuthRequiredError(mode === "blob" ? "请先登录。" : body?.error || "请先登录。");
     }
-
-    if (!resp.ok || (body && body.ok === false)) {
-      const message = body?.error || `request failed: ${resp.status}`;
-      throw new Error(message);
-    }
-    return body;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function requestForm(path, options = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT_MS);
-  try {
-    const resp = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      credentials: "include",
-      signal: controller.signal
-    });
-
-    let body = null;
-    try {
-      body = await resp.json();
-    } catch {
-      body = null;
-    }
-
-    if (resp.status === 401 || body?.authRequired) {
-      throw new AuthRequiredError(body?.error || "请先登录。");
-    }
-
-    if (!resp.ok || (body && body.ok === false)) {
-      const message = body?.error || `request failed: ${resp.status}`;
-      throw new Error(message);
-    }
-    return body;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function requestBlob(path, options = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT_MS);
-  try {
-    const resp = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      credentials: "include",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
-    });
-
-    if (resp.status === 401) {
-      throw new AuthRequiredError("请先登录。");
-    }
-
-    if (!resp.ok) {
-      let body = null;
-      try {
-        body = await resp.json();
-      } catch {
-        body = null;
-      }
-      const message = body?.error || `request failed: ${resp.status}`;
-      throw new Error(message);
-    }
-
-    return await resp.blob();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function requestStatsBomb(path, options = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), STATSBOMB_REQ_TIMEOUT_MS);
-  try {
-    const resp = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      credentials: "include",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
-    });
-
-    let body = null;
-    try {
-      body = await resp.json();
-    } catch {
-      body = null;
-    }
-
-    if (resp.status === 401 || body?.authRequired) {
-      throw new AuthRequiredError(body?.error || "请先登录。");
-    }
-    if (!resp.ok || (body && body.ok === false)) {
+    if (!resp.ok || (mode !== "blob" && body?.ok === false)) {
       throw new Error(body?.error || `request failed: ${resp.status}`);
     }
     return body;
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (mode === "statsbomb" && error instanceof DOMException && error.name === "AbortError") {
       throw new Error("StatsBomb 请求超过 30 秒，请稍后重试。");
     }
     throw error;
   } finally {
     clearTimeout(timer);
   }
+}
+
+function request(path: string, options: RequestOptions = {}) {
+  return sendRequest(path, options);
+}
+
+function requestForm(path: string, options: RequestOptions = {}) {
+  return sendRequest(path, options, "form");
+}
+
+function requestBlob(path: string, options: RequestOptions = {}) {
+  return sendRequest(path, options, "blob");
+}
+
+function requestStatsBomb(path: string, options: RequestOptions = {}) {
+  return sendRequest(path, options, "statsbomb");
 }
 
 export function getApiBase() {
@@ -232,8 +146,11 @@ export function fetchPlayerList(datasetId = "") {
   return request(`/api/player-data/players${query}`, { method: "GET" });
 }
 
-export function fetchPlayerById(playerId, datasetId = "") {
-  const query = datasetId ? `?datasetId=${encodeURIComponent(datasetId)}` : "";
+export function fetchPlayerById(playerId, datasetId = "", comparison = "") {
+  const params = new URLSearchParams();
+  if (datasetId) params.set("datasetId", datasetId);
+  if (comparison) params.set("comparison", comparison);
+  const query = params.toString() ? `?${params}` : "";
   return request(`/api/player-data/player/${encodeURIComponent(playerId)}${query}`, { method: "GET" });
 }
 
@@ -287,6 +204,16 @@ export function importFitnessExcel(file, playerOverviewSide = "home") {
 
 export function fetchFitnessDatasets() {
   return request("/api/fitness-data/datasets", { method: "GET" });
+}
+
+export function fetchFitnessHistory() {
+  return request("/api/fitness-data/history", { method: "GET" });
+}
+
+export function importFitnessHistory(files: File[]) {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  return sendRequest("/api/fitness-data/history", { method: "POST", body: form }, "form", FITNESS_HISTORY_TIMEOUT_MS);
 }
 
 export function fetchFitnessDataset(datasetId = "") {
